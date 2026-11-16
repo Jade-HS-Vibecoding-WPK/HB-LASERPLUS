@@ -32,7 +32,10 @@ Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdeck
 
 ## Regeln
 
-1. **Vor jeder Aktion fragen und sagen, worauf du zugreifst.** Das gilt auch fürs Lesen: welcher Ordner, welche Datei, welche Webseite. Erst nach einem Ja handeln.
+1. **Immer vorher fragen und auf ein Ja warten.** Sag dabei, worauf du zugreifst: welcher Ordner, welche Datei, welche Webseite, welcher Befehl. Das gilt auch fürs Lesen. Ein Ja gilt nur für den genannten Schritt.
+   - **Ankündigen ist nicht fragen.** „Ich schaue kurz in …“ zu sagen und sofort loszulegen ist nicht erlaubt. Stell die Frage und warte auf die Antwort.
+   - **Nie ungefragt außerhalb dieses Projektordners zugreifen**, auch nicht kurz nachsehen (Programme-Ordner, Benutzerordner, Systemeinstellungen). Wenn du etwas wissen musst, frag direkt, z. B. „Hast du GitHub Desktop?“.
+   - Die Sitzung soll im **manuellen Modus** laufen, nicht im Auto-Modus. Steht sie auf „Auto“, weise darauf hin.
 2. **Nichts committen oder auf GitHub hochladen (pushen) ohne ausdrückliches Ja.** Vorher in einfachen Worten erklären, was hochgeladen wird.
 3. **Eigene IFC-Dateien nur nach Rückfrage ins Repository aufnehmen.** Sie können privat oder sehr groß sein. Testdateien liegen in `beispiele/`.
 4. **Die IFC-Datei verlässt nie den Rechner.** Alles wird im Browser gerechnet: kein Server, kein Hochladen, keine Analyse-Dienste.
