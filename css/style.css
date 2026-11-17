@@ -80,6 +80,19 @@ body {
   border-color: var(--akzent-hover);
 }
 
+/* Rückmeldung nach dem Ablegen (Dateiname oder Hinweis) */
+.datei-status {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+}
+.datei-status.ok::before     { content: "✓ "; color: var(--akzent); font-weight: 700; }
+.datei-status.fehler         { border-color: var(--akzent); }
+.datei-status.fehler::before { content: "! "; color: var(--akzent); font-weight: 700; }
+
 /* ---------- Eingabefelder ---------- */
 .feld {
   width: 100%;
