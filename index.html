@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IFC → Laser</title>
+  <meta name="description" content="Aus einer IFC-Datei fertige Laserdateien (DXF) für ein Pappmodell machen.">
+
+  <!-- Ersatzschrift für Century Gothic (Google Fonts) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Didact+Gothic&display=swap">
+
+  <!-- Tailwind (Layout-Baukasten), feste Version 3.4.16 -->
+  <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+  <script>
+    // Unsere Farben als Tailwind-Namen, sie kommen aus den Farbtöpfen in css/style.css
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            hintergrund: "var(--hintergrund)",
+            flaeche: "var(--flaeche)",
+            linie: "var(--linie)",
+            text: "var(--text)",
+            leise: "var(--text-leise)",
+            akzent: "var(--akzent)",
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Eigene Farben und Bauteile -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="min-h-screen">
+
+  <!-- Kopfzeile -->
+  <header class="max-w-4xl mx-auto px-4 pt-10 pb-6 sm:pt-14">
+    <h1 class="titel text-3xl sm:text-4xl font-bold">IFC → Laser</h1>
+    <p class="mt-3 text-leise">Aus deinem Gebäudemodell werden fertige Laserdateien für ein Pappmodell.</p>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 space-y-6 pb-10">
+
+    <!-- Bereich 1: Datei ablegen -->
+    <section id="bereich-datei" class="bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+      <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+        <span class="nummer">1</span> Datei ablegen
+      </h2>
+
+      <div id="ablage" class="ablage rounded-xl px-4 py-10 sm:py-14 text-center space-y-3">
+        <p class="text-lg font-bold">IFC-Datei hierher ziehen</p>
+        <p class="text-leise">oder</p>
+        <label class="knopf haupt-knopf">
+          Datei auswählen
+          <input type="file" id="datei-eingabe" accept=".ifc" hidden>
+        </label>
+        <p class="text-sm text-leise pt-2">Deine Datei bleibt auf deinem Rechner. Nichts wird hochgeladen.</p>
+      </div>
+
+      <details class="mt-5 text-sm">
+        <summary class="text-leise">Tipps für den Export aus Archicad</summary>
+        <ul class="mt-2 ml-5 list-disc space-y-1">
+          <li>Außenwände als <strong>„Außen“</strong> markieren.</li>
+          <li><strong>Morphs</strong> als <strong>Wand</strong> oder <strong>Dach</strong> klassifizieren.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- Bereich 2: Einstellungen -->
+    <section id="bereich-einstellungen" class="bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+      <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+        <span class="nummer">2</span> Einstellungen
+      </h2>
+
+      <form id="einstellungen" class="space-y-6">
+
+        <fieldset>
+          <legend class="titel text-xs font-bold text-leise mb-3">Modell</legend>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <label class="flex flex-col gap-1 text-sm">
+              Maßstab 1 :
+              <input class="feld" type="number" id="massstab" value="100" min="1" step="1">
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              Pappdicke innen
+              <select class="feld" id="dicke-innen">
+                <option value="1">1 mm</option>
+                <option value="1.5">1,5 mm</option>
+                <option value="2" selected>2 mm</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              Pappdicke außen
+              <select class="feld" id="dicke-aussen">
+                <option value="1" selected>1 mm</option>
+                <option value="1.5">1,5 mm</option>
+                <option value="2">2 mm</option>
+              </select>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="border-t border-linie pt-5">
+          <legend class="titel text-xs font-bold text-leise mb-3">Laserplatte</legend>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            <label class="flex flex-col gap-1 text-sm">
+              Breite (mm)
+              <input class="feld" type="number" id="platte-breite" value="1000" min="1">
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              Höhe (mm)
+              <input class="feld" type="number" id="platte-hoehe" value="600" min="1">
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset class="border-t border-linie pt-5">
+          <legend class="titel text-xs font-bold text-leise mb-3">Linienfarben (Werkstatt-Regeln)</legend>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <label class="flex items-center gap-3 text-sm">
+              <input class="farbfeld" type="color" id="farbe-schneiden" value="#ff0000">
+              Schneiden
+            </label>
+            <label class="flex items-center gap-3 text-sm">
+              <input class="farbfeld" type="color" id="farbe-ritzen" value="#0000ff">
+              Ritzen (Nummern)
+            </label>
+            <label class="flex items-center gap-3 text-sm">
+              <input class="farbfeld" type="color" id="farbe-rahmen" value="#ffff00">
+              Rahmen
+            </label>
+            <label class="flex items-center gap-3 text-sm">
+              <input class="farbfeld" type="color" id="farbe-gravieren" value="#000000">
+              Gravieren
+            </label>
+          </div>
+          <button type="button" class="knopf mt-4 text-sm" id="farben-zuruecksetzen">
+            Auf Hochschul-Werte zurücksetzen
+          </button>
+        </fieldset>
+
+      </form>
+    </section>
+
+    <!-- Bereich 3: Vorschau und Download -->
+    <section id="bereich-vorschau" class="bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+      <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+        <span class="nummer">3</span> Vorschau &amp; Download
+      </h2>
+
+      <!-- Leere Laserplatte: Graupappe mit gelbem Rahmen -->
+      <div id="vorschau" class="platte rounded-sm flex items-center justify-center p-6 text-center mb-5">
+        <p class="text-sm">Hier erscheinen die Laserplatten, sobald eine Datei abgelegt ist.</p>
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <button type="button" class="knopf haupt-knopf" id="dxf-herunterladen" disabled>
+          DXF herunterladen
+        </button>
+        <button type="button" class="knopf" id="uebersicht-drucken" disabled>
+          Übersichtsblatt drucken
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="max-w-4xl mx-auto px-4 pb-10 text-xs text-leise">
+    <p>WPK Vibecoding · Jade Hochschule · 2026</p>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

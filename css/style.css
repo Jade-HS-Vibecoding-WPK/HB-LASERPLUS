@@ -1,0 +1,158 @@
+/* =========================================================
+   Aussehen der Seite – Schritt 2
+   Hier stehen die Farben (als „Variablen“, also benannte
+   Farbtöpfe) und ein paar Bauteile, die Tailwind nicht hat.
+   Das Layout selbst (Abstände, Raster) macht Tailwind direkt
+   in index.html.
+   ========================================================= */
+
+/* ---------- Farbtöpfe: HELL ---------- */
+:root {
+  --hintergrund: #FFF8F3;   /* aufgehelltes Papaya Whip */
+  --flaeche:     #FFEAD9;   /* Papaya Whip – Karten */
+  --linie:       #FFCC99;   /* Sandy – Rahmen und Linien */
+  --text:        #2B1A14;
+  --text-leise:  #7A4A3A;
+  --akzent:      #FF6347;   /* Tomato – Buttons, aktiv */
+  --akzent-hover:#F97A5D;   /* Coral */
+  --akzent-text: #2B1A14;   /* dunkler Text auf Tomato (besser lesbar als weiß) */
+
+  /* Vorschau wie die echte Laserplatte – in hell und dunkel gleich */
+  --graupappe:   #CFC6B8;
+  --laser-rahmen:#FFFF00;   /* wird später aus den Einstellungen gesetzt */
+
+  color-scheme: light;
+}
+
+/* ---------- Farbtöpfe: DUNKEL (automatisch nach Systemeinstellung) ---------- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hintergrund: #1C1411;  /* warmes Fast-Schwarz */
+    --flaeche:     #2A1E19;
+    --linie:       #4A3129;
+    --text:        #FFEAD9;  /* Papaya Whip */
+    --text-leise:  #FFCC99;  /* Sandy */
+    --akzent:      #FF8C69;  /* Salmon */
+    --akzent-hover:#FFA07A;  /* Light Coral */
+    --akzent-text: #2B1A14;
+    color-scheme: dark;
+  }
+}
+
+/* ---------- Ganze Seite ---------- */
+body {
+  background: var(--hintergrund);
+  color: var(--text);
+  font-family: "Century Gothic", CenturyGothic, "Didact Gothic", sans-serif;
+  line-height: 1.55;
+}
+
+/* Überschriften in Großbuchstaben mit Zeichenabstand, wie auf der Farbvorlage */
+.titel {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+/* Runde Nummer vor jeder Bereichsüberschrift */
+.nummer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 9999px;
+  background: var(--akzent);
+  color: var(--akzent-text);
+  font-weight: 700;
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+/* ---------- Ablagefläche mit gestrichelter Linie ---------- */
+.ablage {
+  border: 2px dashed var(--akzent);
+  background: var(--hintergrund);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+/* Wenn eine Datei darübergezogen wird (kommt mit dem nächsten Schritt) */
+.ablage.drueber {
+  background: var(--linie);
+  border-color: var(--akzent-hover);
+}
+
+/* ---------- Eingabefelder ---------- */
+.feld {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--linie);
+  border-radius: 0.5rem;
+  background: var(--hintergrund);
+  color: var(--text);
+  font: inherit;
+}
+.feld:focus {
+  outline: 2px solid var(--akzent);
+  outline-offset: 1px;
+}
+
+/* Farbwähler für die Laserfarben */
+.farbfeld {
+  width: 3rem;
+  height: 2.25rem;
+  padding: 0.15rem;
+  border: 1px solid var(--linie);
+  border-radius: 0.5rem;
+  background: var(--hintergrund);
+  cursor: pointer;
+}
+
+/* ---------- Knöpfe ---------- */
+.knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--akzent);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.knopf:hover:not(:disabled) {
+  background: var(--flaeche);
+  border-color: var(--akzent-hover);
+}
+/* Hauptknopf: gefüllt in Tomato (hell) bzw. Salmon (dunkel), Text dunkel */
+.haupt-knopf {
+  background: var(--akzent);
+  color: var(--akzent-text);
+  font-weight: 700;
+}
+.haupt-knopf:hover:not(:disabled) {
+  background: var(--akzent-hover);
+}
+.knopf:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.knopf:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+
+/* ---------- Vorschau: leere Laserplatte ---------- */
+/* Graupappe-Fläche im Seitenverhältnis 1000 × 600 mit gelbem Rahmen */
+.platte {
+  aspect-ratio: 1000 / 600;
+  background: var(--graupappe);
+  outline: 2px solid var(--laser-rahmen);
+  outline-offset: -6px;
+  color: #3a332b; /* dunkler Text auf Graupappe, in beiden Modi gleich */
+}
+
+/* Aufklapp-Hinweis (Archicad-Tipps) */
+summary {
+  cursor: pointer;
+}
