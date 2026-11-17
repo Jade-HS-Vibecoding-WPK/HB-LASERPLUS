@@ -114,7 +114,7 @@ Deutsch, Du-Form, kurz und freundlich. Fehlermeldungen sagen, **was zu tun ist**
 - **Statische Webseite ohne Build-Schritt**: HTML, CSS und JavaScript-Module. GitHub Pages kann sie direkt veröffentlichen.
 - Lokal testen mit einem kleinen Server (z. B. `python3 -m http.server`), weil WASM nicht über `file://` lädt. Die Vorschau läuft über `.claude/launch.json`.
 - Bibliotheken (mit fester Version, über CDN oder im Projekt abgelegt):
-  - **Tailwind** für das Layout, über das CDN mit fester Version (kein Build-Schritt). Eigene Farben als Tailwind-Theme aus den CSS-Variablen oben.
+  - **Tailwind** für das Layout, über das CDN mit fester Version **3.4.16** (`https://cdn.tailwindcss.com/3.4.16`, kein Build-Schritt). Eigene Farben als Tailwind-Theme aus den CSS-Variablen oben.
   - **Google Fonts** nur für die Ersatzschrift „Didact Gothic“
   - **web-ifc**: liest IFC im Browser (WASM)
   - **three.js**: nur für die 3D-Vorschau (Should) und Raycasting

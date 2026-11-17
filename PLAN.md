@@ -1,6 +1,6 @@
 # PLAN – Von der IFC-Datei zum Pappmodell
 
-> Stand: Dienstag, 17.11.2026 · WPK Vibecoding (Werkstatt-Regeln, Archicad-Import, Gestaltungsentscheidung ergänzt)
+> Stand: Dienstag, 17.11.2026, nachmittags · WPK Vibecoding (Webseite mit Aussehen, Datei ablegen und Einstellungen läuft)
 > Das ist unser gemeinsamer Fahrplan für die Kurswoche. Wenn sich etwas ändert, ändern wir es hier.
 
 ---
@@ -129,11 +129,12 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 ### Dienstag, 17.11.: Grundgerüst und Aussehen
 
 - Werkstatt-Regeln, Archicad-Import und Gestaltungsentscheidung in PLAN.md und CLAUDE.md eintragen ✅
-- Die Webseite anlegen: eine Seite mit drei Bereichen (1 Datei ablegen, 2 Einstellungen, 3 Vorschau und Download)
-- Das Aussehen umsetzen mit Tailwind: Farben, Schrift (Century Gothic, Ersatz von Google Fonts), hell und dunkel
-- Die Felder für die Einstellungen bauen (Maßstab, Dicken, Plattengröße, Linienfarben) und im Browser speichern
-- Die Vorschau als echte Laserplatte zeichnen (Graupappe, gelber Rahmen, Laserfarben)
-- Eine Vorschau in der Claude-App einrichten, damit du jede Änderung sofort siehst
+- Die Webseite anlegen: eine Seite mit drei Bereichen (1 Datei ablegen, 2 Einstellungen, 3 Vorschau und Download) ✅
+- Das Aussehen umsetzen mit Tailwind: Farben, Schrift (Century Gothic, Ersatz von Google Fonts), hell und dunkel ✅
+- Datei ablegen: Die Ablagefläche nimmt eine .ifc-Datei an (Ziehen oder „Datei auswählen“) und zeigt Name und Größe. Andere Dateien bekommen einen Hinweis. Mit einer echten Archicad-IFC getestet ✅
+- Die Felder für die Einstellungen bauen (Maßstab, Dicken, Plattengröße, Linienfarben) und im Browser speichern ✅ (der Knopf „Auf Hochschul-Werte zurücksetzen“ setzt Linienfarben **und** Plattengröße 1000 × 600 mm zurück; Maßstab und Pappdicken bleiben)
+- Die Vorschau als echte Laserplatte zeichnen (Graupappe, gelber Rahmen, Laserfarben). Teilweise: Die leere Platte ist da und folgt Plattengröße und Rahmenfarbe. Die Teile darauf fehlen noch.
+- Eine Vorschau in der Claude-App einrichten, damit du jede Änderung sofort siehst ✅
 - Den DXF-Download mit einem **selbst ausgedachten Testhaus** ausprobieren, noch ohne IFC: ein Haus mit Satteldach und einer schrägen Ecke. So prüfen wir den Eckenausgleich und den First, bevor echte Daten kommen.
 - Die Test-DXF hält die Werkstatt-Regeln ein: gelber Rahmen, 5 mm Randabstand, RGB-Farben, Linienstärke 0,00 mm
 - Die Nummern als Linienschrift umsetzen, damit jeder Laser sie ritzen kann
