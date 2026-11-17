@@ -1,6 +1,6 @@
 # PLAN – Von der IFC-Datei zum Pappmodell
 
-> Stand: Montag, 16.11.2026 · WPK Vibecoding
+> Stand: Dienstag, 17.11.2026 · WPK Vibecoding (Werkstatt-Regeln, Archicad-Import, Gestaltungsentscheidung ergänzt)
 > Das ist unser gemeinsamer Fahrplan für die Kurswoche. Wenn sich etwas ändert, ändern wir es hier.
 
 ---
@@ -14,7 +14,7 @@ Du ziehst die **.ifc-Datei** deines Gebäudes in eine Webseite und bekommst **fe
 ## So funktioniert die App, in einfachen Worten
 
 1. **Datei ablegen:** Du ziehst die IFC-Datei ins Browserfenster. Die Datei wird nirgends hochgeladen und bleibt auf deinem Rechner.
-2. **Einstellen:** Maßstab, Pappdicke innen, Pappdicke außen und Größe der Laserplatte.
+2. **Einstellen:** Maßstab, Pappdicke innen, Pappdicke außen, Größe der Laserplatte und die Linienfarben für den Laser. Die Seite merkt sich deine Einstellungen.
 3. **Die App rechnet:**
    - Sie findet die Außenwände und das Dach.
    - Sie legt jede Fassadenseite flach hin, so wie man sie von außen sieht.
@@ -54,12 +54,16 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 | Maßstab | Frei einstellbar (Vorschlag zum Start: 1:100) |
 | Material | Dicke innen und außen getrennt wählbar: **1 mm, 1,5 mm oder 2 mm** (Vorschlag zum Start: innen 2 mm, außen 1 mm) |
 | Laserplatte | **1000 × 600 mm** |
-| Dateiformat | DXF auf jeden Fall, DWG als Extra |
-| Nummern | Zum Beispiel „N-001-A“ (außen) und „N-001-I“ (innen), graviert **neben** dem Teil auf der Restpappe, nie auf dem Teil |
+| Dateiformat | **DXF reicht** (die Werkstatt nimmt DXF oder DWG). DWG nur als Anleitung zum Umwandeln |
+| Laser-Regeln | Von der Werkstatt (17.11.): RGB-Farben Rot = schneiden, Blau = ritzen, Gelb = Rahmen, Schwarz = gravieren. Linienstärke 0,00 mm. **Gelber Rahmen 1000 × 600 mm immer in der Datei**, alle Teile **mind. 5 mm** vom Rahmen. Sonst verfällt der Lasertermin |
+| Linienfarben | In der App **einstellbar**, voreingestellt mit den Werten der Hochschule |
+| Nummern | Zum Beispiel „N-001-A“ (außen) und „N-001-I“ (innen), **geritzt (blau)** **neben** dem Teil auf der Restpappe, nie auf dem Teil |
+| Import | IFC aus **Archicad**. Wände, Dächer und **Morphs**, die als Wand oder Dach klassifiziert sind |
 | Lage in der Datei | Jedes Teil liegt so, wie man es von außen sieht (Außenseite nach oben) |
 | Anleitung | Nummern und ein Übersichtsblatt: Grundriss, welches Teil wohin gehört, Reihenfolge beim Kleben |
 | App | Webseite im Browser, veröffentlicht unter einem Link |
-| Aussehen | Hell oder dunkel automatisch nach Systemeinstellung, Farbpalette von Tomate bis Papaya, Schrift Century Gothic |
+| Aussehen | Hell oder dunkel automatisch nach Systemeinstellung, Farbpalette von Tomate bis Papaya, Schrift Century Gothic (Ersatz: „Didact Gothic“ von Google Fonts), Layout mit **Tailwind** |
+| Eigene Gestaltungsentscheidung | Die Vorschau zeigt jede Platte **wie die echte Laserplatte**: Graupappe-Fläche, gelber Rahmen, Linien in den echten Laserfarben. Was man sieht, macht der Laser |
 
 ---
 
@@ -72,18 +76,18 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 ### Must
 
 1. **Webseite**, die im Browser läuft. Die IFC-Datei kommt per Ziehen und Ablegen hinein und bleibt auf dem Rechner.
-2. **Außenwände und Dach** werden in der IFC-Datei erkannt.
+2. **Außenwände und Dach** werden in der IFC-Datei erkannt, auch **Morphs aus Archicad**, die als Wand oder Dach klassifiziert sind.
 3. **Jede Fassadenseite** wird als eine flache Platte ausgegeben, so wie man sie von außen sieht. Das gilt für gerade und schräge Wände, Flachdächer und Steildächer.
 4. **Zwei Schichten pro Wand:** Die Innenschicht ist geschlossen, in die Außenschicht sind Fenster und Türen geschnitten. Das Dach hat eine Schicht.
-5. **Einstellungen:** Maßstab (frei), Dicke innen und Dicke außen (jeweils zur Auswahl: 1 mm, 1,5 mm oder 2 mm), Plattengröße (Start: 1000 × 600 mm).
+5. **Einstellungen:** Maßstab (frei), Dicke innen und Dicke außen (jeweils zur Auswahl: 1 mm, 1,5 mm oder 2 mm), Plattengröße (Start: 1000 × 600 mm), **Linienfarben** (voreingestellt mit den Hochschul-Werten, zurücksetzbar). Die Seite **merkt sich alle Einstellungen** für das nächste Mal.
 6. **Ecken** werden überlappend ausgeglichen, bei rechten **und** bei schrägen Winkeln.
 7. **Steildach-Anschlüsse:** Am First überlappt eine Dachplatte die andere, und die Giebelwände sind oben passend abgeschrägt.
-8. **Verteilen:** Alle Teile werden mit Abstand auf Laserplatten gelegt. Ist ein Teil zu groß für die Platte, gibt es eine Warnung.
-9. **Nummern** wie N-001-A (außen) und N-001-I (innen) werden neben jedes Teil graviert, nicht auf das Teil.
-10. **DXF-Download** in Millimetern, eine Datei pro Platte. Schnittlinien und Gravur liegen auf getrennten Ebenen in unterschiedlichen Farben.
+8. **Verteilen:** Alle Teile werden mit Abstand auf Laserplatten gelegt, **mindestens 5 mm vom Rahmen entfernt**. Ist ein Teil zu groß für die Platte, gibt es eine Warnung.
+9. **Nummern** wie N-001-A (außen) und N-001-I (innen) werden neben jedes Teil **geritzt** (blau), nicht auf das Teil.
+10. **DXF-Download** in Millimetern, eine Datei pro Platte, nach den **Werkstatt-Regeln**: RGB-Farben, Linienstärke 0,00 mm, **gelber Rahmen in Plattengröße**, Schneiden, Ritzen und Rahmen auf getrennten Ebenen.
 11. **Übersichtsblatt zum Ausdrucken:** Grundriss mit den Nummern, Hinweis, welches Teil wohin gehört, und die Reihenfolge beim Kleben.
-12. **Vorschau** der Laserplatten in der App, bevor man herunterlädt.
-13. **Aussehen:** Farbpalette, Century Gothic, hell und dunkel nach Systemeinstellung.
+12. **Vorschau** der Laserplatten in der App, bevor man herunterlädt, **wie die echte Laserplatte** (eigene Gestaltungsentscheidung).
+13. **Aussehen:** Farbpalette, Century Gothic mit Google-Fonts-Ersatz, Tailwind, hell und dunkel nach Systemeinstellung.
 14. **Veröffentlicht** unter einem Link, am Donnerstag bis 12 Uhr.
 
 ### Should
@@ -92,7 +96,8 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 2. **Warnungen** bei zu dünnen Pappstegen zwischen Fenstern (die brechen leicht) und bei sehr kleinen Teilen.
 3. **DWG:** Eine kurze Anleitung, wie man die DXF mit einem kostenlosen Umwandler (ODA File Converter) in eine DWG verwandelt.
 4. **Himmelsrichtung:** Die Buchstaben (N, O, S, W) werden aus der echten Nordrichtung in der IFC-Datei berechnet.
-5. **Die App merkt sich deine Einstellungen** für das nächste Mal.
+5. **Nicht klassifizierte Morphs:** Die App zeigt sie an, und du sagst per Klick: „Das ist eine Wand“, „Das ist ein Dach“ oder „ignorieren“.
+6. **Archicad-Hinweise** in der App neben der Ablagefläche (Außenwände als „Außen“ markieren, Morphs klassifizieren).
 
 ### Could
 
@@ -101,7 +106,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 3. **Alle Platten auf einmal** als ZIP-Datei herunterladen.
 4. **Weniger Verschnitt:** Die Teile werden noch dichter auf die Platte gelegt.
 5. **Schnittbreite ausgleichen:** Der Laser brennt etwa 0,1–0,2 mm weg. Die App kann das einrechnen.
-6. **Freie Ersatzschrift** für Leute, auf deren Rechner Century Gothic nicht installiert ist.
+6. **Linie auf Linie:** Teile teilen sich eine Schnittkante (laut Werkstatt erlaubt). Das spart Pappe und Laserzeit. Die gemeinsame Kante steht nur einmal in der Datei.
 
 ### Nicht diese Woche (bewusst später)
 
@@ -123,12 +128,15 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 
 ### Dienstag, 17.11.: Grundgerüst und Aussehen
 
+- Werkstatt-Regeln, Archicad-Import und Gestaltungsentscheidung in PLAN.md und CLAUDE.md eintragen ✅
 - Die Webseite anlegen: eine Seite mit drei Bereichen (1 Datei ablegen, 2 Einstellungen, 3 Vorschau und Download)
-- Das Aussehen umsetzen: Farben, Schrift, hell und dunkel
-- Die Felder für die Einstellungen bauen (Maßstab, Dicken, Plattengröße)
+- Das Aussehen umsetzen mit Tailwind: Farben, Schrift (Century Gothic, Ersatz von Google Fonts), hell und dunkel
+- Die Felder für die Einstellungen bauen (Maßstab, Dicken, Plattengröße, Linienfarben) und im Browser speichern
+- Die Vorschau als echte Laserplatte zeichnen (Graupappe, gelber Rahmen, Laserfarben)
 - Eine Vorschau in der Claude-App einrichten, damit du jede Änderung sofort siehst
 - Den DXF-Download mit einem **selbst ausgedachten Testhaus** ausprobieren, noch ohne IFC: ein Haus mit Satteldach und einer schrägen Ecke. So prüfen wir den Eckenausgleich und den First, bevor echte Daten kommen.
-- Die Nummern als Linienschrift umsetzen, damit jeder Laser sie gravieren kann
+- Die Test-DXF hält die Werkstatt-Regeln ein: gelber Rahmen, 5 mm Randabstand, RGB-Farben, Linienstärke 0,00 mm
+- Die Nummern als Linienschrift umsetzen, damit jeder Laser sie ritzen kann
 - Die README an die neue Idee anpassen
 - **Deine Aufgabe:** Das Aussehen prüfen und sagen, was dir gefällt und was nicht. Die Test-DXF in AutoCAD, Rhino oder der Lasersoftware öffnen.
 - **Fertig, wenn:** Die Seite sieht in hell und dunkel so aus wie geplant, und die Test-DXF lässt sich herunterladen und sauber öffnen.
@@ -169,8 +177,10 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 ## Offene Punkte, bitte klären
 
 - [x] **Laserfläche:** 1000 × 600 mm
-- [ ] **Werkstatt:** Welche Linienfarben gelten? Bis dahin nehmen wir Rot = schneiden und Blau = gravieren.
-- [ ] **Werkstatt:** Reicht DXF? Wenn nicht, wird die DWG-Umwandlung vom Should zum Must.
+- [x] **Werkstatt-Farben:** Rot (255) = schneiden, Blau (255) = ritzen, Gelb (255) = Rahmen, Schwarz = gravieren, Linienstärke 0,00 mm. Die Nummern werden geritzt.
+- [x] **Werkstatt-Format:** DXF reicht. Gelber Rahmen 1000 × 600 mm immer drin, 5 mm Abstand zum Rahmen.
+- [ ] **Test-IFC aus Archicad:** am besten mit mindestens einer Wand **und** einem Morph (als Wand oder Dach klassifiziert), in den Projektordner legen. Vorher prüfen, ob die Außenwände als „Außen“ markiert sind.
+- [ ] **Morphs testen:** Ob klassifizierte Morphs wirklich sauber ankommen, zeigt erst die Test-IFC. Das Ergebnis tragen wir hier ein.
 - [x] **Nummernschema:** Der Buchstabe ist die Himmelsrichtung der Fassade (N, O, S, W, Dach = D), die Zahl ist die Reihenfolge beim Kleben, die Endung zeigt die Schicht (-A = außen, -I = innen). Beispiel: N-001-A und N-001-I.
 - [ ] **Tipp fürs Übersichtsblatt:** Weil die Nummer nur auf der Restpappe steht, sollte man jedes Teil direkt nach dem Herausnehmen auf der Rückseite mit Bleistift beschriften.
 - [ ] **GitHub Pages:** Wer darf im Repository „Jade-HS-Vibecoding-WPK“ die Veröffentlichung einschalten? Eventuell die Kursleitung fragen.
@@ -193,6 +203,10 @@ Hier landen Ideen, die während der Woche auftauchen. Sie werden nicht sofort ge
 | **IFC** | Offenes Austauschformat für Gebäudemodelle (BIM). Archicad, Revit und Vectorworks können es exportieren. |
 | **DXF** | Offenes Zeichnungsformat. AutoCAD, Rhino und Lasersoftware öffnen es. |
 | **DWG** | Das Zeichnungsformat von AutoCAD. Es ist geschlossen und darum schwer selbst zu erzeugen. |
+| **Morph** | Frei geformter Körper in Archicad. Ohne Klassifizierung wird er in der IFC zum „Proxy“, also zu einem Platzhalter-Bauteil ohne feste Art. |
+| **RGB** | Farbangabe aus Rot, Grün und Blau, jeweils 0 bis 255. „Rot 255“ heißt reines Rot (255, 0, 0). |
+| **Tailwind** | Ein Baukasten für das Layout von Webseiten, wie ein Raster- und Stilvorlagen-Katalog. |
+| **Google Fonts** | Freie Schriften von Google, die die Webseite aus dem Internet lädt. |
 | **Ebene / Layer** | Wie Folien in CAD: Schnittlinien liegen auf einer Ebene, Gravuren auf einer anderen. |
 | **Abwickeln** | Eine Fläche aus dem 3D-Modell flach hinlegen, so wie man eine Fassade als Ansicht zeichnet. |
 | **Verteilen** | Teile möglichst platzsparend auf die Laserplatte legen. Das Fachwort dafür ist „Nesting“. |
