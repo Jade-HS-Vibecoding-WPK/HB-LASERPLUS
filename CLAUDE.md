@@ -55,13 +55,22 @@ Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdeck
 
 ### Grundsatz
 
-Ruhig, aufgeräumt, viel Weißraum. Es gibt **eine Seite** mit drei klar nummerierten Bereichen:
+Ruhig, aufgeräumt, viel Weißraum.
+
+**Startseite** (erscheint bei jedem Öffnen und Neuladen, liegt über der Arbeitsseite): großes Logo, „IFC → LASER“, ein Satz zur App, Platz für ein Beispielbild und der Knopf **„Erstelle deine Laserdatei“**, der die Startseite ausblendet. Das Beispielbild erscheint automatisch, sobald die Datei `Bilder/beispiel.jpg` existiert.
+
+**Arbeitsseite**: kleines Logo in der Kopfzeile, darunter drei klar nummerierte Bereiche. Ab 1024 px Breite **zweigeteilt**: links (etwa ⅔) oben Bereich 1, unten Bereich 3; rechts (etwa ⅓) Bereich 2, der beim Scrollen stehen bleibt. Schmaler: untereinander 1 → 2 → 3.
 
 1. **Datei ablegen**: große Ablagefläche mit gestrichelter Linie, darunter nach dem Lesen die **Bauteil-Liste** („Das steckt in deiner Datei“) mit Hinweisen und der Auswahl für nicht klassifizierte Morphs
-2. **Einstellungen**: Maßstab (Zahlenfeld, Start 1:100), Dicke innen und Dicke außen (je eine Auswahl 1 / 1,5 / 2 mm, Start innen 2 mm, außen 1 mm), Plattengröße (Start 1000 × 600 mm), **Linienfarben** (Schneiden, Ritzen, Rahmen, Gravieren; voreingestellt nach den Werkstatt-Regeln, Knopf „Auf Hochschul-Werte zurücksetzen“). Die Seite **merkt sich alle Einstellungen** im Browser (`localStorage`), nichts geht an einen Server.
-3. **Vorschau & Download**: Knopf „Laserplatten erstellen“, Warnungen, Platten-Vorschau mit einem DXF-Knopf je Platte, „Alle DXF herunterladen“, „Übersichtsblatt drucken“. Ändert sich danach eine Einstellung, rechnet die App sofort neu.
+2. **Einstellungen**: Maßstab (Zahlenfeld, Start 1:100), Dicke innen und Dicke außen (je eine Auswahl 1 / 1,5 / 2 mm, Start innen 2 mm, außen 1 mm), Plattengröße (Start 1000 × 600 mm), **Linienfarben** (Schneiden, Ritzen, Rahmen, Gravieren; voreingestellt nach den Werkstatt-Regeln, Knopf „Auf Hochschul-Werte zurücksetzen“). Die Seite **merkt sich alle Einstellungen** im Browser (`localStorage`), nichts geht an einen Server. Am Ende der Knopf **„Laserplatten erstellen“**; auf breiten Bildschirmen bleibt er unten in der Spalte immer sichtbar.
+3. **Vorschau & Download**: Warnungen, Platten-Vorschau mit einem DXF-Knopf je Platte, „Alle DXF herunterladen“, „Übersichtsblatt drucken“. Ändert sich danach eine Einstellung, rechnet die App sofort neu.
 
 Hell oder dunkel richtet sich **automatisch nach der Systemeinstellung** (`prefers-color-scheme`). Die Seite muss auch auf schmalen Bildschirmen funktionieren.
+
+### Logo
+
+- Datei: `Bilder/logo.svg` (Ordner mit **großem B** – auf GitHub Pages zählt die Schreibweise). Die Datei ist eine DIN-A4-Seite (2481 × 3508) mit eingebettetem Bild, keine echte Vektorgrafik. Die Website schneidet sie mit `viewBox="290 358 1899 2562"` auf das Logo zu (Stand: Logo vom 17.11., 15:37); die Datei selbst bleibt unverändert. **Wird das Logo neu exportiert, ändert sich meist seine Lage auf der Seite** – dann den Zuschnitt in `index.html` (2×) und das Seitenverhältnis in `css/style.css` (2×) anpassen. Die Lage steht in der SVG-Datei in der Zeile `<use … x=… y=… width=… height=…>`.
+- Hintergrund durchsichtig, „HB“ ist aus der Hausform ausgespart. Darum passt das Logo ohne Änderung in hell und dunkel.
 
 ### Farbpalette (Vorlage: Bild `PHOTO-2026-11-16-14-01-50.jpg` im Hauptordner)
 
@@ -138,6 +147,7 @@ js/linienschrift.js – Nummern als Linien (zum Ritzen)
 js/dxf.js           – DXF schreiben
 js/uebersicht.js    – Übersichtsblatt zum Drucken
 lib/web-ifc/        – IFC-Bibliothek 0.0.78 (wird mit hochgeladen, siehe .gitignore „!lib/“)
+Bilder/             – logo.svg, später beispiel.jpg (Beispielbild für die Startseite)
 beispiele/          – Test-IFC-Dateien (werden NICHT hochgeladen, siehe .gitignore)
 ```
 
@@ -203,8 +213,8 @@ Diese Regeln kommen von der **Laserwerkstatt der Hochschule** (Stand 17.11.2026)
 - Jede Änderung in der Vorschau im Browser anschauen, in hell **und** dunkel.
 - DXF-Ausgaben in einem Viewer oder in AutoCAD/Rhino öffnen und **Maße nachmessen** (z. B. eine Wandlänge 10 m bei 1:100 → 100 mm).
 - Testdateien: die eigene IFC aus **Archicad** (am besten mit mindestens einer Wand **und** einem Morph) und eine frei verfügbare Beispieldatei (z. B. das FZK-Haus des KIT, mit Satteldach).
-  - Vorhanden in `beispiele/`: „Test 01 - wand und dach .ifc“ (6 Außenwände in Schichten, Walmdach über L-Grundriss) und „Test 02 - Morph .ifc“ (ein nicht klassifizierter Morph als ganzes Gebäude). Beide IFC4, Reference View, aus Archicad.
-  - Noch nötig: eine Datei **mit Fenstern und Türen** und eine mit einem **als Wand/Dach klassifizierten Morph**.
+  - Vorhanden in `beispiele/`: „Test 01 - wand und dach .ifc“ (6 Außenwände in Schichten, Walmdach über L-Grundriss), „Test 02 - Morph .ifc“ (ein nicht klassifizierter Morph als ganzes Gebäude) und „Test 03 - wand, satteldach türen und fenster.ifc“ (Satteldach mit Giebelwänden, 6 Fenster, 1 Tür bis zum Boden). Alle IFC4, Reference View, aus Archicad.
+  - Noch nötig: eine Datei mit einem **als Wand/Dach klassifizierten Morph**.
 - Die DXF lässt sich im Browser prüfen, ohne sie herunterzuladen: `platteAlsDxf()` aufrufen und Ebenen, Farben, Randabstand und „NaN“ kontrollieren.
 
 ### Export aus Archicad (Hinweise für die Nutzerin)

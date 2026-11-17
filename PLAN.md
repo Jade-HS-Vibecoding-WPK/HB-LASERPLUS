@@ -1,6 +1,6 @@
 # PLAN – Von der IFC-Datei zum Pappmodell
 
-> Stand: Dienstag, 17.11.2026, abends · WPK Vibecoding (erste vollständige Version läuft: IFC → Laserplatten → DXF und Übersichtsblatt, mit beiden Test-IFCs geprüft)
+> Stand: Dienstag, 17.11.2026, abends · WPK Vibecoding (vollständige Version läuft: IFC → Laserplatten → DXF und Übersichtsblatt, mit drei Test-IFCs geprüft · Nummern A/I/D mit Legende · Startseite mit Logo, Arbeitsseite zweigeteilt)
 > Das ist unser gemeinsamer Fahrplan für die Kurswoche. Wenn sich etwas ändert, ändern wir es hier.
 
 ---
@@ -92,13 +92,13 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 
 #### Stand der Must-Punkte (17.11. abends)
 
-Geprüft mit beiden Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Außenwände, von Archicad in Schichten zerlegt, Walmdach über L-Grundriss) und „Test 02 – Morph“ (ein nicht klassifizierter Morph als ganzes Gebäude mit Giebeln).
+Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Außenwände, von Archicad in Schichten zerlegt, Walmdach über L-Grundriss), „Test 02 – Morph“ (ein nicht klassifizierter Morph als ganzes Gebäude mit Giebeln) und „Test 03 – wand, satteldach türen und fenster“ (Satteldach mit Giebelwänden, 6 Fenster, 1 Tür bis zum Boden).
 
 | Must | Stand |
 |---|---|
 | 1 Webseite, Datei ablegen | ✅ |
 | 2 Außenwände, Dach, Morphs erkennen | ✅ auch Wände, die Archicad in Schichten zerlegt (IfcBuildingElementPart). Nicht klassifizierte Morphs: Auswahl per Klick „Wand und Dach / Wand / Dach / Ignorieren“ (damit ist Should 5 auch erledigt) |
-| 3 Fassaden flach als Platte | ✅ gerade und schräge Wände, Giebel, Walm- und Satteldach. Fenster und Türen werden zu Löchern – **noch nicht mit einer Datei mit Fenstern getestet** |
+| 3 Fassaden flach als Platte | ✅ gerade und schräge Wände, Giebel, Walm- und Satteldach. Fenster werden Löcher, eine Tür bis zum Boden wird eine Aussparung in der Außenschicht (Innenschicht bleibt geschlossen) – mit Test 03 geprüft. Ränder der Fensterlaibungen werden ignoriert, kleine Stufen geglättet |
 | 4 Zwei Schichten | ✅ |
 | 5 Einstellungen | ✅ Änderungen rechnen die Platten sofort neu |
 | 6 Ecken | ✅ 90° und schräg, Außen- und Innenecken (L-Form geprüft). Schräge Ecken: kleine Keilfuge, Hinweis auf dem Übersichtsblatt |
@@ -108,7 +108,7 @@ Geprüft mit beiden Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 A
 | 10 DXF | ✅ eine Datei je Platte, im Browser geprüft (Ebenen, Farben, Rahmen, Randabstand). **Noch nicht in AutoCAD, Rhino oder der Lasersoftware geöffnet** |
 | 11 Übersichtsblatt | ✅ Grundriss mit Nummern und Nordpfeil, Teileliste, Reihenfolge beim Kleben, Hinweise |
 | 12 Vorschau | ✅ |
-| 13 Aussehen | ✅ |
+| 13 Aussehen | ✅ Seit 17.11. abends: Startseite mit Logo und Knopf „Erstelle deine Laserdatei“, Arbeitsseite zweigeteilt (links Datei und Vorschau, rechts Einstellungen). **Offen: Beispielbild** als `Bilder/beispiel.jpg` (am besten ein Foto vom gelaserten Modell) |
 | 14 Veröffentlichen | offen (Donnerstag) |
 
 **Bekannte Vereinfachungen (ehrlich):**
@@ -209,7 +209,8 @@ Geprüft mit beiden Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 A
 - [x] **Werkstatt-Format:** DXF reicht. Gelber Rahmen 1000 × 600 mm immer drin, 10 mm Abstand zum Rahmen (am 17.11. von 5 auf 10 mm geändert).
 - [x] **Test-IFC aus Archicad:** zwei Dateien liegen in `beispiele/` (werden nicht hochgeladen, siehe `.gitignore`).
 - [x] **Morphs testen:** Ein **nicht klassifizierter** Morph kommt als `IfcBuildingElementProxy` („Modellkörper-001“) an. Die App nimmt ihn als ganzen Gebäudekörper, das klappt. Ein als Wand oder Dach **klassifizierter** Morph ist noch nicht getestet.
-- [ ] **Test-IFC mit Fenstern und Türen** exportieren und prüfen, ob die Löcher stimmen.
+- [x] **Test-IFC mit Fenstern und Türen** (Test 03): Löcher und Tür-Aussparung stimmen.
+- [ ] **Test-IFC mit klassifiziertem Morph** (Morph als Wand bzw. als Dach klassifiziert) prüfen.
 - [ ] **DXF in AutoCAD, Rhino oder der Lasersoftware öffnen** und Maße nachmessen (z. B. eine Wand von 10 m bei 1:100 = 100 mm).
 - [ ] **Grundriss im Übersichtsblatt mit Archicad vergleichen:** Liegen Norden und die L-Form richtig herum (nicht gespiegelt)?
 - [x] **Nummernschema (geändert am 17.11.):** Der Buchstabe zeigt die Schicht: A = Außenschicht, I = Innenschicht, D = Dachfläche. Die Zahl ist die Fassade bzw. Dachfläche; gleiche Zahl bei A und I = gleiche Fassade. Beispiel: A-001 kommt auf I-001. Die Himmelsrichtung steht in der Teileliste des Übersichtsblatts, die Legende ebenfalls.

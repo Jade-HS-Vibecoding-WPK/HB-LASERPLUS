@@ -23,6 +23,21 @@ import { verteilen } from "./verteilen.js";
 import { uebersichtBauen } from "./uebersicht.js";
 
 // ---------------------------------------------------------
+// Startseite: erscheint bei jedem Öffnen und Neuladen.
+// „Erstelle deine Laserdatei“ blendet sie aus und gibt die Arbeitsseite frei.
+// ---------------------------------------------------------
+const startseite = document.getElementById("startseite");
+const arbeitsseite = document.getElementById("arbeitsseite");
+const startKnopf = document.getElementById("start-knopf");
+startKnopf.addEventListener("click", () => {
+  startseite.hidden = true;
+  arbeitsseite.inert = false;
+  document.documentElement.classList.remove("start-offen");
+  window.scrollTo(0, 0);
+});
+startKnopf.focus();
+
+// ---------------------------------------------------------
 // Bauteile der Seite
 // ---------------------------------------------------------
 const ablage = document.getElementById("ablage");
@@ -118,7 +133,7 @@ function zuruecksetzen() {
   proxyWahl.clear();
   bauteileFeld.hidden = true;
   erstellenKnopf.disabled = true;
-  erstellenHinweis.textContent = "Zuerst oben eine IFC-Datei ablegen.";
+  erstellenHinweis.textContent = "Zuerst eine IFC-Datei ablegen.";
   zeigeErgebnis();
 }
 

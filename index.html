@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" class="start-offen">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -36,165 +36,203 @@
 </head>
 <body class="min-h-screen">
 
-  <!-- Kopfzeile -->
-  <header class="max-w-4xl mx-auto px-4 pt-10 pb-6 sm:pt-14">
-    <h1 class="titel text-3xl sm:text-4xl font-bold">IFC → Laser</h1>
-    <p class="mt-3 text-leise">Aus deinem Gebäudemodell werden fertige Laserdateien für ein Pappmodell.</p>
-  </header>
+  <!-- =====================================================
+       STARTSEITE – erscheint bei jedem Öffnen und Neuladen.
+       Der Knopf blendet sie aus (js/main.js).
+       ===================================================== -->
+  <section id="startseite" class="startseite" aria-labelledby="start-titel">
+    <div class="startseite-inhalt">
+      <!-- Logo: Datei Bilder/logo.svg (DIN-A4-Seite), hier auf das Logo zugeschnitten -->
+      <svg class="logo-gross" viewBox="290 358 1899 2562" role="img" aria-label="Logo HB Laser">
+        <image href="Bilder/logo.svg" width="2481" height="3508"></image>
+      </svg>
 
-  <main class="max-w-4xl mx-auto px-4 space-y-6 pb-10">
+      <h1 id="start-titel" class="titel text-3xl sm:text-4xl font-bold mt-8">IFC → Laser</h1>
+      <p class="mt-3 text-leise max-w-md mx-auto">Aus deinem Gebäudemodell wird ein Pappmodell: Datei ablegen, einstellen und fertige Laserdateien herunterladen.</p>
 
-    <!-- Bereich 1: Datei ablegen -->
-    <section id="bereich-datei" class="bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
-      <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
-        <span class="nummer">1</span> Datei ablegen
-      </h2>
+      <!-- Beispielbild: erscheint erst, wenn die Datei Bilder/beispiel.jpg existiert -->
+      <img src="Bilder/beispiel.jpg" alt="Beispiel: ein gelasertes Pappmodell" class="beispielbild" hidden onload="this.hidden = false">
 
-      <div id="ablage" class="ablage rounded-xl px-4 py-10 sm:py-14 text-center space-y-3">
-        <p class="text-lg font-bold">IFC-Datei hierher ziehen</p>
-        <p class="text-leise">oder</p>
-        <label class="knopf haupt-knopf">
-          Datei auswählen
-          <input type="file" id="datei-eingabe" accept=".ifc" hidden>
-        </label>
-        <p class="text-sm text-leise pt-2">Deine Datei bleibt auf deinem Rechner. Nichts wird hochgeladen.</p>
-        <!-- Hier steht nach dem Ablegen der Dateiname oder ein Hinweis -->
-        <p id="datei-status" class="datei-status" role="status" aria-live="polite" hidden></p>
+      <button type="button" class="knopf haupt-knopf start-knopf mt-8" id="start-knopf">
+        Erstelle deine Laserdatei
+      </button>
+      <p class="mt-4 text-xs text-leise">Deine Datei bleibt auf deinem Rechner. Nichts wird hochgeladen.</p>
+    </div>
+  </section>
+
+  <!-- =====================================================
+       ARBEITSSEITE – links Datei (1) und Vorschau (3),
+       rechts die Einstellungen (2). Auf schmalen
+       Bildschirmen untereinander: 1 → 2 → 3.
+       ===================================================== -->
+  <div id="arbeitsseite" inert>
+
+    <!-- Kopfzeile mit kleinem Logo -->
+    <header class="max-w-7xl mx-auto px-4 pt-8 pb-6 sm:pt-10 flex items-center gap-4">
+      <svg class="logo-klein" viewBox="290 358 1899 2562" role="img" aria-label="Logo HB Laser">
+        <image href="Bilder/logo.svg" width="2481" height="3508"></image>
+      </svg>
+      <div>
+        <p class="titel text-2xl sm:text-3xl font-bold">IFC → Laser</p>
+        <p class="mt-1 text-leise">Aus deinem Gebäudemodell werden fertige Laserdateien für ein Pappmodell.</p>
       </div>
+    </header>
 
-      <!-- Bauteil-Liste: was in der IFC-Datei steckt (erscheint nach dem Lesen) -->
-      <div id="bauteile" class="mt-5 bg-hintergrund border border-linie rounded-xl p-4 sm:p-5" aria-live="polite" hidden></div>
+    <main class="raster max-w-7xl mx-auto px-4 pb-10">
 
-      <details class="mt-5 text-sm">
-        <summary class="text-leise">Tipps für den Export aus Archicad</summary>
-        <ul class="mt-2 ml-5 list-disc space-y-1">
-          <li>Außenwände als <strong>„Außen“</strong> markieren.</li>
-          <li><strong>Morphs</strong> als <strong>Wand</strong> oder <strong>Dach</strong> klassifizieren.</li>
-        </ul>
-      </details>
-    </section>
+      <!-- Bereich 1: Datei ablegen (links oben) -->
+      <section id="bereich-datei" class="feld-datei bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+        <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+          <span class="nummer">1</span> Datei ablegen
+        </h2>
 
-    <!-- Bereich 2: Einstellungen -->
-    <section id="bereich-einstellungen" class="bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
-      <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
-        <span class="nummer">2</span> Einstellungen
-      </h2>
+        <div id="ablage" class="ablage rounded-xl px-4 py-10 sm:py-12 text-center space-y-3">
+          <p class="text-lg font-bold">IFC-Datei hierher ziehen</p>
+          <p class="text-leise">oder</p>
+          <label class="knopf haupt-knopf">
+            Datei auswählen
+            <input type="file" id="datei-eingabe" accept=".ifc" hidden>
+          </label>
+          <p class="text-sm text-leise pt-2">Deine Datei bleibt auf deinem Rechner. Nichts wird hochgeladen.</p>
+          <!-- Hier steht nach dem Ablegen der Dateiname oder ein Hinweis -->
+          <p id="datei-status" class="datei-status" role="status" aria-live="polite" hidden></p>
+        </div>
 
-      <form id="einstellungen" class="space-y-6">
+        <!-- Bauteil-Liste: was in der IFC-Datei steckt (erscheint nach dem Lesen) -->
+        <div id="bauteile" class="mt-5 bg-hintergrund border border-linie rounded-xl p-4 sm:p-5" aria-live="polite" hidden></div>
 
-        <fieldset>
-          <legend class="titel text-xs font-bold text-leise mb-3">Modell</legend>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <label class="flex flex-col gap-1 text-sm">
-              Maßstab 1 :
-              <input class="feld" type="number" id="massstab" value="100" min="1" step="1">
-            </label>
-            <label class="flex flex-col gap-1 text-sm">
-              Pappdicke innen
-              <select class="feld" id="dicke-innen">
-                <option value="1">1 mm</option>
-                <option value="1.5">1,5 mm</option>
-                <option value="2" selected>2 mm</option>
-              </select>
-            </label>
-            <label class="flex flex-col gap-1 text-sm">
-              Pappdicke außen
-              <select class="feld" id="dicke-aussen">
-                <option value="1" selected>1 mm</option>
-                <option value="1.5">1,5 mm</option>
-                <option value="2">2 mm</option>
-              </select>
-            </label>
-          </div>
-        </fieldset>
+        <details class="mt-5 text-sm">
+          <summary class="text-leise">Tipps für den Export aus Archicad</summary>
+          <ul class="mt-2 ml-5 list-disc space-y-1">
+            <li>Außenwände als <strong>„Außen“</strong> markieren.</li>
+            <li><strong>Morphs</strong> als <strong>Wand</strong> oder <strong>Dach</strong> klassifizieren.</li>
+          </ul>
+        </details>
+      </section>
 
-        <fieldset class="border-t border-linie pt-5">
-          <legend class="titel text-xs font-bold text-leise mb-3">Laserplatte</legend>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <label class="flex flex-col gap-1 text-sm">
-              Breite (mm)
-              <input class="feld" type="number" id="platte-breite" value="1000" min="1">
-            </label>
-            <label class="flex flex-col gap-1 text-sm">
-              Höhe (mm)
-              <input class="feld" type="number" id="platte-hoehe" value="600" min="1">
-            </label>
-          </div>
-        </fieldset>
+      <!-- Bereich 2: Einstellungen (rechts, bleibt beim Scrollen stehen) -->
+      <section id="bereich-einstellungen" class="feld-einstellungen bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+        <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+          <span class="nummer">2</span> Einstellungen
+        </h2>
 
-        <fieldset class="border-t border-linie pt-5">
-          <legend class="titel text-xs font-bold text-leise mb-3">Linienfarben (Werkstatt-Regeln)</legend>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <label class="flex items-center gap-3 text-sm">
-              <input class="farbfeld" type="color" id="farbe-schneiden" value="#ff0000">
-              Schneiden
-            </label>
-            <label class="flex items-center gap-3 text-sm">
-              <input class="farbfeld" type="color" id="farbe-ritzen" value="#0000ff">
-              Ritzen (Nummern)
-            </label>
-            <label class="flex items-center gap-3 text-sm">
-              <input class="farbfeld" type="color" id="farbe-rahmen" value="#ffff00">
-              Rahmen
-            </label>
-            <label class="flex items-center gap-3 text-sm">
-              <input class="farbfeld" type="color" id="farbe-gravieren" value="#000000">
-              Gravieren
-            </label>
-          </div>
-          <button type="button" class="knopf mt-4 text-sm" id="farben-zuruecksetzen">
-            Auf Hochschul-Werte zurücksetzen
+        <form id="einstellungen" class="space-y-6">
+
+          <fieldset>
+            <legend class="titel text-xs font-bold text-leise mb-3">Modell</legend>
+            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-2 gap-4">
+              <label class="flex flex-col gap-1 text-sm lg:col-span-2">
+                Maßstab 1 :
+                <input class="feld" type="number" id="massstab" value="100" min="1" step="1">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Pappdicke innen
+                <select class="feld" id="dicke-innen">
+                  <option value="1">1 mm</option>
+                  <option value="1.5">1,5 mm</option>
+                  <option value="2" selected>2 mm</option>
+                </select>
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Pappdicke außen
+                <select class="feld" id="dicke-aussen">
+                  <option value="1" selected>1 mm</option>
+                  <option value="1.5">1,5 mm</option>
+                  <option value="2">2 mm</option>
+                </select>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="border-t border-linie pt-5">
+            <legend class="titel text-xs font-bold text-leise mb-3">Laserplatte</legend>
+            <div class="grid grid-cols-2 gap-4">
+              <label class="flex flex-col gap-1 text-sm">
+                Breite (mm)
+                <input class="feld" type="number" id="platte-breite" value="1000" min="1">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Höhe (mm)
+                <input class="feld" type="number" id="platte-hoehe" value="600" min="1">
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="border-t border-linie pt-5">
+            <legend class="titel text-xs font-bold text-leise mb-3">Linienfarben (Werkstatt-Regeln)</legend>
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-4">
+              <label class="flex items-center gap-3 text-sm">
+                <input class="farbfeld" type="color" id="farbe-schneiden" value="#ff0000">
+                Schneiden
+              </label>
+              <label class="flex items-center gap-3 text-sm">
+                <input class="farbfeld" type="color" id="farbe-ritzen" value="#0000ff">
+                Ritzen (Nummern)
+              </label>
+              <label class="flex items-center gap-3 text-sm">
+                <input class="farbfeld" type="color" id="farbe-rahmen" value="#ffff00">
+                Rahmen
+              </label>
+              <label class="flex items-center gap-3 text-sm">
+                <input class="farbfeld" type="color" id="farbe-gravieren" value="#000000">
+                Gravieren
+              </label>
+            </div>
+            <button type="button" class="knopf mt-4 text-sm" id="farben-zuruecksetzen">
+              Auf Hochschul-Werte zurücksetzen
+            </button>
+          </fieldset>
+
+        </form>
+
+        <!-- Knopf: aus der gelesenen IFC die Laserplatten berechnen
+             (auf breiten Bildschirmen immer unten in der Spalte sichtbar) -->
+        <div class="erstellen-leiste border-t border-linie mt-6 pt-5 space-y-3">
+          <button type="button" class="knopf haupt-knopf w-full" id="erstellen" disabled>
+            Laserplatten erstellen
           </button>
-        </fieldset>
+          <p id="erstellen-hinweis" class="text-sm text-leise" role="status" aria-live="polite">Zuerst eine IFC-Datei ablegen.</p>
+        </div>
+      </section>
 
-      </form>
-    </section>
+      <!-- Bereich 3: Vorschau und Download (links unten) -->
+      <section id="bereich-vorschau" class="feld-vorschau bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+        <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+          <span class="nummer">3</span> Vorschau &amp; Download
+        </h2>
 
-    <!-- Bereich 3: Vorschau und Download -->
-    <section id="bereich-vorschau" class="bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
-      <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
-        <span class="nummer">3</span> Vorschau &amp; Download
-      </h2>
+        <!-- Warnungen, z. B. Teil zu groß für die Platte -->
+        <ul id="warnungen" class="space-y-2 text-sm mb-5" hidden></ul>
 
-      <!-- Knopf: aus der gelesenen IFC die Laserplatten berechnen -->
-      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-5">
-        <button type="button" class="knopf haupt-knopf" id="erstellen" disabled>
-          Laserplatten erstellen
-        </button>
-        <p id="erstellen-hinweis" class="text-sm text-leise" role="status" aria-live="polite">Zuerst oben eine IFC-Datei ablegen.</p>
-      </div>
+        <!-- Leere Laserplatte (Hintergrundfarbe mit gelbem Rahmen), solange noch nichts erstellt ist -->
+        <div id="vorschau" class="platte rounded-sm mb-2"></div>
+        <p id="vorschau-text" class="text-xs text-leise mb-5">Hier erscheinen die Laserplatten, sobald du auf „Laserplatten erstellen“ klickst.</p>
 
-      <!-- Warnungen, z. B. Teil zu groß für die Platte -->
-      <ul id="warnungen" class="space-y-2 text-sm mb-5" hidden></ul>
+        <!-- Die fertigen Platten, je mit eigenem DXF-Knopf -->
+        <div id="platten" class="space-y-6 mb-5" hidden></div>
 
-      <!-- Leere Laserplatte (Hintergrundfarbe mit gelbem Rahmen), solange noch nichts erstellt ist -->
-      <div id="vorschau" class="platte rounded-sm mb-2"></div>
-      <p id="vorschau-text" class="text-xs text-leise mb-5">Hier erscheinen die Laserplatten, sobald du auf „Laserplatten erstellen“ klickst.</p>
+        <div class="flex flex-wrap gap-3">
+          <button type="button" class="knopf haupt-knopf" id="dxf-herunterladen" disabled>
+            Alle DXF herunterladen
+          </button>
+          <button type="button" class="knopf" id="uebersicht-drucken" disabled>
+            Übersichtsblatt drucken
+          </button>
+        </div>
 
-      <!-- Die fertigen Platten, je mit eigenem DXF-Knopf -->
-      <div id="platten" class="space-y-6 mb-5" hidden></div>
+        <!-- Erinnerung: Ohne Übersichtsblatt weiß man später nicht, wie geklebt wird -->
+        <p class="mt-4 text-sm flex gap-2">
+          <span class="text-akzent font-bold">!</span>
+          <span><strong>Wichtig:</strong> Speichere oder drucke das Übersichtsblatt. Nur darauf steht, welches Teil wohin gehört und in welcher Reihenfolge du klebst. Tipp: Im Druckfenster „Als PDF sichern“ wählen.</span>
+        </p>
+      </section>
 
-      <div class="flex flex-wrap gap-3">
-        <button type="button" class="knopf haupt-knopf" id="dxf-herunterladen" disabled>
-          Alle DXF herunterladen
-        </button>
-        <button type="button" class="knopf" id="uebersicht-drucken" disabled>
-          Übersichtsblatt drucken
-        </button>
-      </div>
+    </main>
 
-      <!-- Erinnerung: Ohne Übersichtsblatt weiß man später nicht, wie geklebt wird -->
-      <p class="mt-4 text-sm flex gap-2">
-        <span class="text-akzent font-bold">!</span>
-        <span><strong>Wichtig:</strong> Speichere oder drucke das Übersichtsblatt. Nur darauf steht, welches Teil wohin gehört und in welcher Reihenfolge du klebst. Tipp: Im Druckfenster „Als PDF sichern“ wählen.</span>
-      </p>
-    </section>
-
-  </main>
-
-  <footer class="max-w-4xl mx-auto px-4 pb-10 text-xs text-leise">
-    <p>WPK Vibecoding · Jade Hochschule · 2026</p>
-  </footer>
+    <footer class="max-w-7xl mx-auto px-4 pb-10 text-xs text-leise">
+      <p>WPK Vibecoding · Jade Hochschule · 2026</p>
+    </footer>
+  </div>
 
   <!-- Übersichtsblatt: auf dem Bildschirm unsichtbar, nur zum Drucken -->
   <div id="druckblatt"></div>

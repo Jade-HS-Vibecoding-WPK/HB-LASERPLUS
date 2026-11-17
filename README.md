@@ -12,10 +12,11 @@ Entstanden im WPK Vibecoding an der Jade Hochschule, 2026.
 
 ## So benutzt du die App
 
-1. **IFC-Datei ablegen** (z. B. aus Archicad). Die App zeigt, was in der Datei steckt.
-2. **Einstellungen** prüfen: Maßstab, Pappdicke innen und außen (1 / 1,5 / 2 mm), Plattengröße, Linienfarben.
-3. **„Laserplatten erstellen“** klicken. Die Platten erscheinen in der Vorschau.
-4. **DXF herunterladen** (eine Datei pro Platte) und das **Übersichtsblatt drucken**.
+1. Auf der Startseite **„Erstelle deine Laserdatei“** klicken.
+2. **IFC-Datei ablegen** (links oben, z. B. aus Archicad). Die App zeigt, was in der Datei steckt.
+3. **Einstellungen** prüfen (rechts): Maßstab, Pappdicke innen und außen (1 / 1,5 / 2 mm), Plattengröße, Linienfarben.
+4. **„Laserplatten erstellen“** klicken (unter den Einstellungen). Die Platten erscheinen links unten in der Vorschau.
+5. **DXF herunterladen** (eine Datei pro Platte) und das **Übersichtsblatt drucken oder als PDF speichern**.
 
 **Deine IFC-Datei bleibt auf deinem Rechner.** Alles wird im Browser gerechnet, nichts wird hochgeladen.
 

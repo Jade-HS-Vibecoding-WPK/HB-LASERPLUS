@@ -169,6 +169,106 @@ summary {
   cursor: pointer;
 }
 
+/* ---------- Startseite ---------- */
+/* Liegt über der Arbeitsseite, bis man auf „Erstelle deine Laserdatei“ klickt */
+.startseite {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow-y: auto;
+  background: var(--hintergrund);
+  display: flex;
+}
+.startseite[hidden] {
+  display: none;
+}
+.startseite-inhalt {
+  margin: auto;              /* mittig, auch wenn der Inhalt höher als das Fenster ist */
+  padding: 3rem 1rem;
+  text-align: center;
+  max-width: 40rem;
+}
+/* Solange die Startseite offen ist, scrollt die Seite dahinter nicht */
+html.start-offen {
+  overflow: hidden;
+}
+
+/* Logo: groß auf der Startseite, klein in der Kopfzeile */
+.logo-gross {
+  display: block;
+  width: auto;
+  height: min(40vh, 18rem);
+  aspect-ratio: 1899 / 2562;
+  margin: 0 auto;
+}
+.logo-klein {
+  flex-shrink: 0;
+  width: auto;
+  height: 4rem;
+  aspect-ratio: 1899 / 2562;
+}
+
+/* Beispielbild auf der Startseite (erscheint erst, wenn die Datei da ist) */
+.beispielbild {
+  display: block;
+  max-width: 100%;
+  max-height: 40vh;
+  margin: 2rem auto 0;
+  border-radius: 0.75rem;
+  border: 1px solid var(--linie);
+}
+.beispielbild[hidden] {
+  display: none;
+}
+
+/* Großer Startknopf */
+.start-knopf {
+  font-size: 1.125rem;
+  padding: 0.85rem 2rem;
+}
+
+/* ---------- Arbeitsseite: Raster ---------- */
+/* Schmal: untereinander 1 → 2 → 3.
+   Breit: links Datei (oben) und Vorschau (unten), rechts die Einstellungen. */
+.raster {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    "datei"
+    "einstellungen"
+    "vorschau";
+}
+.feld-datei { grid-area: datei; }
+.feld-einstellungen { grid-area: einstellungen; }
+.feld-vorschau { grid-area: vorschau; }
+
+@media (min-width: 1024px) {
+  .raster {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-areas:
+      "datei    einstellungen"
+      "vorschau einstellungen";
+    align-items: start;
+  }
+  /* Einstellungen bleiben beim Scrollen stehen */
+  .feld-einstellungen {
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+  }
+  /* Der Knopf „Laserplatten erstellen“ bleibt unten in der Spalte sichtbar,
+     auch wenn die Einstellungen höher sind als das Fenster */
+  .erstellen-leiste {
+    position: sticky;
+    bottom: 0;
+    background: var(--flaeche);
+    padding-bottom: 1.75rem;   /* = Innenabstand der Karte (p-7) */
+    margin-bottom: -1.75rem;
+  }
+}
+
 /* ---------- Übersichtsblatt (nur beim Drucken sichtbar) ---------- */
 #druckblatt {
   display: none;
