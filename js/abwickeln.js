@@ -143,7 +143,14 @@ export function flaechenFinden(huelle, wahlFuerProxy = new Map()) {
     };
     const dreiecke2d = g.dreiecke.map((d) => [zu2d(d.a), zu2d(d.b), zu2d(d.c)]);
     for (const region of vereinigen(dreiecke2d)) {
-      if (region.flaeche < 0.02) continue; // Splitter kleiner als 0,02 m² weglassen
+      // Kleine Stücke und schmale Streifen weglassen, z. B. die Ränder der
+      // Fensterlaibungen (oft nur 1 cm breit). Mittlere Breite ≈ 2 · Fläche / Umfang.
+      let umfang = 0;
+      for (let k = 0; k < region.aussen.length; k++) {
+        const a = region.aussen[k], b = region.aussen[(k + 1) % region.aussen.length];
+        umfang += Math.hypot(b[0] - a[0], b[1] - a[1]);
+      }
+      if (region.flaeche < 0.2 || (2 * region.flaeche) / umfang < 0.05) continue;
       flaechen.push({
         wofuer: g.wofuer,
         n: g.n,

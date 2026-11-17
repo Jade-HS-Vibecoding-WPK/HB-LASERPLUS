@@ -6,6 +6,9 @@
 //   - Innenschicht (I): geschlossen, tragend
 // Jede Dachfläche wird eine Pappe (eine Schicht, Dicke = Pappdicke innen).
 //
+// Nummern: A-001 = Außenschicht, I-001 = Innenschicht derselben Fassade,
+// D-001 = Dachfläche. Fassaden im Uhrzeigersinn ab Norden, Dach getrennt.
+//
 // Eckenausgleich (wie in CLAUDE.md beschrieben):
 //   An jeder Ecke läuft eine Fläche durch, die andere wird gekürzt.
 //   Durchlaufend und gekürzt wechseln sich rund ums Gebäude ab.
@@ -263,7 +266,10 @@ export function teileBauen(flaechen, ecken, e) {
         : [{ schicht: "", wort: "Dachplatte", tiefe: 0, dicke: td, mitLoechern: true, eKlein: 0, eGross: td }];
 
     for (const s of schichten) {
-      let umriss = f.aussen.map((p) => [p[0], p[1]]);
+      // Fassaden: kleine Stufen (z. B. vom Dach eingeschnittene Giebelecken) glätten
+      let umriss = f.wofuer === "fassade" ? stufenGlaetten(f.aussen) : f.aussen.map((p) => [p[0], p[1]]);
+      // Innenschicht geschlossen: auch Aussparungen am unteren Rand (Türen bis zum Boden) füllen
+      if (f.wofuer === "fassade" && !s.mitLoechern) umriss = unterkanteSchliessen(umriss);
       const eckInfo = [];
       for (const c of meineEcken) {
         const laeuftDurch = c.durch === index;
@@ -274,9 +280,12 @@ export function teileBauen(flaechen, ecken, e) {
         umriss = kanteVerschieben(umriss, c.kanten2d[index], x / k);
         eckInfo.push({ laeuftDurch, schraeg: Math.abs(Math.cos(c.phi)) > 0.02, gemischt: !!c.gemischt });
       }
-      const name = f.wofuer === "fassade" ? `${r.buchstabe}-${drei(nummer.get(index))}-${s.schicht}` : `D-${drei(nummer.get(index))}`;
+      // Nummern: A-001 = Außenschicht, I-001 = Innenschicht derselben Fassade, D-001 = Dachfläche
+      const zahl = drei(nummer.get(index));
+      const name = f.wofuer === "fassade" ? `${s.schicht}-${zahl}` : `D-${zahl}`;
       teile.push({
         name,
+        nummer: zahl,
         flaecheIndex: index,
         wofuer: f.wofuer,
         schicht: s.schicht,
@@ -289,6 +298,98 @@ export function teileBauen(flaechen, ecken, e) {
     }
   }
   return teile;
+}
+
+// ---------------------------------------------------------
+// Kleine Stufen im Umriss glätten (kürzer als 30 cm).
+// Zwei kurze Kanten hintereinander zwischen zwei langen Kanten werden
+// entfernt, und die beiden langen Kanten werden verlängert, bis sie sich
+// treffen. Beispiel: Eine Giebelwand, die an der Traufe vom Dach
+// eingeschnitten ist – danach läuft die Seitenkante gerade bis zur Dachschräge.
+// ---------------------------------------------------------
+function stufenGlaetten(umriss, maxStufe = 0.3) {
+  let p = umriss.map((q) => [q[0], q[1]]);
+  const abstand = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+  let geaendert = true;
+  let schutz = 0;
+  while (geaendert && p.length > 4 && schutz++ < 100) {
+    geaendert = false;
+    const n = p.length;
+    for (let i = 0; i < n; i++) {
+      const a = p[(i - 1 + n) % n], b = p[i], c = p[(i + 1) % n], d = p[(i + 2) % n], e = p[(i + 3) % n];
+      // a→b lang, b→c kurz, c→d kurz, d→e lang
+      if (abstand(b, c) >= maxStufe || abstand(c, d) >= maxStufe) continue;
+      if (abstand(a, b) < maxStufe || abstand(d, e) < maxStufe) continue;
+      const x = schnittpunkt(a, b, d, e);
+      if (!x || abstand(x, c) > 0.5) continue;
+      // b, c und d durch den Schnittpunkt x ersetzen
+      const weg = new Set([(i + 1) % n, (i + 2) % n]);
+      const neu = [];
+      for (let k = 0; k < n; k++) {
+        if (k === i) neu.push(x);
+        else if (!weg.has(k)) neu.push(p[k]);
+      }
+      p = neu;
+      geaendert = true;
+      break;
+    }
+  }
+  return p;
+}
+
+// Schnittpunkt der Geraden durch a-b und c-d (oder null, wenn parallel)
+function schnittpunkt(a, b, c, d) {
+  const r = [b[0] - a[0], b[1] - a[1]], s = [d[0] - c[0], d[1] - c[1]];
+  const nenner = r[0] * s[1] - r[1] * s[0];
+  if (Math.abs(nenner) < 1e-9) return null;
+  const t = ((c[0] - a[0]) * s[1] - (c[1] - a[1]) * s[0]) / nenner;
+  return [a[0] + r[0] * t, a[1] + r[1] * t];
+}
+
+// ---------------------------------------------------------
+// Aussparungen am unteren Rand schließen (z. B. eine Tür, die bis zum
+// Boden geht). Der Umriss läuft gegen den Uhrzeigersinn, die Unterkante
+// also von links nach rechts. Verlässt er die Unterkante und kommt weiter
+// rechts wieder auf ihr an, ohne seitlich darüber hinaus zu gehen, ist
+// das eine Aussparung – sie wird durch eine gerade Linie ersetzt.
+// ---------------------------------------------------------
+function unterkanteSchliessen(umriss) {
+  const n = umriss.length;
+  const vmin = Math.min(...umriss.map((p) => p[1]));
+  const unten = (p) => Math.abs(p[1] - vmin) < 1e-3;
+  // Start beim Punkt ganz links auf der Unterkante
+  let start = -1;
+  for (let i = 0; i < n; i++) {
+    if (unten(umriss[i]) && (start < 0 || umriss[i][0] < umriss[start][0])) start = i;
+  }
+  if (start < 0) return umriss;
+
+  const neu = [];
+  let i = 0;
+  while (i < n) {
+    const idx = (start + i) % n;
+    const p = umriss[idx];
+    neu.push(p);
+    if (unten(p)) {
+      // nächster Punkt, der wieder auf der Unterkante liegt
+      let k = 1;
+      while (i + k < n && !unten(umriss[(idx + k) % n])) k++;
+      if (k > 1 && i + k < n) {
+        const q = umriss[(idx + k) % n];
+        let innerhalb = q[0] > p[0];
+        for (let m = 1; m < k && innerhalb; m++) {
+          const z = umriss[(idx + m) % n];
+          innerhalb = z[0] >= p[0] - 1e-6 && z[0] <= q[0] + 1e-6;
+        }
+        if (innerhalb) {
+          i += k; // Umweg überspringen, weiter bei q
+          continue;
+        }
+      }
+    }
+    i++;
+  }
+  return neu.length >= 3 ? neu : umriss;
 }
 
 // ---------------------------------------------------------

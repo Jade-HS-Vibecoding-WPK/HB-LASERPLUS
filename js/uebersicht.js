@@ -133,12 +133,32 @@ export function uebersichtBauen(daten) {
     )
   );
 
-  // Grundriss
+  // Legende: was bedeuten die Nummern?
+  blatt.append(element("h2", "", "Legende"));
+  const legende = element("ul");
+  legende.append(
+    element("li", "", "A-001, A-002 … = Außenschicht einer Fassade, mit Fenstern und Türen. Wird außen auf die Innenschicht geklebt."),
+    element("li", "", "I-001, I-002 … = Innenschicht derselben Fassade, geschlossen. Die Innenschichten bilden den tragenden Kasten."),
+    element("li", "", "D-001, D-002 … = Dachfläche."),
+    element("li", "", "Gleiche Zahl bei A und I = gleiche Fassade: A-001 kommt auf I-001. Im Grundriss steht diese Zahl an der Fassade."),
+    element("li", "", "Die Nummern sind blau neben das Teil auf die Restpappe geritzt, nicht auf das Teil selbst.")
+  );
+  blatt.append(legende);
+
+  // Grundriss: an den Fassaden die Zahl (z. B. 001), an den Dachflächen die D-Nummer
   const nummerVon = new Map();
-  for (const t of teile) if (!nummerVon.has(t.flaecheIndex)) nummerVon.set(t.flaecheIndex, t.name.replace(/-[AI]$/, ""));
+  for (const t of teile) {
+    if (!nummerVon.has(t.flaecheIndex)) nummerVon.set(t.flaecheIndex, t.wofuer === "fassade" ? t.nummer : t.name);
+  }
   blatt.append(element("h2", "", "Grundriss"));
   blatt.append(grundriss(flaechen, nummerVon));
-  blatt.append(element("p", "klein", "Fassaden als dicke Linien, Dachflächen gestrichelt. Blick von oben, Norden oben."));
+  blatt.append(
+    element(
+      "p",
+      "klein",
+      "Fassaden als dicke Linien mit ihrer Zahl (dazu gehören A- und I-Teil mit derselben Zahl), Dachflächen gestrichelt mit D-Nummer. Blick von oben, Norden oben."
+    )
+  );
 
   // Teileliste
   const platteVon = new Map();
@@ -169,7 +189,7 @@ export function uebersichtBauen(daten) {
   schritte.append(
     element("li", "", "Jedes Teil gleich nach dem Herauslösen auf der Rückseite mit Bleistift beschriften – die geritzte Nummer steht nur auf der Restpappe."),
     element("li", "", `Innenschichten zu einem Kasten kleben: ${namen((t) => t.schicht === "I")}. Die Innenschichten sind geschlossen und tragen das Modell.`),
-    element("li", "", `Außenschichten (mit Fenstern und Türen) auf die passenden Innenschichten kleben: ${namen((t) => t.schicht === "A")}. Gleiche Zahl = gleiche Fassade.`),
+    element("li", "", `Außenschichten (mit Fenstern und Türen) auf die passenden Innenschichten kleben: ${namen((t) => t.schicht === "A")}. Gleiche Zahl = gleiche Fassade, also A-001 auf I-001.`),
     element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Zuerst die gekürzten Dachflächen, dann die durchlaufenden – sie überlappen am First.`)
   );
   blatt.append(schritte);

@@ -5,8 +5,8 @@ Eine Webseite, die aus der **IFC-Datei eines einzelnen Gebäudes** fertige **Las
 - Jede Fassade wird eine flache Platte, so wie man sie von außen sieht, das Dach ebenso.
 - Jede Wand bekommt **zwei Schichten**: eine geschlossene Innenschicht und eine Außenschicht mit ausgeschnittenen Fenstern und Türen.
 - An den Ecken überlappen die Platten. Die App kürzt sie um die Pappdicken, damit die Außenmaße stimmen, auch bei schrägen Ecken und am First.
-- Die Teile werden auf Laserplatten (Standard 1000 × 600 mm) verteilt. Neben jedes Teil wird seine Nummer geritzt, z. B. `N-001-A` (Fassade Nord, außen).
-- Dazu gibt es ein **Übersichtsblatt** zum Ausdrucken: Grundriss mit Nummern, Teileliste und Reihenfolge beim Kleben.
+- Die Teile werden auf Laserplatten (Standard 1000 × 600 mm) verteilt. Neben jedes Teil wird seine Nummer geritzt: `A-001` = Außenschicht, `I-001` = Innenschicht derselben Fassade, `D-001` = Dachfläche.
+- Dazu gibt es ein **Übersichtsblatt** zum Ausdrucken: Legende der Nummern, Grundriss mit Nummern, Teileliste und Reihenfolge beim Kleben. **Speichere oder drucke es** – nur darauf steht, wie geklebt wird.
 
 Entstanden im WPK Vibecoding an der Jade Hochschule, 2026.
 

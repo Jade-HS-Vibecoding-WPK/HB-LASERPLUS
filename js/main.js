@@ -153,7 +153,7 @@ async function dateiLesen(datei) {
     dateiName = datei.name;
     // Nicht klassifizierte Bauteile: Gibt es sonst keine Wände und kein Dach,
     // ist der Morph wohl das ganze Gebäude
-    const sonstLeer = info.waende.aussen + info.waende.ohneAngabe === 0 && info.dachflaechen === 0;
+    const sonstLeer = info.waende.aussen + info.waende.ohneAngabe === 0 && info.daecher === 0;
     for (const p of info.ohneKlasse) proxyWahl.set(p.id, sonstLeer ? "koerper" : "ignorieren");
     zeigeStatus(datei.name + " · " + groesseLesbar(datei.size) + " · gelesen", "ok");
     zeigeBauteile(info);
@@ -195,8 +195,8 @@ function zeigeBauteile(e) {
   if (w.ohneAngabe) zeile("Wände ohne Angabe", String(w.ohneAngabe), "weder „Außen“ noch „Innen“");
   if (w.innen) zeile("Innenwände", String(w.innen), "werden nicht verwendet");
   if (e.vorhangfassaden) zeile("Vorhangfassaden", String(e.vorhangfassaden), "noch nicht unterstützt");
-  zeile("Dächer", String(e.daecher), "");
-  zeile("Dachflächen", String(e.dachflaechen), e.dachFrei ? "davon " + e.dachFrei + " freie Form / Morph" : "");
+  // Die Zahl der Dachflächen (Ebenen) steht nach „Laserplatten erstellen“ in Bereich 3
+  zeile("Dächer", String(e.daecher), e.dachplatten ? "aus " + e.dachplatten + " Dachplatten" : "");
   zeile("Fenster", String(e.fenster), "");
   zeile("Türen", String(e.tueren), "");
   if (e.decken) zeile("Decken / Böden", String(e.decken), "werden nicht verwendet");

@@ -261,27 +261,41 @@ function auswerten(modell) {
     teileVon.set(ganzes, liste);
   }
   const dachIds = idsVon(modell, WebIFC.IFCROOF);
+  // Alles, was zum Dach gehört (für die Geometrie): das Dach selbst und seine Teile.
+  // Archicad zerlegt Dächer oft in Schichten (IfcBuildingElementPart) – die
+  // gehören zum Dach, sind aber keine eigenen Dachflächen.
   const dachflaechen = new Set();
   for (const id of dachIds) {
-    const teile = teileVon.get(id) || [];
-    if (teile.length === 0) dachflaechen.add(id); // Dach ohne Teile (z. B. Dach-Morph) ist selbst eine Fläche
-    for (const teil of teile) dachflaechen.add(teil);
+    dachflaechen.add(id);
+    for (const teil of teileVon.get(id) || []) dachflaechen.add(teil);
   }
-  // Platten (IfcSlab): mit ROOF sind sie Dachflächen, sonst Decken/Böden
-  let decken = 0;
-  const plattenIds = new Set([
-    ...idsVon(modell, WebIFC.IFCSLAB),
-    ...idsVon(modell, WebIFC.IFCSLABSTANDARDCASE),
-    ...idsVon(modell, WebIFC.IFCSLABELEMENTEDCASE),
-  ]);
+  // Platten (IfcSlab): mit ROOF gehören sie zum Dach, sonst sind es Decken/Böden
+  const plattenArten = [WebIFC.IFCSLAB, WebIFC.IFCSLABSTANDARDCASE, WebIFC.IFCSLABELEMENTEDCASE];
+  let decken = 0, einzelneDachplatten = 0;
+  const plattenIds = new Set(plattenArten.flatMap((art) => idsVon(modell, art)));
   for (const id of plattenIds) {
     if (dachflaechen.has(id)) continue;
     const platte = zeile(modell, id);
-    if (platte && auswahl(platte.PredefinedType) === "ROOF") dachflaechen.add(id);
-    else decken++;
+    if (platte && auswahl(platte.PredefinedType) === "ROOF") {
+      dachflaechen.add(id);
+      einzelneDachplatten++;
+    } else {
+      decken++;
+    }
   }
-  let dachFrei = 0;
-  for (const id of dachflaechen) if (frei(id)) dachFrei++;
+  // Wie viele Dachplatten (IfcSlab) stecken in den Dächern? Schichten zählen nicht.
+  let dachplatten = 0;
+  for (const id of dachIds) {
+    for (const teil of teileVon.get(id) || []) {
+      let art = null;
+      try {
+        art = api.GetLineType(modell, teil);
+      } catch {
+        art = null;
+      }
+      if (plattenArten.includes(art)) dachplatten++;
+    }
+  }
 
   // --- Fenster, Türen, Vorhangfassaden ---
   const anzahl = (...arten) => new Set(arten.flatMap((art) => idsVon(modell, art))).size;
@@ -310,7 +324,7 @@ function auswerten(modell) {
     if (eig.aussen.get(id) === false) continue; // Innenwände brauchen wir nicht
     for (const g of mitTeilen(id)) artVon.set(g, { art: "wand", bauteil: id });
   }
-  for (const id of [...dachIds, ...dachflaechen]) {
+  for (const id of dachflaechen) {
     for (const g of mitTeilen(id)) if (!artVon.has(g)) artVon.set(g, { art: "dach", bauteil: id });
   }
   for (const p of ohneKlasse) {
@@ -365,9 +379,8 @@ function auswerten(modell) {
     einheit,
     waende,
     vorhangfassaden,
-    daecher: dachIds.length,
-    dachflaechen: dachflaechen.size,
-    dachFrei,
+    daecher: dachIds.length + einzelneDachplatten, // einzelne Dachplatten ohne IfcRoof zählen als je ein Dach
+    dachplatten,
     decken,
     fenster,
     tueren,

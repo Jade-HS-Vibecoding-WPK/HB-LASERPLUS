@@ -57,7 +57,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 | Dateiformat | **DXF reicht** (die Werkstatt nimmt DXF oder DWG). DWG nur als Anleitung zum Umwandeln |
 | Laser-Regeln | Von der Werkstatt (17.11.): RGB-Farben Rot = schneiden, Blau = ritzen, Gelb = Rahmen, Schwarz = gravieren. Linienstärke 0,00 mm. **Gelber Rahmen 1000 × 600 mm immer in der Datei**, alle Teile **mind. 10 mm** vom Rahmen. Sonst verfällt der Lasertermin |
 | Linienfarben | In der App **einstellbar**, voreingestellt mit den Werten der Hochschule |
-| Nummern | Zum Beispiel „N-001-A“ (außen) und „N-001-I“ (innen), **geritzt (blau)** **neben** dem Teil auf der Restpappe, nie auf dem Teil |
+| Nummern | „A-001“ (Außenschicht), „I-001“ (Innenschicht derselben Fassade), „D-001“ (Dachfläche), **geritzt (blau)** **neben** dem Teil auf der Restpappe, nie auf dem Teil. Legende auf dem Übersichtsblatt (geändert am 17.11., vorher „N-001-A“) |
 | Import | IFC aus **Archicad**. Wände, Dächer und **Morphs**, die als Wand oder Dach klassifiziert sind |
 | Lage in der Datei | Jedes Teil liegt so, wie man es von außen sieht (Außenseite nach oben) |
 | Anleitung | Nummern und ein Übersichtsblatt: Grundriss, welches Teil wohin gehört, Reihenfolge beim Kleben |
@@ -83,7 +83,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 6. **Ecken** werden überlappend ausgeglichen, bei rechten **und** bei schrägen Winkeln.
 7. **Steildach-Anschlüsse:** Am First überlappt eine Dachplatte die andere, und die Giebelwände sind oben passend abgeschrägt.
 8. **Verteilen:** Alle Teile werden mit Abstand auf Laserplatten gelegt, **mindestens 10 mm vom Rahmen entfernt**. Ist ein Teil zu groß für die Platte, gibt es eine Warnung.
-9. **Nummern** wie N-001-A (außen) und N-001-I (innen) werden neben jedes Teil **geritzt** (blau), nicht auf das Teil.
+9. **Nummern** wie A-001 (Außenschicht), I-001 (Innenschicht) und D-001 (Dach) werden neben jedes Teil **geritzt** (blau), nicht auf das Teil.
 10. **DXF-Download** in Millimetern, eine Datei pro Platte, nach den **Werkstatt-Regeln**: RGB-Farben, Linienstärke 0,00 mm, **gelber Rahmen in Plattengröße**, Schneiden, Ritzen und Rahmen auf getrennten Ebenen.
 11. **Übersichtsblatt zum Ausdrucken:** Grundriss mit den Nummern, Hinweis, welches Teil wohin gehört, und die Reihenfolge beim Kleben.
 12. **Vorschau** der Laserplatten in der App, bevor man herunterlädt, **wie die echte Laserplatte** (eigene Gestaltungsentscheidung).
@@ -212,7 +212,7 @@ Geprüft mit beiden Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 A
 - [ ] **Test-IFC mit Fenstern und Türen** exportieren und prüfen, ob die Löcher stimmen.
 - [ ] **DXF in AutoCAD, Rhino oder der Lasersoftware öffnen** und Maße nachmessen (z. B. eine Wand von 10 m bei 1:100 = 100 mm).
 - [ ] **Grundriss im Übersichtsblatt mit Archicad vergleichen:** Liegen Norden und die L-Form richtig herum (nicht gespiegelt)?
-- [x] **Nummernschema:** Der Buchstabe ist die Himmelsrichtung der Fassade (N, O, S, W, Dach = D), die Zahl ist die Reihenfolge beim Kleben, die Endung zeigt die Schicht (-A = außen, -I = innen). Beispiel: N-001-A und N-001-I.
+- [x] **Nummernschema (geändert am 17.11.):** Der Buchstabe zeigt die Schicht: A = Außenschicht, I = Innenschicht, D = Dachfläche. Die Zahl ist die Fassade bzw. Dachfläche; gleiche Zahl bei A und I = gleiche Fassade. Beispiel: A-001 kommt auf I-001. Die Himmelsrichtung steht in der Teileliste des Übersichtsblatts, die Legende ebenfalls.
 - [x] **Tipp fürs Übersichtsblatt:** Weil die Nummer nur auf der Restpappe steht, sollte man jedes Teil direkt nach dem Herausnehmen auf der Rückseite mit Bleistift beschriften. (Steht jetzt als Schritt 1 auf dem Übersichtsblatt.)
 - [ ] **GitHub Pages:** Wer darf im Repository „Jade-HS-Vibecoding-WPK“ die Veröffentlichung einschalten? Eventuell die Kursleitung fragen.
 - [x] **README:** an die neue Idee angepasst (17.11.).
