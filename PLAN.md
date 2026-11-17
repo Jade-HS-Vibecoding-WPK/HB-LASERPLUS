@@ -1,6 +1,6 @@
 # PLAN – Von der IFC-Datei zum Pappmodell
 
-> Stand: Dienstag, 17.11.2026, nachmittags · WPK Vibecoding (Webseite mit Aussehen, Datei ablegen und Einstellungen läuft)
+> Stand: Dienstag, 17.11.2026, abends · WPK Vibecoding (erste vollständige Version läuft: IFC → Laserplatten → DXF und Übersichtsblatt, mit beiden Test-IFCs geprüft)
 > Das ist unser gemeinsamer Fahrplan für die Kurswoche. Wenn sich etwas ändert, ändern wir es hier.
 
 ---
@@ -63,7 +63,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 | Anleitung | Nummern und ein Übersichtsblatt: Grundriss, welches Teil wohin gehört, Reihenfolge beim Kleben |
 | App | Webseite im Browser, veröffentlicht unter einem Link |
 | Aussehen | Hell oder dunkel automatisch nach Systemeinstellung, Farbpalette von Tomate bis Papaya, Schrift Century Gothic (Ersatz: „Didact Gothic“ von Google Fonts), Layout mit **Tailwind** |
-| Eigene Gestaltungsentscheidung | Die Vorschau zeigt jede Platte **wie die echte Laserplatte**: Graupappe-Fläche, gelber Rahmen, Linien in den echten Laserfarben. Was man sieht, macht der Laser |
+| Eigene Gestaltungsentscheidung | Die Vorschau zeigt jede Platte **wie die echte Laserplatte**: Fläche in der Hintergrundfarbe der Seite (hell/dunkel, am 17.11. statt Graupappe), gelber Rahmen, Linien in den echten Laserfarben. Was man sieht, macht der Laser |
 
 ---
 
@@ -89,6 +89,33 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 12. **Vorschau** der Laserplatten in der App, bevor man herunterlädt, **wie die echte Laserplatte** (eigene Gestaltungsentscheidung).
 13. **Aussehen:** Farbpalette, Century Gothic mit Google-Fonts-Ersatz, Tailwind, hell und dunkel nach Systemeinstellung.
 14. **Veröffentlicht** unter einem Link, am Donnerstag bis 12 Uhr.
+
+#### Stand der Must-Punkte (17.11. abends)
+
+Geprüft mit beiden Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Außenwände, von Archicad in Schichten zerlegt, Walmdach über L-Grundriss) und „Test 02 – Morph“ (ein nicht klassifizierter Morph als ganzes Gebäude mit Giebeln).
+
+| Must | Stand |
+|---|---|
+| 1 Webseite, Datei ablegen | ✅ |
+| 2 Außenwände, Dach, Morphs erkennen | ✅ auch Wände, die Archicad in Schichten zerlegt (IfcBuildingElementPart). Nicht klassifizierte Morphs: Auswahl per Klick „Wand und Dach / Wand / Dach / Ignorieren“ (damit ist Should 5 auch erledigt) |
+| 3 Fassaden flach als Platte | ✅ gerade und schräge Wände, Giebel, Walm- und Satteldach. Fenster und Türen werden zu Löchern – **noch nicht mit einer Datei mit Fenstern getestet** |
+| 4 Zwei Schichten | ✅ |
+| 5 Einstellungen | ✅ Änderungen rechnen die Platten sofort neu |
+| 6 Ecken | ✅ 90° und schräg, Außen- und Innenecken (L-Form geprüft). Schräge Ecken: kleine Keilfuge, Hinweis auf dem Übersichtsblatt |
+| 7 Steildach-Anschlüsse | ⚠️ teilweise: First, Grat und Kehle überlappen richtig. Wand–Dach: Die Wände bleiben so hoch wie in der IFC, das Dach liegt oben auf. Ist die Dachpappe dünner als das echte Dach, sitzt das Dach minimal tiefer (bei 1:100 etwa 1 mm). Giebel sind oben schräg, so wie in der IFC |
+| 8 Verteilen | ✅ Regal-Verfahren, 10 mm Rand, 3 mm Abstand, Warnung bei zu großen Teilen, bei Bedarf um 90° gedreht |
+| 9 Nummern | ✅ Linienschrift, blau geritzt, unter dem Teil |
+| 10 DXF | ✅ eine Datei je Platte, im Browser geprüft (Ebenen, Farben, Rahmen, Randabstand). **Noch nicht in AutoCAD, Rhino oder der Lasersoftware geöffnet** |
+| 11 Übersichtsblatt | ✅ Grundriss mit Nummern und Nordpfeil, Teileliste, Reihenfolge beim Kleben, Hinweise |
+| 12 Vorschau | ✅ |
+| 13 Aussehen | ✅ |
+| 14 Veröffentlichen | offen (Donnerstag) |
+
+**Bekannte Vereinfachungen (ehrlich):**
+- Die Dachplatten haben die Pappdicke innen.
+- Norden ist der Projekt-Norden der IFC. Die echte Nordrichtung („TrueNorth“) wird noch nicht gelesen (Should 4).
+- Verteilt wird über die umgebenden Rechtecke der Teile, das lässt etwas Pappe übrig (Could 4).
+- web-ifc 0.0.78: Der Befehl `StreamMeshes` hat einen Fehler, wir nutzen stattdessen `StreamAllMeshes`.
 
 ### Should
 
@@ -133,12 +160,12 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 - Das Aussehen umsetzen mit Tailwind: Farben, Schrift (Century Gothic, Ersatz von Google Fonts), hell und dunkel ✅
 - Datei ablegen: Die Ablagefläche nimmt eine .ifc-Datei an (Ziehen oder „Datei auswählen“) und zeigt Name und Größe. Andere Dateien bekommen einen Hinweis. Mit einer echten Archicad-IFC getestet ✅
 - Die Felder für die Einstellungen bauen (Maßstab, Dicken, Plattengröße, Linienfarben) und im Browser speichern ✅ (der Knopf „Auf Hochschul-Werte zurücksetzen“ setzt Linienfarben **und** Plattengröße 1000 × 600 mm zurück; Maßstab und Pappdicken bleiben)
-- Die Vorschau als echte Laserplatte zeichnen (Graupappe, gelber Rahmen, Laserfarben). Teilweise: Die leere Platte ist da und folgt Plattengröße und Rahmenfarbe. Die Teile darauf fehlen noch.
+- Die Vorschau als echte Laserplatte zeichnen (Hintergrundfarbe der Seite statt Graupappe, gelber Rahmen, Laserfarben) ✅ mit den echten Teilen aus der IFC
 - Eine Vorschau in der Claude-App einrichten, damit du jede Änderung sofort siehst ✅
-- Den DXF-Download mit einem **selbst ausgedachten Testhaus** ausprobieren, noch ohne IFC: ein Haus mit Satteldach und einer schrägen Ecke. So prüfen wir den Eckenausgleich und den First, bevor echte Daten kommen.
-- Die Test-DXF hält die Werkstatt-Regeln ein: gelber Rahmen, 10 mm Randabstand, RGB-Farben, Linienstärke 0,00 mm
-- Die Nummern als Linienschrift umsetzen, damit jeder Laser sie ritzen kann
-- Die README an die neue Idee anpassen
+- ~~DXF mit einem selbst ausgedachten Testhaus ausprobieren~~ → gleich mit den echten Test-IFCs gemacht ✅ (Mittwoch-Punkte vorgezogen: IFC einlesen, Fassaden flach legen, Schichten, Ecken, First, Verteilen, Übersichtsblatt)
+- Die DXF hält die Werkstatt-Regeln ein: gelber Rahmen, 10 mm Randabstand, RGB-Farben, Linienstärke 0,00 mm ✅ (im Browser geprüft)
+- Die Nummern als Linienschrift umsetzen, damit jeder Laser sie ritzen kann ✅
+- Die README an die neue Idee anpassen ✅
 - **Deine Aufgabe:** Das Aussehen prüfen und sagen, was dir gefällt und was nicht. Die Test-DXF in AutoCAD, Rhino oder der Lasersoftware öffnen.
 - **Fertig, wenn:** Die Seite sieht in hell und dunkel so aus wie geplant, und die Test-DXF lässt sich herunterladen und sauber öffnen.
 
@@ -180,12 +207,15 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 - [x] **Laserfläche:** 1000 × 600 mm
 - [x] **Werkstatt-Farben:** Rot (255) = schneiden, Blau (255) = ritzen, Gelb (255) = Rahmen, Schwarz = gravieren, Linienstärke 0,00 mm. Die Nummern werden geritzt.
 - [x] **Werkstatt-Format:** DXF reicht. Gelber Rahmen 1000 × 600 mm immer drin, 10 mm Abstand zum Rahmen (am 17.11. von 5 auf 10 mm geändert).
-- [ ] **Test-IFC aus Archicad:** am besten mit mindestens einer Wand **und** einem Morph (als Wand oder Dach klassifiziert), in den Projektordner legen. Vorher prüfen, ob die Außenwände als „Außen“ markiert sind.
-- [ ] **Morphs testen:** Ob klassifizierte Morphs wirklich sauber ankommen, zeigt erst die Test-IFC. Das Ergebnis tragen wir hier ein.
+- [x] **Test-IFC aus Archicad:** zwei Dateien liegen in `beispiele/` (werden nicht hochgeladen, siehe `.gitignore`).
+- [x] **Morphs testen:** Ein **nicht klassifizierter** Morph kommt als `IfcBuildingElementProxy` („Modellkörper-001“) an. Die App nimmt ihn als ganzen Gebäudekörper, das klappt. Ein als Wand oder Dach **klassifizierter** Morph ist noch nicht getestet.
+- [ ] **Test-IFC mit Fenstern und Türen** exportieren und prüfen, ob die Löcher stimmen.
+- [ ] **DXF in AutoCAD, Rhino oder der Lasersoftware öffnen** und Maße nachmessen (z. B. eine Wand von 10 m bei 1:100 = 100 mm).
+- [ ] **Grundriss im Übersichtsblatt mit Archicad vergleichen:** Liegen Norden und die L-Form richtig herum (nicht gespiegelt)?
 - [x] **Nummernschema:** Der Buchstabe ist die Himmelsrichtung der Fassade (N, O, S, W, Dach = D), die Zahl ist die Reihenfolge beim Kleben, die Endung zeigt die Schicht (-A = außen, -I = innen). Beispiel: N-001-A und N-001-I.
-- [ ] **Tipp fürs Übersichtsblatt:** Weil die Nummer nur auf der Restpappe steht, sollte man jedes Teil direkt nach dem Herausnehmen auf der Rückseite mit Bleistift beschriften.
+- [x] **Tipp fürs Übersichtsblatt:** Weil die Nummer nur auf der Restpappe steht, sollte man jedes Teil direkt nach dem Herausnehmen auf der Rückseite mit Bleistift beschriften. (Steht jetzt als Schritt 1 auf dem Übersichtsblatt.)
 - [ ] **GitHub Pages:** Wer darf im Repository „Jade-HS-Vibecoding-WPK“ die Veröffentlichung einschalten? Eventuell die Kursleitung fragen.
-- [ ] **README:** Dort stehen noch „Umgebungsmodelle“. Wir passen das am Dienstag an.
+- [x] **README:** an die neue Idee angepasst (17.11.).
 
 ---
 

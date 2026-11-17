@@ -218,3 +218,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Eigene IFC-Testdateien nicht hochladen (CLAUDE.md, Regel 3)
+beispiele/*.ifc
+beispiele/*.IFC
+
+# Bibliotheken der Webseite (lib/web-ifc) MÜSSEN mit hochgeladen werden.
+# Die Python-Vorlage oben schließt „lib/“ aus, das wird hier wieder aufgehoben.
+!lib/

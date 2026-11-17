@@ -17,10 +17,6 @@
   --akzent-hover:#F97A5D;   /* Coral */
   --akzent-text: #2B1A14;   /* dunkler Text auf Tomato (besser lesbar als weiß) */
 
-  /* Vorschau wie die echte Laserplatte – in hell und dunkel gleich */
-  --graupappe:   #CFC6B8;
-  --laser-rahmen:#FFFF00;   /* wird später aus den Einstellungen gesetzt */
-
   color-scheme: light;
 }
 
@@ -155,17 +151,87 @@ body {
   outline-offset: 2px;
 }
 
-/* ---------- Vorschau: leere Laserplatte ---------- */
-/* Graupappe-Fläche im Seitenverhältnis 1000 × 600 mit gelbem Rahmen */
+/* ---------- Vorschau: Laserplatte ---------- */
+/* Fläche in der Hintergrundfarbe der Seite (hell oder dunkel),
+   Seitenverhältnis wie die Platte (Start 1000 × 600).
+   Der gelbe Laser-Rahmen wird in main.js in die Zeichnung gemalt.
+   Die dünne Kante in der Linienfarbe zeigt den Umriss der Platte,
+   weil Gelb im hellen Modus auf dem hellen Grund kaum zu sehen ist. */
 .platte {
   aspect-ratio: 1000 / 600;
-  background: var(--graupappe);
-  outline: 2px solid var(--laser-rahmen);
-  outline-offset: -6px;
-  color: #3a332b; /* dunkler Text auf Graupappe, in beiden Modi gleich */
+  background: var(--hintergrund);
+  border: 1px solid var(--linie);
+  color: var(--text);
 }
 
 /* Aufklapp-Hinweis (Archicad-Tipps) */
 summary {
   cursor: pointer;
+}
+
+/* ---------- Übersichtsblatt (nur beim Drucken sichtbar) ---------- */
+#druckblatt {
+  display: none;
+}
+@media print {
+  body > *:not(#druckblatt) {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+    color: #000;
+  }
+  #druckblatt {
+    display: block;
+    font-size: 10pt;
+    line-height: 1.4;
+    color: #000;
+  }
+  #druckblatt h1 {
+    font-size: 16pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.2cm;
+  }
+  #druckblatt h2 {
+    font-size: 11pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin: 0.6cm 0 0.2cm;
+  }
+  #druckblatt .klein {
+    font-size: 8.5pt;
+    color: #444;
+  }
+  #druckblatt table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  #druckblatt th,
+  #druckblatt td {
+    border-bottom: 0.5pt solid #999;
+    padding: 2pt 4pt;
+    text-align: left;
+  }
+  #druckblatt .teilnummer {
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  #druckblatt ol {
+    list-style: decimal;
+    padding-left: 0.6cm;
+  }
+  #druckblatt ul {
+    list-style: disc;
+    padding-left: 0.6cm;
+  }
+  #druckblatt li {
+    margin-bottom: 0.1cm;
+  }
+  #druckblatt svg {
+    display: block;
+    margin: 0.2cm 0;
+  }
 }

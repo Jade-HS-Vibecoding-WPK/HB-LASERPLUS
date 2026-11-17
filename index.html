@@ -62,6 +62,9 @@
         <p id="datei-status" class="datei-status" role="status" aria-live="polite" hidden></p>
       </div>
 
+      <!-- Bauteil-Liste: was in der IFC-Datei steckt (erscheint nach dem Lesen) -->
+      <div id="bauteile" class="mt-5 bg-hintergrund border border-linie rounded-xl p-4 sm:p-5" aria-live="polite" hidden></div>
+
       <details class="mt-5 text-sm">
         <summary class="text-leise">Tipps für den Export aus Archicad</summary>
         <ul class="mt-2 ml-5 list-disc space-y-1">
@@ -153,15 +156,27 @@
         <span class="nummer">3</span> Vorschau &amp; Download
       </h2>
 
-      <!-- Leere Laserplatte: Graupappe mit gelbem Rahmen -->
-      <div id="vorschau" class="platte rounded-sm flex items-center justify-center p-6 text-center mb-2">
-        <p class="text-sm">Hier erscheinen die Laserplatten, sobald eine Datei abgelegt ist.</p>
+      <!-- Knopf: aus der gelesenen IFC die Laserplatten berechnen -->
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-5">
+        <button type="button" class="knopf haupt-knopf" id="erstellen" disabled>
+          Laserplatten erstellen
+        </button>
+        <p id="erstellen-hinweis" class="text-sm text-leise" role="status" aria-live="polite">Zuerst oben eine IFC-Datei ablegen.</p>
       </div>
-      <p class="text-xs text-leise mb-5">Probeplatte zum Testen: zwei Rechtecke, 100 × 50 mm und 50 × 50 mm, je 10 mm vom Rahmen. Noch ohne IFC.</p>
+
+      <!-- Warnungen, z. B. Teil zu groß für die Platte -->
+      <ul id="warnungen" class="space-y-2 text-sm mb-5" hidden></ul>
+
+      <!-- Leere Laserplatte (Hintergrundfarbe mit gelbem Rahmen), solange noch nichts erstellt ist -->
+      <div id="vorschau" class="platte rounded-sm mb-2"></div>
+      <p id="vorschau-text" class="text-xs text-leise mb-5">Hier erscheinen die Laserplatten, sobald du auf „Laserplatten erstellen“ klickst.</p>
+
+      <!-- Die fertigen Platten, je mit eigenem DXF-Knopf -->
+      <div id="platten" class="space-y-6 mb-5" hidden></div>
 
       <div class="flex flex-wrap gap-3">
         <button type="button" class="knopf haupt-knopf" id="dxf-herunterladen" disabled>
-          DXF herunterladen
+          Alle DXF herunterladen
         </button>
         <button type="button" class="knopf" id="uebersicht-drucken" disabled>
           Übersichtsblatt drucken
@@ -174,6 +189,9 @@
   <footer class="max-w-4xl mx-auto px-4 pb-10 text-xs text-leise">
     <p>WPK Vibecoding · Jade Hochschule · 2026</p>
   </footer>
+
+  <!-- Übersichtsblatt: auf dem Bildschirm unsichtbar, nur zum Drucken -->
+  <div id="druckblatt"></div>
 
   <script type="module" src="js/main.js"></script>
 </body>
