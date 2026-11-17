@@ -55,7 +55,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 | Material | Dicke innen und außen getrennt wählbar: **1 mm, 1,5 mm oder 2 mm** (Vorschlag zum Start: innen 2 mm, außen 1 mm) |
 | Laserplatte | **1000 × 600 mm** |
 | Dateiformat | **DXF reicht** (die Werkstatt nimmt DXF oder DWG). DWG nur als Anleitung zum Umwandeln |
-| Laser-Regeln | Von der Werkstatt (17.11.): RGB-Farben Rot = schneiden, Blau = ritzen, Gelb = Rahmen, Schwarz = gravieren. Linienstärke 0,00 mm. **Gelber Rahmen 1000 × 600 mm immer in der Datei**, alle Teile **mind. 5 mm** vom Rahmen. Sonst verfällt der Lasertermin |
+| Laser-Regeln | Von der Werkstatt (17.11.): RGB-Farben Rot = schneiden, Blau = ritzen, Gelb = Rahmen, Schwarz = gravieren. Linienstärke 0,00 mm. **Gelber Rahmen 1000 × 600 mm immer in der Datei**, alle Teile **mind. 10 mm** vom Rahmen. Sonst verfällt der Lasertermin |
 | Linienfarben | In der App **einstellbar**, voreingestellt mit den Werten der Hochschule |
 | Nummern | Zum Beispiel „N-001-A“ (außen) und „N-001-I“ (innen), **geritzt (blau)** **neben** dem Teil auf der Restpappe, nie auf dem Teil |
 | Import | IFC aus **Archicad**. Wände, Dächer und **Morphs**, die als Wand oder Dach klassifiziert sind |
@@ -82,7 +82,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 5. **Einstellungen:** Maßstab (frei), Dicke innen und Dicke außen (jeweils zur Auswahl: 1 mm, 1,5 mm oder 2 mm), Plattengröße (Start: 1000 × 600 mm), **Linienfarben** (voreingestellt mit den Hochschul-Werten, zurücksetzbar). Die Seite **merkt sich alle Einstellungen** für das nächste Mal.
 6. **Ecken** werden überlappend ausgeglichen, bei rechten **und** bei schrägen Winkeln.
 7. **Steildach-Anschlüsse:** Am First überlappt eine Dachplatte die andere, und die Giebelwände sind oben passend abgeschrägt.
-8. **Verteilen:** Alle Teile werden mit Abstand auf Laserplatten gelegt, **mindestens 5 mm vom Rahmen entfernt**. Ist ein Teil zu groß für die Platte, gibt es eine Warnung.
+8. **Verteilen:** Alle Teile werden mit Abstand auf Laserplatten gelegt, **mindestens 10 mm vom Rahmen entfernt**. Ist ein Teil zu groß für die Platte, gibt es eine Warnung.
 9. **Nummern** wie N-001-A (außen) und N-001-I (innen) werden neben jedes Teil **geritzt** (blau), nicht auf das Teil.
 10. **DXF-Download** in Millimetern, eine Datei pro Platte, nach den **Werkstatt-Regeln**: RGB-Farben, Linienstärke 0,00 mm, **gelber Rahmen in Plattengröße**, Schneiden, Ritzen und Rahmen auf getrennten Ebenen.
 11. **Übersichtsblatt zum Ausdrucken:** Grundriss mit den Nummern, Hinweis, welches Teil wohin gehört, und die Reihenfolge beim Kleben.
@@ -136,7 +136,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 - Die Vorschau als echte Laserplatte zeichnen (Graupappe, gelber Rahmen, Laserfarben). Teilweise: Die leere Platte ist da und folgt Plattengröße und Rahmenfarbe. Die Teile darauf fehlen noch.
 - Eine Vorschau in der Claude-App einrichten, damit du jede Änderung sofort siehst ✅
 - Den DXF-Download mit einem **selbst ausgedachten Testhaus** ausprobieren, noch ohne IFC: ein Haus mit Satteldach und einer schrägen Ecke. So prüfen wir den Eckenausgleich und den First, bevor echte Daten kommen.
-- Die Test-DXF hält die Werkstatt-Regeln ein: gelber Rahmen, 5 mm Randabstand, RGB-Farben, Linienstärke 0,00 mm
+- Die Test-DXF hält die Werkstatt-Regeln ein: gelber Rahmen, 10 mm Randabstand, RGB-Farben, Linienstärke 0,00 mm
 - Die Nummern als Linienschrift umsetzen, damit jeder Laser sie ritzen kann
 - Die README an die neue Idee anpassen
 - **Deine Aufgabe:** Das Aussehen prüfen und sagen, was dir gefällt und was nicht. Die Test-DXF in AutoCAD, Rhino oder der Lasersoftware öffnen.
@@ -179,7 +179,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 
 - [x] **Laserfläche:** 1000 × 600 mm
 - [x] **Werkstatt-Farben:** Rot (255) = schneiden, Blau (255) = ritzen, Gelb (255) = Rahmen, Schwarz = gravieren, Linienstärke 0,00 mm. Die Nummern werden geritzt.
-- [x] **Werkstatt-Format:** DXF reicht. Gelber Rahmen 1000 × 600 mm immer drin, 5 mm Abstand zum Rahmen.
+- [x] **Werkstatt-Format:** DXF reicht. Gelber Rahmen 1000 × 600 mm immer drin, 10 mm Abstand zum Rahmen (am 17.11. von 5 auf 10 mm geändert).
 - [ ] **Test-IFC aus Archicad:** am besten mit mindestens einer Wand **und** einem Morph (als Wand oder Dach klassifiziert), in den Projektordner legen. Vorher prüfen, ob die Außenwände als „Außen“ markiert sind.
 - [ ] **Morphs testen:** Ob klassifizierte Morphs wirklich sauber ankommen, zeigt erst die Test-IFC. Das Ergebnis tragen wir hier ein.
 - [x] **Nummernschema:** Der Buchstabe ist die Himmelsrichtung der Fassade (N, O, S, W, Dach = D), die Zahl ist die Reihenfolge beim Kleben, die Endung zeigt die Schicht (-A = außen, -I = innen). Beispiel: N-001-A und N-001-I.

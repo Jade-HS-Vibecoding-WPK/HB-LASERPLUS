@@ -14,19 +14,82 @@
 //   - Mittwoch: IFC-Datei wirklich einlesen
 // =========================================================
 
-import { einstellungenStarten, beiAenderung } from "./einstellungen.js";
+import { einstellungenStarten, beiAenderung, holeEinstellungen } from "./einstellungen.js";
+import { platteAlsDxf, dxfHerunterladen, rahmenLinie, EBENEN, RAND_ABSTAND, zuNahAmRahmen } from "./dxf.js";
 
 // ---------------------------------------------------------
 // Einstellungen anschließen
 // ---------------------------------------------------------
 einstellungenStarten();
 
-// Die leere Laserplatte in der Vorschau folgt den Einstellungen:
-// Seitenverhältnis = Plattengröße, Rahmen = eingestellte Rahmenfarbe
+// ---------------------------------------------------------
+// Probeplatte (Etappe 1, noch ohne IFC):
+// zwei rote Rechtecke zum Nachmessen, mit dem Mindestabstand
+// RAND_ABSTAND (10 mm, Werkstatt-Regel) zum Rahmen
+// ---------------------------------------------------------
+function rechteck(x, y, breite, hoehe, ebene) {
+  return {
+    ebene,
+    punkte: [[x, y], [x + breite, y], [x + breite, y + hoehe], [x, y + hoehe]],
+    geschlossen: true,
+  };
+}
+
+function probeplatte(e) {
+  return {
+    breite: e.platteBreite,
+    hoehe: e.platteHoehe,
+    linien: [
+      rechteck(RAND_ABSTAND, RAND_ABSTAND, 100, 50, "SCHNITT"),            // 100 × 50 mm
+      rechteck(RAND_ABSTAND + 110, RAND_ABSTAND, 50, 50, "SCHNITT"),       //  50 × 50 mm, 10 mm daneben
+    ],
+  };
+}
+
+// ---------------------------------------------------------
+// Vorschau wie die echte Laserplatte:
+// dieselben Linien und Farben, die auch in der DXF stehen
+// ---------------------------------------------------------
 const vorschau = document.getElementById("vorschau");
-beiAenderung((e) => {
-  vorschau.style.aspectRatio = e.platteBreite + " / " + e.platteHoehe;
-  vorschau.style.setProperty("--laser-rahmen", e.farben.rahmen);
+
+function zeichneVorschau(platte, farben) {
+  const { breite, hoehe } = platte;
+  const alleLinien = [...platte.linien, rahmenLinie(breite, hoehe)];
+  // In der DXF zeigt y nach oben, am Bildschirm nach unten → umdrehen
+  const formen = alleLinien.map((linie) => {
+    const punkte = linie.punkte.map(([x, y]) => x + "," + (hoehe - y)).join(" ");
+    const farbe = farben[EBENEN[linie.ebene]];
+    const art = linie.geschlossen ? "polygon" : "polyline";
+    return `<${art} points="${punkte}" fill="none" stroke="${farbe}" stroke-width="1.5" vector-effect="non-scaling-stroke" />`;
+  });
+  vorschau.innerHTML =
+    `<svg viewBox="0 0 ${breite} ${hoehe}" width="100%" height="100%" role="img" ` +
+    `aria-label="Laserplatte ${breite} × ${hoehe} mm">${formen.join("")}</svg>`;
+  vorschau.style.aspectRatio = breite + " / " + hoehe;
+  vorschau.style.outline = "none"; // der Rahmen ist jetzt in der Zeichnung
+  vorschau.style.padding = "0";
+}
+
+beiAenderung((e) => zeichneVorschau(probeplatte(e), e.farben));
+
+// ---------------------------------------------------------
+// Knopf „DXF herunterladen“ – zurzeit die Probeplatte
+// ---------------------------------------------------------
+const dxfKnopf = document.getElementById("dxf-herunterladen");
+dxfKnopf.disabled = false;
+dxfKnopf.addEventListener("click", () => {
+  const e = holeEinstellungen();
+  const platte = probeplatte(e);
+  // Werkstatt-Regel prüfen, bevor die Datei entsteht
+  if (zuNahAmRahmen(platte).length > 0) {
+    alert(
+      "Mindestens ein Teil liegt näher als " + RAND_ABSTAND + " mm am gelben Rahmen. " +
+      "Die Werkstatt würde es evtl. nicht ganz ausschneiden. Vergrößere die Laserplatte in den Einstellungen."
+    );
+    return;
+  }
+  const text = platteAlsDxf(platte, e.farben);
+  dxfHerunterladen(text, "Probeplatte-01.dxf");
 });
 
 // Die Bauteile der Seite, die wir brauchen

@@ -158,7 +158,7 @@ Datei- und Ordnernamen ohne Umlaute. Kommentare im Code auf Deutsch und einfach.
    - Durchlaufend und gekürzt wechseln sich rund ums Gebäude ab (beim Rechteck: zwei gegenüberliegende Seiten laufen durch). Bei ungerader Eckenzahl ist eine Platte gemischt.
    - **Schräge Winkel** (Must): Die Kürzung wird über parallel versetzte Linien im Grundriss berechnet, damit die Außenmaße genauso stimmen wie bei 90°. Der Laser schneidet senkrecht, darum bleibt an spitzen oder stumpfen Ecken eine kleine Keilfuge. Das Übersichtsblatt weist darauf hin.
    - **Dach** (Must): Das Dach liegt auf. Die Wände werden oben um die Dachdicke gekürzt, beim Steildach entlang der Dachneigung, und die Giebelwände sind oben passend abgeschrägt. Am First überlappt eine Dachplatte die andere. Die überlappende Platte wird so verlängert, dass die Firsthöhe stimmt.
-9. **Verteilen**: Standard-Platte 1000 × 600 mm (einstellbar). Die Teile kommen als Rechteck-Hüllen in Reihen auf die Platte („Regal-Verfahren“), groß zuerst. Abstand zwischen den Teilen mindestens 3 mm **plus Platz für die Nummer**, **mindestens 5 mm Abstand zum gelben Rahmen** (Werkstatt-Regel). Teile, die größer als die Platte sind, lösen eine Warnung aus und werden nicht stumm verkleinert.
+9. **Verteilen**: Standard-Platte 1000 × 600 mm (einstellbar). Die Teile kommen als Rechteck-Hüllen in Reihen auf die Platte („Regal-Verfahren“), groß zuerst. Abstand zwischen den Teilen mindestens 3 mm **plus Platz für die Nummer**, **mindestens 10 mm Abstand zum gelben Rahmen** (Werkstatt-Regel, im Code zentral als `RAND_ABSTAND` in `js/dxf.js`). Teile, die größer als die Platte sind, lösen eine Warnung aus und werden nicht stumm verkleinert.
 10. **Nummern**: Schema `Richtung-Zahl-Schicht`, z. B. `N-001-I` / `N-001-A`, Dach `D-001`. Die Zahl ist die Reihenfolge beim Kleben. Die Nummer steht **neben** dem Teil auf der Restpappe, nie innerhalb der Kontur, und wird **geritzt** (Ebene `RITZEN`, blau). Das Schema ist bestätigt (`-A` = außen, `-I` = innen) und trotzdem an einer Stelle im Code zentral änderbar. In der Linienschrift bekommt das `I` Querstriche oben und unten, damit man es nicht mit einer `1` verwechselt.
 
 ### Laser-Regeln für die DXF
@@ -177,7 +177,7 @@ Diese Regeln kommen von der **Laserwerkstatt der Hochschule** (Stand 17.11.2026)
 
 - Die Farben sind in der App **einstellbar**. Die Tabelle zeigt die Werte der Hochschule, die voreingestellt sind. Die DXF nimmt immer die eingestellten Farben.
 - **Linienstärke 0,00 mm** für alle Linien (DXF-Gruppencode 370 = 0).
-- **Gelber Rahmen in Plattengröße (1000 × 600 mm) muss immer drin sein**, als geschlossene Linie auf der Ebene `RAHMEN`. Alle Teile mindestens **5 mm** vom Rahmen entfernt, sonst werden sie evtl. nicht vollständig ausgeschnitten.
+- **Gelber Rahmen in Plattengröße (1000 × 600 mm) muss immer drin sein**, als geschlossene Linie auf der Ebene `RAHMEN`. Alle Teile mindestens **10 mm** vom Rahmen entfernt (geändert am 17.11., vorher 5 mm), sonst werden sie evtl. nicht vollständig ausgeschnitten.
 - **Alle Konturen geschlossen**, **keine doppelten Linien** (der Laser würde zweimal schneiden und die Pappe verbrennen; in AutoCAD wäre das der Befehl „Overkill“). Keine unnötigen Hilfsinformationen in der Datei (AutoCAD: „Bereinigen“).
 - **Linie auf Linie** ist laut Werkstatt erlaubt (Teile teilen sich eine Schnittkante). Das ist ein Could. Die gemeinsame Kante darf dann nur **einmal** in der Datei stehen.
 - Schriften: Weil die Nummern als **Linienschrift** gezeichnet werden, braucht die Werkstatt keine installierte Schriftart.
