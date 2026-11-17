@@ -6,12 +6,28 @@
 //
 // Schon angeschlossen:
 //   - Datei ablegen oder auswählen, prüfen, Namen anzeigen
+//   - Einstellungen merken und Farben zurücksetzen (js/einstellungen.js)
+//   - leere Laserplatte folgt Rahmenfarbe und Plattengröße
 // Kommt noch:
-//   - Einstellungen speichern und Farben zurücksetzen
-//   - Vorschau der Laserplatte zeichnen
+//   - Vorschau der Teile auf der Laserplatte zeichnen
 //   - Test-DXF herunterladen
 //   - Mittwoch: IFC-Datei wirklich einlesen
 // =========================================================
+
+import { einstellungenStarten, beiAenderung } from "./einstellungen.js";
+
+// ---------------------------------------------------------
+// Einstellungen anschließen
+// ---------------------------------------------------------
+einstellungenStarten();
+
+// Die leere Laserplatte in der Vorschau folgt den Einstellungen:
+// Seitenverhältnis = Plattengröße, Rahmen = eingestellte Rahmenfarbe
+const vorschau = document.getElementById("vorschau");
+beiAenderung((e) => {
+  vorschau.style.aspectRatio = e.platteBreite + " / " + e.platteHoehe;
+  vorschau.style.setProperty("--laser-rahmen", e.farben.rahmen);
+});
 
 // Die Bauteile der Seite, die wir brauchen
 const ablage = document.getElementById("ablage");
