@@ -550,7 +550,9 @@ function zeigeErgebnis() {
       "p",
       "text-sm",
       (mehrere ? `${liste.length} Gebäude: ` : "") +
-        `${fassaden} Fassaden (je Außen- und Innenschicht) und ${dach} Dachflächen = ${teile.length} Teile ` +
+        `${fassaden} Fassaden (${
+          (e.wandaufbau || "zwei") === "zwei" ? "je Außen- und Innenschicht" : e.wandaufbau === "eine-geritzt" ? "je eine Schicht, Öffnungen geritzt" : "je eine Schicht, ohne Öffnungen"
+        }) und ${dach} Dachflächen = ${teile.length} Teile ` +
         `auf ${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} (Maßstab 1:${e.massstab}).`
     )
   );

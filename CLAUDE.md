@@ -11,6 +11,7 @@ Eine **Webseite**, die aus einer **.ifc-Datei** eines Gebäudes fertige **Laserd
 
 - Das **Dach** und **jede Fassadenseite** werden zu je einer flachen Platte, so gezeichnet, wie man sie von außen sieht.
 - Jede Wand hat **zwei Schichten**: eine **Innenschicht** (geschlossen, tragend) und eine **Außenschicht** mit ausgeschnittenen Fenstern und Türen, die aufgeklebt wird. Das Dach hat **eine Schicht**.
+- Seit 18.11. ist der **Wandaufbau wählbar** (Einstellung `wandaufbau` in `js/einstellungen.js`, umgesetzt in `teileBauen` in `js/schichten.js`): `zwei` (Standard, wie oben), `eine-geritzt` (eine geschlossene Schicht, Fenster und Türen blau auf `RITZEN` angeritzt; Türen bis zum Boden als offener Linienzug ohne Unterkante) oder `eine-ohne` (eine geschlossene Schicht ohne Öffnungen). Bei einer Schicht gilt nur `dickeInnen` („Pappdicke Wand und Dach“), Nummern bleiben `A-001`.
 - An den **Ecken** überlappen die Wände: Eine Wand läuft durch, die andere wird um die Pappdicke(n) gekürzt. Das gilt auch für **schräge Winkel** und den **First**, beides ist Must.
 - Pappdicke innen und außen getrennt wählbar: **1 mm, 1,5 mm oder 2 mm**. Die Laserplatte ist **1000 × 600 mm**.
 - Die Teile werden auf Laserplatten verteilt. **Neben** jedes Teil wird seine Nummer geritzt (`A-001` = Außenschicht, `I-001` = Innenschicht derselben Fassade, `D-001` = Dachfläche), **nie auf das Teil**.

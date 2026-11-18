@@ -25,8 +25,15 @@ export const STARTWERTE = {
   dickeAussen: 1,    // mm
   platteBreite: 1000, // mm
   platteHoehe: 600,   // mm
+  // Wandaufbau: "zwei" = Außen- und Innenschicht (Standard),
+  // "eine-geritzt" = eine Schicht, Fenster/Türen geritzt,
+  // "eine-ohne" = eine Schicht ohne Fenster/Türen
+  wandaufbau: "zwei",
   farben: { ...HOCHSCHUL_FARBEN },
 };
+
+// Erlaubte Werte für den Wandaufbau
+export const WANDAUFBAU = ["zwei", "eine-geritzt", "eine-ohne"];
 
 // Welche Einstellung gehört zu welchem Feld auf der Seite
 const FELDER = {
@@ -59,11 +66,13 @@ function laden() {
     if (!text) return kopieStartwerte();
     const gespeichert = JSON.parse(text);
     // Mit Startwerten auffüllen, falls etwas fehlt
-    return {
+    const werte = {
       ...kopieStartwerte(),
       ...gespeichert,
       farben: { ...HOCHSCHUL_FARBEN, ...(gespeichert.farben || {}) },
     };
+    if (!WANDAUFBAU.includes(werte.wandaufbau)) werte.wandaufbau = STARTWERTE.wandaufbau;
+    return werte;
   } catch {
     // Notizzettel nicht lesbar (z. B. privates Fenster): Startwerte nehmen
     return kopieStartwerte();
@@ -92,6 +101,16 @@ function felderFuellen() {
   for (const [name, id] of Object.entries(FARBFELDER)) {
     document.getElementById(id).value = aktuell.farben[name];
   }
+  document.getElementById("wandaufbau").value = aktuell.wandaufbau;
+  dickenfelderAnpassen();
+}
+
+// Bei einer Schicht gibt es nur eine Pappdicke für die Wand:
+// Das Feld „Pappdicke innen“ heißt dann „Pappdicke Wand“, „außen“ verschwindet.
+function dickenfelderAnpassen() {
+  const eineSchicht = aktuell.wandaufbau !== "zwei";
+  document.getElementById("dicke-innen-text").textContent = eineSchicht ? "Pappdicke Wand und Dach" : "Pappdicke innen";
+  document.getElementById("dicke-aussen-feld").style.display = eineSchicht ? "none" : "";
 }
 
 function felderLesen() {
@@ -103,6 +122,9 @@ function felderLesen() {
   for (const [name, id] of Object.entries(FARBFELDER)) {
     aktuell.farben[name] = document.getElementById(id).value;
   }
+  const aufbau = document.getElementById("wandaufbau").value;
+  if (WANDAUFBAU.includes(aufbau)) aktuell.wandaufbau = aufbau;
+  dickenfelderAnpassen();
 }
 
 // ---------------------------------------------------------
@@ -211,6 +233,7 @@ function werteAufraeumen(werte) {
     dickeAussen: dicke(werte.dickeAussen, STARTWERTE.dickeAussen),
     platteBreite: zahl(werte.platteBreite, STARTWERTE.platteBreite),
     platteHoehe: zahl(werte.platteHoehe, STARTWERTE.platteHoehe),
+    wandaufbau: WANDAUFBAU.includes(werte.wandaufbau) ? werte.wandaufbau : STARTWERTE.wandaufbau,
     farben: {
       schneiden: farbe(f.schneiden, HOCHSCHUL_FARBEN.schneiden),
       ritzen: farbe(f.ritzen, HOCHSCHUL_FARBEN.ritzen),
