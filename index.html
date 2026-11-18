@@ -253,6 +253,38 @@
             </div>
           </fieldset>
 
+          <!-- Staffage: Menschen und Bäume als zusätzliche Laserteile (js/staffage.js) -->
+          <fieldset class="border-t border-linie pt-5">
+            <legend class="titel text-xs font-bold text-leise mb-3">Menschen und Bäume</legend>
+            <div class="grid grid-cols-3 lg:grid-cols-2 gap-4">
+              <label class="flex flex-col gap-1 text-sm">
+                Menschen
+                <input class="feld" type="number" id="menschen" value="0" min="0" max="50" step="1">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Bäume
+                <input class="feld" type="number" id="baeume" value="0" min="0" max="30" step="1">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Baumhöhe
+                <select class="feld" id="baum-hoehe">
+                  <option value="6">6 m (klein)</option>
+                  <option value="10" selected>10 m (mittel)</option>
+                  <option value="15">15 m (groß)</option>
+                </select>
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Pappdicke
+                <select class="feld" id="staffage-dicke">
+                  <option value="1" selected>1 mm</option>
+                  <option value="1.5">1,5 mm</option>
+                  <option value="2">2 mm</option>
+                </select>
+              </label>
+            </div>
+            <p class="text-xs text-leise mt-2">Selbst gezeichnete Formen, frei nutzbar. Menschen 1,75 m mit Fußlasche, Bäume als Steckbaum aus zwei Teilen (A und B über Kreuz stecken), im eingestellten Maßstab. Ist die Pappdicke anders als bei den Wänden, kommen sie auf eine eigene Platte.</p>
+          </fieldset>
+
           <fieldset class="border-t border-linie pt-5">
             <legend class="titel text-xs font-bold text-leise mb-3">Linienfarben (Werkstatt-Regeln)</legend>
             <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-4">

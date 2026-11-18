@@ -31,8 +31,17 @@ export const STARTWERTE = {
   // "eine-geritzt" = eine Schicht, Fenster/Türen geritzt,
   // "eine-ohne" = eine Schicht ohne Fenster/Türen
   wandaufbau: "zwei",
+  // Staffage (Menschen und Bäume), seit 18.11.
+  menschen: 0,
+  baeume: 0,
+  baumHoehe: 10, // m
+  staffageDicke: 1, // mm, Pappe für Menschen und Bäume
   farben: { ...HOCHSCHUL_FARBEN },
 };
+
+// Anzahl-Felder (0 ist erlaubt) mit Höchstwert
+const ANZAHLFELDER = { menschen: ["menschen", 50], baeume: ["baeume", 30] };
+const BAUMHOEHEN = [6, 10, 15];
 
 // Erlaubte Werte für den Wandaufbau
 export const WANDAUFBAU = ["zwei", "eine-geritzt", "eine-ohne"];
@@ -104,6 +113,11 @@ function felderFuellen() {
     document.getElementById(id).value = aktuell.farben[name];
   }
   document.getElementById("wandaufbau").value = aktuell.wandaufbau;
+  for (const [name, [id]] of Object.entries(ANZAHLFELDER)) {
+    document.getElementById(id).value = String(aktuell[name]);
+  }
+  document.getElementById("baum-hoehe").value = String(aktuell.baumHoehe);
+  document.getElementById("staffage-dicke").value = String(aktuell.staffageDicke);
   dickenfelderAnpassen();
 }
 
@@ -223,6 +237,15 @@ function felderLesen() {
   //  so folgt es auch den Pappdicken und Linienfarben)
   const aufbau = document.getElementById("wandaufbau").value;
   if (WANDAUFBAU.includes(aufbau)) aktuell.wandaufbau = aufbau;
+  // Menschen und Bäume: ganze Zahlen ab 0, nach oben begrenzt
+  for (const [name, [id, max]] of Object.entries(ANZAHLFELDER)) {
+    const z = parseInt(document.getElementById(id).value, 10);
+    if (Number.isFinite(z) && z >= 0) aktuell[name] = Math.min(z, max);
+  }
+  const hoehe = parseFloat(document.getElementById("baum-hoehe").value);
+  if (BAUMHOEHEN.includes(hoehe)) aktuell.baumHoehe = hoehe;
+  const sDicke = parseFloat(document.getElementById("staffage-dicke").value);
+  if (DICKEN.includes(sDicke)) aktuell.staffageDicke = sDicke;
   dickenfelderAnpassen();
 }
 
@@ -324,6 +347,10 @@ function werteAufraeumen(werte) {
     return Number.isFinite(z) && z > 0 ? z : ersatz;
   };
   const dicke = (wert, ersatz) => (DICKEN.includes(parseFloat(wert)) ? parseFloat(wert) : ersatz);
+  const anzahl = (wert, max) => {
+    const z = parseInt(wert, 10);
+    return Number.isFinite(z) && z >= 0 ? Math.min(z, max) : 0;
+  };
   const farbe = (wert, ersatz) => (typeof wert === "string" && /^#[0-9a-f]{6}$/i.test(wert) ? wert.toLowerCase() : ersatz);
   const f = werte.farben || {};
   return {
@@ -333,6 +360,10 @@ function werteAufraeumen(werte) {
     platteBreite: zahl(werte.platteBreite, STARTWERTE.platteBreite),
     platteHoehe: zahl(werte.platteHoehe, STARTWERTE.platteHoehe),
     wandaufbau: WANDAUFBAU.includes(werte.wandaufbau) ? werte.wandaufbau : STARTWERTE.wandaufbau,
+    menschen: anzahl(werte.menschen, 50),
+    baeume: anzahl(werte.baeume, 30),
+    baumHoehe: BAUMHOEHEN.includes(parseFloat(werte.baumHoehe)) ? parseFloat(werte.baumHoehe) : STARTWERTE.baumHoehe,
+    staffageDicke: dicke(werte.staffageDicke, STARTWERTE.staffageDicke),
     farben: {
       schneiden: farbe(f.schneiden, HOCHSCHUL_FARBEN.schneiden),
       ritzen: farbe(f.ritzen, HOCHSCHUL_FARBEN.ritzen),

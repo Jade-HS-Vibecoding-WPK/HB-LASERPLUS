@@ -476,6 +476,12 @@ export function uebersichtBauen(daten) {
   if (aufbau === "eine-geritzt") {
     hinweise.append(element("li", "", "Fenster und Türen sind nur angeritzt (blau). Die Wand bleibt geschlossen – Türen bis zum Boden auch."));
   }
+  if (teile.some((t) => t.name.startsWith("M-"))) {
+    hinweise.append(element("li", "", "Menschen (M-01 …): Die Lasche unter den Füßen umknicken und aufkleben oder in einen schmalen Schlitz in der Grundplatte stecken."));
+  }
+  if (teile.some((t) => t.name.startsWith("B-"))) {
+    hinweise.append(element("li", "", "Bäume (B-01A + B-01B …): Teil A (Schlitz von oben) und Teil B (Schlitz von unten) mit derselben Zahl über Kreuz ineinanderstecken. Der Schlitz ist so breit wie die Pappe; bei Bedarf einen Tropfen Kleber."));
+  }
   if (alleEcken.some((c) => Math.abs(Math.cos(c.phi)) > 0.02)) {
     hinweise.append(element("li", "", "Schräge Ecken, Grate und Kehlen (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));
   }

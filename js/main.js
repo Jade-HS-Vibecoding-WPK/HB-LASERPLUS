@@ -31,6 +31,7 @@ import { uebersichtBauen } from "./uebersicht.js";
 import { farbmodusStarten } from "./farbmodus.js";
 import { Betrachter } from "./betrachter.js"; // 3D-Vorschau (von Svenjas Zusatz 3D übernommen, unverändert)
 import { modellTeile, grundrissBreite } from "./modell3d.js";
+import { staffageTeile } from "./staffage.js";
 
 // Knopf hell/dunkel (Sonne/Mond) anschließen
 farbmodusStarten();
@@ -451,6 +452,8 @@ function berechnen() {
     }
     liste.push({ nummer, name: g.datei.name, flaechen: g.flaechen, ecken: g.ecken });
   }
+  // Menschen und Bäume (Staffage) kommen mit auf die Platten
+  teile.push(...staffageTeile(e));
   // Alle Teile aller Gebäude teilen sich die Platten (spart Pappe)
   const { platten, zuGross } = verteilen(teile, e);
   ergebnis = { teile, platten, zuGross, einstellungen: e, gebaeude: liste, mehrere };
@@ -585,7 +588,10 @@ function zeigeErgebnis() {
       (mehrere ? `${liste.length} Gebäude: ` : "") +
         `${fassaden} Fassaden (${
           (e.wandaufbau || "zwei") === "zwei" ? "je Außen- und Innenschicht" : e.wandaufbau === "eine-geritzt" ? "je eine Schicht, Öffnungen geritzt" : "je eine Schicht, ohne Öffnungen"
-        }) und ${dach} Dachflächen = ${teile.length} Teile ` +
+        }) und ${dach} Dachflächen` +
+        (e.menschen ? `, ${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"}` : "") +
+        (e.baeume ? `, ${e.baeume} ${e.baeume === 1 ? "Baum" : "Bäume"} (je 2 Teile)` : "") +
+        ` = ${teile.length} Teile ` +
         `auf ${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} (Maßstab 1:${e.massstab}).`
     )
   );
