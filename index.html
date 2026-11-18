@@ -202,8 +202,12 @@
             <legend class="titel text-xs font-bold text-leise mb-3">Modell</legend>
             <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-2 gap-4">
               <label class="flex flex-col gap-1 text-sm lg:col-span-2">
-                Maßstab 1 :
-                <input class="feld" type="number" id="massstab" value="100" min="1" step="1">
+                Maßstab
+                <!-- „1 :“ steht direkt vor dem Feld, man tippt nur die zweite Zahl (z. B. 100) -->
+                <span class="flex items-center gap-2">
+                  <span class="text-base whitespace-nowrap shrink-0" aria-hidden="true">1&nbsp;:</span>
+                  <input class="feld" type="number" id="massstab" value="100" min="1" step="1" aria-label="Maßstab 1 zu">
+                </span>
               </label>
               <!-- Wandaufbau: zwei Schichten (wie bisher) oder eine Schicht -->
               <label class="flex flex-col gap-1 text-sm sm:col-span-3 lg:col-span-2">
