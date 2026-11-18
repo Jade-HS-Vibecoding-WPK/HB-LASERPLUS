@@ -406,7 +406,10 @@ export function uebersichtBauen(daten) {
 
   // Teileliste
   const platteVon = new Map();
-  platten.forEach((p, i) => p.teile.forEach((t) => platteVon.set(t.name, i + 1)));
+  // Platte mit Pappdicke, z. B. „2 (1 mm)“ – Teile verschiedener Dicke liegen auf verschiedenen Platten
+  platten.forEach((p, i) =>
+    p.teile.forEach((t) => platteVon.set(t.name, `${i + 1} (${String(p.dicke ?? t.teil?.dicke ?? "").replace(".", ",")} mm)`))
+  );
   blatt.append(element("h2", "", "Teileliste"));
   const tabelle = element("table");
   const kopf = element("tr");

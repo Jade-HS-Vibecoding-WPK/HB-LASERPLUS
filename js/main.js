@@ -589,15 +589,32 @@ function zeigeErgebnis() {
         `auf ${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} (Maßstab 1:${e.massstab}).`
     )
   );
+  // Verschiedene Pappdicken: getrennte Platten, das sagen wir deutlich
+  const dicken = [...new Set(platten.map((p) => p.dicke))];
+  if (dicken.length > 1) {
+    const teilText = dicken
+      .map((d) => {
+        const anzahl = platten.filter((p) => p.dicke === d).length;
+        return `${anzahl} ${anzahl === 1 ? "Platte" : "Platten"} ${mmText(d)} Pappe`;
+      })
+      .join(" und ");
+    plattenFeld.append(
+      element("p", "text-sm", `Weil du verschiedene Pappdicken gewählt hast, liegen die Teile getrennt: ${teilText}. Achte beim Lasern auf die richtige Pappe.`)
+    );
+  }
 
   // Je Platte: Überschrift, DXF-Knopf, Bild
   platten.forEach((platte, i) => {
     const block = element("div", "");
     const kopf = element("div", "flex flex-wrap items-center justify-between gap-2 mb-2");
     kopf.append(
-      element("h3", "titel text-xs font-bold text-leise", `Platte ${i + 1} von ${platten.length} · ${platte.teile.length} Teile`)
+      element(
+        "h3",
+        "titel text-xs font-bold text-leise",
+        `Platte ${i + 1} von ${platten.length} · Pappe ${mmText(platte.dicke)} · ${platte.teile.length} Teile`
+      )
     );
-    const knopf = element("button", "knopf text-sm", `DXF Platte ${i + 1}`);
+    const knopf = element("button", "knopf text-sm", `DXF Platte ${i + 1} (${mmText(platte.dicke)})`);
     knopf.type = "button";
     knopf.addEventListener("click", () => platteHerunterladen(i));
     kopf.append(knopf);
@@ -623,7 +640,14 @@ function platteHerunterladen(i) {
   const { platten, einstellungen: e } = ergebnis;
   const zwei = (z) => String(z).padStart(2, "0");
   const text = platteAlsDxf(platten[i], e.farben);
-  dxfHerunterladen(text, `${dateiBasis()}_Platte-${zwei(i + 1)}-von-${zwei(platten.length)}.dxf`);
+  // Pappdicke im Dateinamen, z. B. „…_Platte-02-von-03_Pappe-1-5mm.dxf“
+  const dicke = String(platten[i].dicke).replace(".", "-") + "mm";
+  dxfHerunterladen(text, `${dateiBasis()}_Platte-${zwei(i + 1)}-von-${zwei(platten.length)}_Pappe-${dicke}.dxf`);
+}
+
+// 1.5 → „1,5 mm“
+function mmText(z) {
+  return String(z).replace(".", ",") + " mm";
 }
 
 alleDxfKnopf.addEventListener("click", () => {

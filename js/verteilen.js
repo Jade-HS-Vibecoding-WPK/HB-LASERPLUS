@@ -43,8 +43,28 @@ function drehen(form) {
   };
 }
 
+// ---------------------------------------------------------
+// Eine Laserplatte ist EINE Pappe mit EINER Dicke. Darum werden die Teile
+// zuerst nach Pappdicke getrennt (z. B. Außenschicht 1 mm, Innenschicht
+// und Dach 2 mm) und jede Dicke bekommt ihre eigenen Platten.
+// Sind alle Teile gleich dick, gibt es nur eine Gruppe – wie bisher.
+// Jede Platte bekommt die Angabe „dicke“ (mm).
+// ---------------------------------------------------------
 // teile: aus schichten.js (aussen/loecher in mm), e: Einstellungen
 export function verteilen(teile, e) {
+  const dicken = [...new Set(teile.map((t) => t.dicke))].sort((a, b) => a - b);
+  const platten = [];
+  const zuGross = [];
+  for (const dicke of dicken) {
+    const ergebnis = verteilenEineDicke(teile.filter((t) => t.dicke === dicke), e);
+    for (const p of ergebnis.platten) platten.push({ ...p, dicke });
+    zuGross.push(...ergebnis.zuGross.map((z) => ({ ...z, dicke })));
+  }
+  return { platten, zuGross };
+}
+
+// Alle Teile einer Pappdicke auf Platten legen
+function verteilenEineDicke(teile, e) {
   const W = e.platteBreite, H = e.platteHoehe;
   const nutzB = W - 2 * RAND_ABSTAND, nutzH = H - 2 * RAND_ABSTAND;
 
