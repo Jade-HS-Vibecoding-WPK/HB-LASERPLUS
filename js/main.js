@@ -29,38 +29,63 @@ import { eckenFinden, teileBauen } from "./schichten.js";
 import { verteilen } from "./verteilen.js";
 import { uebersichtBauen } from "./uebersicht.js";
 import { farbmodusStarten } from "./farbmodus.js";
+import { druck3dStarten } from "./druck3d.js"; // ZUSATZ 3D: Seite für 3D-Druck-Dateien
 
 // Knopf hell/dunkel (Sonne/Mond) anschließen
 farbmodusStarten();
 
+// ZUSATZ 3D: die 3D-Druck-Seite anschließen (eigene Dateien, Einstellungen, Vorschau).
+// Mit Sicherheitsnetz: Ein Fehler dort darf die Laser-Seite nie stören.
+try {
+  druck3dStarten();
+} catch (fehler) {
+  console.error("3D-Seite konnte nicht starten:", fehler);
+}
+
 // ---------------------------------------------------------
 // Startseite: erscheint bei jedem Öffnen und Neuladen.
-// „Erstelle deine Laserdatei“ blendet sie aus und gibt die Arbeitsseite frei.
+// ZUSATZ 3D: zwei Wege – „Erstelle deine Laserdatei“ öffnet die Laser-Seite,
+// „Erstelle deine 3D-Druck-Datei“ die 3D-Seite. „← Startseite“ führt zurück.
 // ---------------------------------------------------------
 const startseite = document.getElementById("startseite");
-const arbeitsseite = document.getElementById("arbeitsseite");
+const arbeitsseite = document.getElementById("arbeitsseite"); // Laser-Seite
+const seite3d = document.getElementById("seite-3d");
 const startKnopf = document.getElementById("start-knopf");
+const start3dKnopf = document.getElementById("start-3d");
+const FADE_MS = 1600; // Dauer des Ausblendens, wie in style.css
+let fadeZeit = null;
 
 // Startseite sanft ausblenden (Fade, siehe .startseite.ausblenden in style.css)
-function startseiteSchliessen() {
+// und die gewählte Seite zeigen
+function seiteOeffnen(seite) {
   if (startseite.classList.contains("ausblenden")) return; // läuft schon
-  arbeitsseite.inert = false;
+  for (const s of [arbeitsseite, seite3d]) {
+    s.hidden = s !== seite;
+    s.inert = s !== seite;
+  }
   document.documentElement.classList.remove("start-offen");
   window.scrollTo(0, 0);
   startseite.classList.add("ausblenden");
-  // Nach dem Fade ganz entfernen (Dauer wie in style.css, 1,6 s).
-  // Falls das Fade abgeschaltet ist („weniger Bewegung“), passiert es sofort.
-  const FADE_MS = 1600;
+  // Nach dem Fade ganz entfernen. Falls das Fade abgeschaltet ist („weniger Bewegung“), sofort.
   const ohneBewegung = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  setTimeout(() => { startseite.hidden = true; }, ohneBewegung ? 0 : FADE_MS + 100);
+  clearTimeout(fadeZeit);
+  fadeZeit = setTimeout(() => { startseite.hidden = true; }, ohneBewegung ? 0 : FADE_MS + 100);
 }
 
-// Ein Klick irgendwo auf die Startseite (auch auf den Knopf) blendet sie aus –
-// nur nicht der Knopf für hell/dunkel
-startseite.addEventListener("click", (ereignis) => {
-  if (ereignis.target.closest(".farbmodus-knopf")) return;
-  startseiteSchliessen();
-});
+// Zurück zur Startseite: Was man auf den Seiten gemacht hat, bleibt erhalten
+function startseiteZeigen() {
+  clearTimeout(fadeZeit);
+  startseite.hidden = false;
+  startseite.classList.remove("ausblenden");
+  document.documentElement.classList.add("start-offen");
+  arbeitsseite.inert = true;
+  seite3d.inert = true;
+  startKnopf.focus();
+}
+
+startKnopf.addEventListener("click", () => seiteOeffnen(arbeitsseite));
+start3dKnopf.addEventListener("click", () => seiteOeffnen(seite3d));
+for (const link of document.querySelectorAll(".zurueck-link")) link.addEventListener("click", startseiteZeigen);
 startKnopf.focus();
 
 // ---------------------------------------------------------

@@ -46,7 +46,8 @@
 
   <!-- =====================================================
        STARTSEITE – erscheint bei jedem Öffnen und Neuladen.
-       Der Knopf blendet sie aus (js/main.js).
+       ZUSATZ 3D: zwei Karten – Laserdatei (DXF) oder 3D-Druck-Datei (STL).
+       Die Knöpfe blenden sie aus und öffnen die passende Seite (js/main.js).
        ===================================================== -->
   <section id="startseite" class="startseite" aria-labelledby="start-titel">
     <!-- Knopf hell/dunkel (Mond = dunkel einschalten, Sonne = hell einschalten) -->
@@ -54,22 +55,40 @@
       <svg class="mond" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="sonne" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M1.5 12H4M20 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
     </button>
-    <div class="startseite-inhalt">
+    <div class="startseite-inhalt startseite-breit">
       <!-- Logo: Datei Bilder/logo.svg (DIN-A4-Seite), hier auf das Logo zugeschnitten -->
       <svg class="logo-gross" viewBox="290 358 1899 2562" role="img" aria-label="Logo HB Laser">
         <image href="Bilder/logo.svg" width="2481" height="3508"></image>
       </svg>
 
-      <h1 id="start-titel" class="titel text-3xl sm:text-4xl font-bold mt-8">IFC → Laser</h1>
-      <p class="mt-3 text-leise max-w-md mx-auto">Aus deinem Gebäudemodell wird ein Pappmodell: Datei ablegen, einstellen und fertige Laserdateien herunterladen.</p>
+      <h1 id="start-titel" class="titel text-3xl sm:text-4xl font-bold mt-6">IFC → Laser</h1>
+      <p class="mt-3 text-leise max-w-lg mx-auto">Aus deinem Gebäudemodell wird ein Modell zum Anfassen: als Laserdatei für ein Pappmodell oder als 3D-Druck-Datei.</p>
 
-      <!-- Beispielbild: erscheint erst, wenn die Datei Bilder/beispiel.jpg existiert -->
-      <img src="Bilder/beispiel.jpg" alt="Beispiel: ein gelasertes Pappmodell" class="beispielbild" hidden onload="this.hidden = false">
-
-      <button type="button" class="knopf haupt-knopf start-knopf mt-8" id="start-knopf">
-        Erstelle deine Laserdatei
-      </button>
-      <p class="mt-4 text-xs text-leise">Deine Datei bleibt auf deinem Rechner. Nichts wird hochgeladen.</p>
+      <!-- Zwei Wege. Die Bilder erscheinen, sobald Bilder/laser.jpg bzw. Bilder/3d.jpg existieren;
+           bis dahin ist der Kasten ein leerer Platzhalter. -->
+      <div class="start-karten">
+        <article class="start-karte">
+          <div class="platzhalter">
+            <img src="Bilder/laser.jpg" alt="Beispiel: Laserplatten und gelasertes Pappmodell" hidden onload="this.hidden = false; this.parentElement.classList.add('mit-bild')">
+          </div>
+          <h2 class="titel text-base font-bold mt-4">Laserdatei · DXF</h2>
+          <p class="text-sm text-leise mt-1">Pappmodell aus Platten: Fassaden und Dach flach gelegt, mit Nummern und Klebeanleitung.</p>
+          <button type="button" class="knopf haupt-knopf start-knopf mt-4" id="start-knopf">
+            Erstelle deine Laserdatei
+          </button>
+        </article>
+        <article class="start-karte">
+          <div class="platzhalter">
+            <img src="Bilder/3d.jpg" alt="Beispiel: 3D-gedrucktes Modell" hidden onload="this.hidden = false; this.parentElement.classList.add('mit-bild')">
+          </div>
+          <h2 class="titel text-base font-bold mt-4">3D-Druck-Datei · STL</h2>
+          <p class="text-sm text-leise mt-1">Modell für den 3D-Drucker: das Gebäude als Körper im Maßstab, mit Vorschau zum Drehen.</p>
+          <button type="button" class="knopf haupt-knopf start-knopf mt-4" id="start-3d">
+            Erstelle deine 3D-Druck-Datei
+          </button>
+        </article>
+      </div>
+      <p class="mt-6 text-xs text-leise">Deine Dateien bleiben auf deinem Rechner. Nichts wird hochgeladen.</p>
     </div>
   </section>
 
@@ -80,8 +99,13 @@
        ===================================================== -->
   <div id="arbeitsseite" inert>
 
+    <!-- ZUSATZ 3D: Weg zurück zur Startseite (Wahl Laser / 3D-Druck) -->
+    <nav class="max-w-7xl mx-auto px-4 pt-4">
+      <button type="button" class="zurueck-link">← Startseite</button>
+    </nav>
+
     <!-- Kopfzeile mit kleinem Logo -->
-    <header class="max-w-7xl mx-auto px-4 pt-8 pb-6 sm:pt-10 flex items-center gap-4">
+    <header class="max-w-7xl mx-auto px-4 pt-3 pb-6 flex items-center gap-4">
       <svg class="logo-klein" viewBox="290 358 1899 2562" role="img" aria-label="Logo HB Laser">
         <image href="Bilder/logo.svg" width="2481" height="3508"></image>
       </svg>
@@ -291,6 +315,139 @@
         <p class="mt-4 text-sm flex gap-2">
           <span class="text-akzent font-bold">!</span>
           <span><strong>Wichtig:</strong> Speichere oder drucke das Übersichtsblatt. Nur darauf steht, welches Teil wohin gehört und in welcher Reihenfolge du klebst. Tipp: Im Druckfenster „Als PDF sichern“ wählen.</span>
+        </p>
+      </section>
+
+    </main>
+
+    <footer class="max-w-7xl mx-auto px-4 pb-10 text-xs text-leise">
+      <p>WPK Vibecoding · Jade Hochschule · 2026</p>
+    </footer>
+  </div>
+
+  <!-- =====================================================
+       ZUSATZ 3D: SEITE FÜR 3D-DRUCK-DATEIEN (STL)
+       Aufbau wie die Laser-Seite. Zurzeit nur der Rahmen,
+       der Inhalt kommt in Schritt 2.
+       ===================================================== -->
+  <div id="seite-3d" hidden inert>
+    <nav class="max-w-7xl mx-auto px-4 pt-4">
+      <button type="button" class="zurueck-link">← Startseite</button>
+    </nav>
+
+    <header class="max-w-7xl mx-auto px-4 pt-3 pb-6 flex items-center gap-4">
+      <svg class="logo-klein" viewBox="290 358 1899 2562" role="img" aria-label="Logo HB Laser">
+        <image href="Bilder/logo.svg" width="2481" height="3508"></image>
+      </svg>
+      <div class="flex-1 min-w-0">
+        <p class="titel text-2xl sm:text-3xl font-bold">Erstelle deine 3D-Druck-Datei</p>
+        <p class="mt-1 text-leise">Aus deinem Gebäudemodell wird eine STL-Datei für den 3D-Drucker.</p>
+      </div>
+      <button type="button" class="farbmodus-knopf self-start" aria-label="Hell oder dunkel">
+        <svg class="mond" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="sonne" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M1.5 12H4M20 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
+      </button>
+    </header>
+
+    <!-- Aufbau wie die Laser-Seite: links Datei (1) und Vorschau (3), rechts Einstellungen (2) -->
+    <main class="raster max-w-7xl mx-auto px-4 pb-10">
+
+      <!-- 3D · Bereich 1: Dateien ablegen -->
+      <section id="d3-bereich-datei" class="feld-datei bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+        <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+          <span class="nummer">1</span> Datei ablegen
+        </h2>
+        <div id="d3-ablage" class="ablage rounded-xl px-4 py-10 sm:py-12 text-center space-y-3">
+          <p id="d3-ablage-titel" class="text-lg font-bold">IFC-Dateien hierher ziehen</p>
+          <p class="nur-gross text-leise">oder</p>
+          <label class="knopf haupt-knopf" tabindex="0">
+            Dateien auswählen
+            <input type="file" id="d3-eingabe" accept=".ifc" multiple hidden>
+          </label>
+          <p class="nur-gross text-sm text-leise pt-2">Je Datei ein Gebäude, auch mehrere auf einmal. Deine Dateien bleiben auf deinem Rechner, nichts wird hochgeladen.</p>
+          <p id="d3-status" class="datei-status" role="status" aria-live="polite" hidden></p>
+        </div>
+        <ul id="d3-liste" class="mt-4 space-y-3" aria-label="Abgelegte IFC-Dateien für den 3D-Druck"></ul>
+      </section>
+
+      <!-- 3D · Bereich 2: Einstellungen für den 3D-Druck -->
+      <section id="d3-bereich-einstellungen" class="feld-einstellungen bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+        <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+          <span class="nummer">2</span> Einstellungen
+        </h2>
+        <form id="d3-einstellungen" class="space-y-6">
+          <fieldset>
+            <legend class="titel text-xs font-bold text-leise mb-3">Modell</legend>
+            <label class="flex flex-col gap-1 text-sm">
+              Maßstab 1 :
+              <input class="feld" type="number" id="d3-massstab" value="200" min="1" step="1">
+            </label>
+          </fieldset>
+
+          <fieldset class="border-t border-linie pt-5">
+            <legend class="titel text-xs font-bold text-leise mb-3">Druckbett (mm)</legend>
+            <div class="grid grid-cols-3 gap-3">
+              <label class="flex flex-col gap-1 text-sm">Breite <input class="feld" type="number" id="d3-bett-breite" value="220" min="1"></label>
+              <label class="flex flex-col gap-1 text-sm">Tiefe <input class="feld" type="number" id="d3-bett-tiefe" value="220" min="1"></label>
+              <label class="flex flex-col gap-1 text-sm">Höhe <input class="feld" type="number" id="d3-bett-hoehe" value="250" min="1"></label>
+            </div>
+          </fieldset>
+
+          <fieldset class="border-t border-linie pt-5">
+            <legend class="titel text-xs font-bold text-leise mb-3">Sockel und Dach</legend>
+            <label class="flex items-center gap-3 text-sm">
+              <input type="checkbox" id="d3-sockel" class="haken" checked>
+              Sockelplatte unter dem Gebäude
+            </label>
+            <div id="d3-sockel-felder" class="grid grid-cols-2 gap-3 mt-3">
+              <label class="flex flex-col gap-1 text-sm">Dicke (mm) <input class="feld" type="number" id="d3-sockel-dicke" value="2" min="0.2" step="0.2"></label>
+              <label class="flex flex-col gap-1 text-sm">Rand (mm) <input class="feld" type="number" id="d3-sockel-rand" value="3" min="0" step="1"></label>
+            </div>
+            <label class="flex items-center gap-3 text-sm mt-4">
+              <input type="checkbox" id="d3-dach-getrennt" class="haken">
+              Dach als eigene Datei (abnehmbar)
+            </label>
+          </fieldset>
+        </form>
+
+        <div class="erstellen-leiste border-t border-linie mt-6 pt-5 space-y-3">
+          <button type="button" class="knopf haupt-knopf w-full" id="d3-erstellen" disabled>
+            3D-Modell erstellen
+          </button>
+          <p id="d3-hinweis" class="text-sm text-leise" role="status" aria-live="polite">Zuerst eine IFC-Datei ablegen.</p>
+        </div>
+      </section>
+
+      <!-- 3D · Bereich 3: Vorschau und Download -->
+      <section id="d3-bereich-vorschau" class="feld-vorschau bg-flaeche border border-linie rounded-2xl p-5 sm:p-7">
+        <h2 class="titel flex items-center gap-3 text-lg font-bold mb-5">
+          <span class="nummer">3</span> Vorschau &amp; Download
+        </h2>
+
+        <ul id="d3-warnungen" class="space-y-2 text-sm mb-5" hidden></ul>
+
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <label id="d3-auswahl-zeile" class="flex items-center gap-2 text-sm" hidden>
+            Vorschau:
+            <select id="d3-auswahl" class="feld w-auto max-w-full"></select>
+          </label>
+          <button type="button" class="knopf text-sm ml-auto" id="d3-ansicht">Ansicht zurücksetzen</button>
+        </div>
+
+        <!-- 3D-Betrachter: drehen durch Ziehen, zoomen mit Mausrad oder zwei Fingern -->
+        <div class="betrachter-rahmen rounded-xl">
+          <canvas id="d3-canvas" aria-label="3D-Vorschau des Modells. Ziehen dreht, Mausrad zoomt, Pfeiltasten drehen."></canvas>
+          <p id="d3-leer" class="betrachter-leer text-sm text-leise">Hier erscheint das 3D-Modell, sobald du auf „3D-Modell erstellen“ klickst.</p>
+        </div>
+        <p class="text-xs text-leise mt-2">Ziehen = drehen · Mausrad oder zwei Finger = zoomen · Doppelklick = Ansicht zurücksetzen. Gestrichelt: das Druckbett.</p>
+        <p id="d3-masse" class="text-sm mt-3"></p>
+
+        <div id="d3-downloads" class="flex flex-wrap gap-3 mt-4"></div>
+        <button type="button" class="knopf text-sm mt-3" id="d3-alle" hidden>Alle STL herunterladen</button>
+
+        <p class="mt-4 text-sm flex gap-2">
+          <span class="text-akzent font-bold">!</span>
+          <span>Öffne die STL-Datei in deinem Slicer (z. B. Cura, PrusaSlicer, Bambu Studio) und prüfe dort, ob alles druckbar ist. Sehr dünne Wände können bei kleinen Maßstäben wegfallen.</span>
         </p>
       </section>
 

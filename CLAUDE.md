@@ -38,6 +38,7 @@ Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdeck
    - **Nie ungefragt außerhalb dieses Projektordners zugreifen**, auch nicht kurz nachsehen (Programme-Ordner, Benutzerordner, Systemeinstellungen). Wenn du etwas wissen musst, frag direkt, z. B. „Hast du GitHub Desktop?“.
    - **Auch kein Internet ohne ausdrückliches Ja**, auch nicht zum Nachlesen (Paket-Seiten wie npm oder jsdelivr, Webseiten, Suche). Fehlt eine Bibliothek, beschreibst du, welche Datei gebraucht wird, und die Nutzerin legt sie selbst in `lib/` (so geschehen am 17.11. mit web-ifc).
    - Ein Ja gilt für genau die Schritte und Zugriffe, die du vorher aufgezählt hast. Brauchst du unterwegs etwas anderes, halte an und frag.
+   - **Downloads macht nie Claude**, weder aus dem Internet noch über einen Download-Knopf in der App (DXF, STL, Vorlagen …). Das übernehmen Svenja oder Alison. Claude prüft erzeugte Dateien nur im Browser-Speicher und sagt dann, welchen Knopf sie drücken sollen (seit 18.11.).
    - Die Sitzung soll im **manuellen Modus** laufen, nicht im Auto-Modus. Steht sie auf „Auto“, weise darauf hin.
 2. **Nichts committen oder auf GitHub hochladen (pushen) ohne ausdrückliches Ja.** Vorher in einfachen Worten erklären, was hochgeladen wird.
 3. **Eigene IFC-Dateien nur nach Rückfrage ins Repository aufnehmen.** Sie können privat oder sehr groß sein. Testdateien liegen in `beispiele/`.
@@ -154,6 +155,9 @@ js/linienschrift.js – Nummern als Linien (zum Ritzen)
 js/dxf.js           – DXF schreiben
 js/farbmodus.js     – Knopf hell/dunkel (Sonne/Mond)
 js/uebersicht.js    – Übersichtsblatt zum Drucken
+js/druck3d.js       – ZUSATZ 3D (nur Branch zusatz-3d): 3D-Druck-Seite, Dateien, Einstellungen, Modell, STL-Knöpfe
+js/betrachter.js    – ZUSATZ 3D: kleiner 3D-Betrachter ohne Bibliothek (Canvas)
+js/stl.js           – ZUSATZ 3D: STL schreiben (binär)
 lib/web-ifc/        – IFC-Bibliothek 0.0.78 (wird mit hochgeladen, siehe .gitignore „!lib/“)
 Bilder/             – logo.svg, später beispiel.jpg (Beispielbild für die Startseite)
 beispiele/          – Test-IFC-Dateien (werden NICHT hochgeladen, siehe .gitignore)

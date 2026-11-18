@@ -365,6 +365,134 @@ summary {
   text-align: center;
   max-width: 40rem;
 }
+
+/* ---------- ZUSATZ 3D: Startseite mit zwei Karten ---------- */
+.startseite-breit {
+  max-width: 54rem;
+}
+.startseite-breit .logo-gross {
+  height: min(26vh, 13rem);
+}
+.start-karten {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  margin-top: 2rem;
+  text-align: left;
+}
+@media (min-width: 640px) {
+  .start-karten {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.start-karte {
+  display: flex;
+  flex-direction: column;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+.start-karte .start-knopf {
+  margin-top: auto;          /* Knöpfe beider Karten auf gleicher Höhe */
+  align-self: flex-start;
+  font-size: 1rem;
+  padding: 0.7rem 1.4rem;
+}
+.start-karte p {
+  margin-bottom: 1rem;
+}
+/* Platzhalter-Kasten für das Bild: gestrichelt und leer, bis das Bild da ist */
+.platzhalter {
+  aspect-ratio: 16 / 9;
+  border: 2px dashed var(--linie);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--hintergrund);
+}
+.platzhalter.mit-bild {
+  border-style: solid;
+  border-width: 1px;
+}
+.platzhalter img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.platzhalter img[hidden] {
+  display: none;
+}
+
+/* Kleiner Textknopf „← Startseite“ */
+.zurueck-link {
+  font-size: 0.875rem;
+  color: var(--text-leise);
+  background: none;
+  border: none;
+  padding: 0.25rem 0;
+  cursor: pointer;
+}
+.zurueck-link:hover {
+  color: var(--akzent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.zurueck-link:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+#seite-3d[hidden],
+#arbeitsseite[hidden] {
+  display: none;
+}
+
+/* Versteckt heißt versteckt – auch wenn ein Tailwind-Baustein wie „flex“ dran steht */
+[hidden] {
+  display: none !important;
+}
+
+/* ---------- ZUSATZ 3D: 3D-Betrachter ---------- */
+.betrachter-rahmen {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--hintergrund);
+  border: 1px solid var(--linie);
+  overflow: hidden;
+}
+.betrachter-rahmen canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+.betrachter-rahmen canvas:active {
+  cursor: grabbing;
+}
+.betrachter-rahmen canvas:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: -2px;
+}
+.betrachter-leer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  pointer-events: none;
+}
+.betrachter-leer[hidden] {
+  display: none;
+}
+/* Häkchen in der Akzentfarbe */
+.haken {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--akzent);
+}
 /* Solange die Startseite offen ist, scrollt die Seite dahinter nicht */
 html.start-offen {
   overflow: hidden;

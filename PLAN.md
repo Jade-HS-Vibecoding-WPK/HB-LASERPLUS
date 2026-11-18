@@ -219,11 +219,16 @@ Wir arbeiten mit zwei Branches in GitHub (Regeln dazu: CLAUDE.md, Regel 11).
 - ✅ **Mehrere Gebäude:** Mehrere IFC-Dateien auf einmal oder nacheinander ablegen, je Datei ein Gebäude (höchstens 12). Die Ablagefläche bleibt (klein) sichtbar. Alle Teile teilen sich die Platten. Nummern mit Gebäude-Nummer davor (`2-A-001`), bei nur einem Gebäude wie bisher (`A-001`). Übersichtsblatt: je Gebäude ein Grundriss und eine Klebe-Reihenfolge, Legende erklärt die Gebäude-Nummer. Mit allen drei Test-IFCs zusammen geprüft (44 Teile auf einer Platte). **Nicht dabei:** echte Lage der Gebäude zueinander (Lageplan).
 - ✅ **Titel der Arbeitsseite** und des Übersichtsblatts: „Erstelle deine Laserdatei“ (vorher „IFC → Laser“).
 
-### Zusatzversion (`zusatz-3d`): geplant
+### Zusatzversion (`zusatz-3d`)
 
-- Startseite mit **zwei Karten**: „Erstelle deine Laserdatei“ (DXF) und „Erstelle deine 3D-Druck-Datei“ (STL), je mit einem Platzhalter-Kasten für ein Bild.
-- Eigene **3D-Seite**, aufgebaut wie die Laser-Seite: 1 Datei ablegen, 2 Einstellungen für den 3D-Druck (Maßstab, Druckbett-Größe, Mindest-Wandstärke, Sockel ja/nein, Dach als eigenes Teil ja/nein), 3 **3D-Vorschau** (drehen, zoomen) und **STL-Download**.
-- STL wird selbst geschrieben (wie die DXF). Die 3D-Vorschau braucht **three.js** mit fester Version, von euch in `lib/three/` abgelegt.
+- ✅ **Schritt 1 – Startseite mit zwei Karten** (18.11.): „Erstelle deine Laserdatei“ (DXF) und „Erstelle deine 3D-Druck-Datei“ (STL), je mit einem leeren Platzhalter-Kasten. Die Bilder erscheinen automatisch, sobald `Bilder/laser.jpg` bzw. `Bilder/3d.jpg` da sind. Das frühere einzelne Beispielbild (`beispiel.jpg`) fällt hier weg. Ein Klick irgendwo auf die Startseite schließt sie nicht mehr, nur die zwei Knöpfe. Auf beiden Arbeitsseiten führt „← Startseite“ zurück; was man dort gemacht hat, bleibt erhalten. Die 3D-Seite ist zunächst nur ein Rahmen („Wird gerade gebaut“).
+- ✅ **Schritt 2 – 3D-Seite** (18.11.), aufgebaut wie die Laser-Seite:
+  - 1 IFC-Dateien ablegen (eigene Liste, Karten mit ✕, mehrere Gebäude, Morph-Auswahl)
+  - 2 Einstellungen für den 3D-Druck: Maßstab (Start 1:200), Druckbett (Start 220 × 220 × 250 mm), Sockelplatte ja/nein mit Dicke und Rand, Dach als eigene Datei ja/nein. Eigene Einstellungen, getrennt von der Laser-Seite, im Browser gemerkt.
+  - 3 **3D-Vorschau** (eigener kleiner Betrachter ohne Bibliothek: ziehen = drehen, Mausrad/zwei Finger = zoomen, Doppelklick = zurücksetzen, Pfeiltasten), Maße, Druckbett-Prüfung mit Vorschlag für einen passenden Maßstab, **STL-Knöpfe** je Gebäude (und Dach), „Alle STL herunterladen“.
+  - Getestet im Browser mit allen drei Test-IFCs (Test 03 bei 1:200: 112,4 × 73,1 × 53,4 mm). Das STL-Format wurde im Browser-Speicher geprüft. **Noch nicht** heruntergeladen und im Slicer geöffnet – das macht ihr.
+  - Neue Dateien: `js/druck3d.js`, `js/betrachter.js`, `js/stl.js`. In `index.html`, `css/style.css` und `js/main.js` sind alle Zusatz-Stellen mit „ZUSATZ 3D“ markiert.
+- **Noch offen / ehrlich:** Mindest-Wandstärke wird noch nicht geprüft. Die IFC-Bauteile sind einzelne Körper (z. B. Wandschichten), die sich berühren oder überlappen – ob der Slicer daraus sauber druckt, zeigt erst der Test. Ein Morph als „ganzer Gebäudekörper“ wird in der Vorschau einfarbig gezeigt (Wand und Dach nicht getrennt). Dateien, die auf der Laser-Seite abgelegt wurden, muss man auf der 3D-Seite noch einmal ablegen.
 - Ehrlich: Ob die STL sauber druckt, zeigt erst der Slicer (Cura, PrusaSlicer, Bambu Studio). Die IFC-Bauteile sind einzelne Körper, die sich berühren oder überlappen.
 
 ---
