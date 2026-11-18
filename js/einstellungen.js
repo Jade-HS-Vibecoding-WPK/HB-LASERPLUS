@@ -7,6 +7,8 @@
 // Nichts davon geht an einen Server.
 // =========================================================
 
+import { wand3dZeichnen } from "./wand3d.js";
+
 // Name des Notizzettels im Browser
 const SPEICHER_NAME = "ifc-laser-einstellungen";
 
@@ -29,8 +31,17 @@ export const STARTWERTE = {
   // "eine-geritzt" = eine Schicht, Fenster/Türen geritzt,
   // "eine-ohne" = eine Schicht ohne Fenster/Türen
   wandaufbau: "zwei",
+  // Staffage (Menschen und Bäume), seit 18.11.
+  menschen: 0,
+  baeume: 0,
+  baumHoehe: 10, // m
+  staffageDicke: 1, // mm, Pappe für Menschen und Bäume
   farben: { ...HOCHSCHUL_FARBEN },
 };
+
+// Anzahl-Felder (0 ist erlaubt) mit Höchstwert
+const ANZAHLFELDER = { menschen: ["menschen", 50], baeume: ["baeume", 30] };
+const BAUMHOEHEN = [6, 10, 15];
 
 // Erlaubte Werte für den Wandaufbau
 export const WANDAUFBAU = ["zwei", "eine-geritzt", "eine-ohne"];
@@ -102,6 +113,11 @@ function felderFuellen() {
     document.getElementById(id).value = aktuell.farben[name];
   }
   document.getElementById("wandaufbau").value = aktuell.wandaufbau;
+  for (const [name, [id]] of Object.entries(ANZAHLFELDER)) {
+    document.getElementById(id).value = String(aktuell[name]);
+  }
+  document.getElementById("baum-hoehe").value = String(aktuell.baumHoehe);
+  document.getElementById("staffage-dicke").value = String(aktuell.staffageDicke);
   dickenfelderAnpassen();
 }
 
@@ -111,6 +127,101 @@ function dickenfelderAnpassen() {
   const eineSchicht = aktuell.wandaufbau !== "zwei";
   document.getElementById("dicke-innen-text").textContent = eineSchicht ? "Pappdicke Wand und Dach" : "Pappdicke innen";
   document.getElementById("dicke-aussen-feld").style.display = eineSchicht ? "none" : "";
+  wandbildZeichnen();
+}
+
+// ---------------------------------------------------------
+// Vorschaubild zum Wandaufbau (unter der Auswahl „Wandaufbau“):
+// links eine kleine Fassade (Ansicht), rechts ein Schnitt durch die Wand.
+// Linien in den eingestellten Laserfarben: Rot = schneiden, Blau = ritzen.
+// Nur eine Skizze – sie zeigt das Prinzip, nicht dein Gebäude.
+// ---------------------------------------------------------
+function wandbildZeichnen() {
+  const ort = document.getElementById("wandaufbau-bild");
+  if (!ort) return;
+  const aufbau = aktuell.wandaufbau;
+  const rot = aktuell.farben.schneiden, blau = aktuell.farben.ritzen;
+  const pappeAussen = "#d8cdbd", pappeInnen = "#a99d8a"; // Graupappe hell / dunkler (innen)
+  const punkte = (liste) => liste.map((p) => p.join(",")).join(" ");
+
+  // --- Ansicht: Haus mit Satteldach, ein Fenster, eine Tür bis zum Boden ---
+  const fenster = [[38, 62], [72, 62], [72, 88], [38, 88]];
+  const fenster2 = [[118, 62], [146, 62], [146, 88], [118, 88]];
+  const tuer = [[84, 122], [84, 84], [104, 84], [104, 122]]; // offen nach unten
+  const wandOhneTuer = [[20, 122], [20, 44], [92, 12], [164, 44], [164, 122]];
+  const wandMitTuer = [[20, 122], [20, 44], [92, 12], [164, 44], [164, 122], [104, 122], [104, 84], [84, 84], [84, 122]];
+  let ansicht = "";
+  if (aufbau === "zwei") {
+    // hinten die Innenschicht (geschlossen, dunkler), davor die Außenschicht mit Löchern
+    ansicht +=
+      `<polygon points="${punkte(wandOhneTuer)}" fill="${pappeInnen}" />` +
+      `<path d="M${punkte(wandMitTuer)}Z M${punkte(fenster)}Z M${punkte(fenster2)}Z" fill="${pappeAussen}" fill-rule="evenodd" stroke="${rot}" stroke-width="1.6" />`;
+  } else {
+    ansicht += `<polygon points="${punkte(wandOhneTuer)}" fill="${pappeAussen}" stroke="${rot}" stroke-width="1.6" />`;
+    if (aufbau === "eine-geritzt") {
+      ansicht +=
+        `<polygon points="${punkte(fenster)}" fill="none" stroke="${blau}" stroke-width="1.4" />` +
+        `<polygon points="${punkte(fenster2)}" fill="none" stroke="${blau}" stroke-width="1.4" />` +
+        `<polyline points="${punkte(tuer)}" fill="none" stroke="${blau}" stroke-width="1.4" />`;
+    }
+  }
+
+  // --- Schnitt durch die Wand (Pappdicken stark vergrößert) ---
+  const F = 9; // 1 mm = 9 Bildpunkte
+  const x0 = 236, y0 = 18, h = 104;
+  let schnitt = "";
+  let dickeText;
+  if (aufbau === "zwei") {
+    const ta = aktuell.dickeAussen * F, ti = aktuell.dickeInnen * F;
+    schnitt +=
+      `<rect x="${x0}" y="${y0}" width="${ta}" height="${h}" fill="${pappeAussen}" stroke="${rot}" stroke-width="1.2" />` +
+      `<rect x="${x0 + ta}" y="${y0}" width="${ti}" height="${h}" fill="${pappeInnen}" stroke="${rot}" stroke-width="1.2" />` +
+      `<text x="${x0 + ta / 2}" y="${y0 + h + 12}" text-anchor="middle">A</text>` +
+      `<text x="${x0 + ta + ti / 2}" y="${y0 + h + 12}" text-anchor="middle">I</text>`;
+    dickeText = `${zahlText(aktuell.dickeAussen)} + ${zahlText(aktuell.dickeInnen)} mm`;
+  } else {
+    const t = aktuell.dickeInnen * F;
+    schnitt +=
+      `<rect x="${x0}" y="${y0}" width="${t}" height="${h}" fill="${pappeAussen}" stroke="${rot}" stroke-width="1.2" />` +
+      `<text x="${x0 + t / 2}" y="${y0 + h + 12}" text-anchor="middle">A</text>`;
+    dickeText = `${zahlText(aktuell.dickeInnen)} mm`;
+  }
+  schnitt +=
+    `<text x="${x0 - 8}" y="${y0 + h / 2}" text-anchor="end">außen</text>` +
+    `<text x="${x0 + 52}" y="${y0 + h / 2}" text-anchor="start">innen</text>` +
+    `<text x="${x0 + 14}" y="${y0 + h + 25}" text-anchor="middle">${dickeText}</text>`;
+
+  const beschreibung = {
+    zwei: "Zwei Pappen je Fassade: außen (A) mit ausgeschnittenen Fenstern und Türen, dahinter innen (I) geschlossen.",
+    "eine-geritzt": "Eine Pappe je Fassade, geschlossen. Fenster und Türen werden nur angeritzt (blau).",
+    "eine-ohne": "Eine Pappe je Fassade, geschlossen, ohne Fenster und Türen – ein reines Massenmodell.",
+  }[aufbau];
+
+  ort.innerHTML =
+    `<svg viewBox="0 0 330 152" role="img" aria-label="Skizze Wandaufbau: ${beschreibung}">` +
+    `<text x="92" y="6" text-anchor="middle" class="wandbild-titel">Ansicht</text>` +
+    ansicht +
+    `<text x="250" y="6" text-anchor="middle" class="wandbild-titel">Schnitt</text>` +
+    schnitt +
+    `</svg>` +
+    // 3D-Skizze einer Hausecke zum Drehen (js/wand3d.js)
+    `<div class="wand3d">` +
+    `<p class="wand3d-titel">3D-Ecke · ziehen = drehen, Mausrad = zoomen, Doppelklick = zurück</p>` +
+    `<svg id="wand3d-svg" tabindex="0" role="img" aria-label="3D-Skizze einer Hausecke zum Drehen"></svg>` +
+    `</div>` +
+    `<figcaption>${beschreibung} <span class="leise-klein">Skizze, Pappdicken vergrößert. In 3D: Die Nordwand läuft an der Ecke durch, die Westwand ist gekürzt.</span></figcaption>`;
+
+  wand3dZeichnen(document.getElementById("wand3d-svg"), {
+    aufbau,
+    dickeAussen: aktuell.dickeAussen,
+    dickeInnen: aktuell.dickeInnen,
+    farben: aktuell.farben,
+  });
+}
+
+// 1.5 → „1,5“
+function zahlText(z) {
+  return String(z).replace(".", ",");
 }
 
 function felderLesen() {
@@ -122,8 +233,19 @@ function felderLesen() {
   for (const [name, id] of Object.entries(FARBFELDER)) {
     aktuell.farben[name] = document.getElementById(id).value;
   }
+  // (das Vorschaubild zum Wandaufbau wird in dickenfelderAnpassen neu gezeichnet,
+  //  so folgt es auch den Pappdicken und Linienfarben)
   const aufbau = document.getElementById("wandaufbau").value;
   if (WANDAUFBAU.includes(aufbau)) aktuell.wandaufbau = aufbau;
+  // Menschen und Bäume: ganze Zahlen ab 0, nach oben begrenzt
+  for (const [name, [id, max]] of Object.entries(ANZAHLFELDER)) {
+    const z = parseInt(document.getElementById(id).value, 10);
+    if (Number.isFinite(z) && z >= 0) aktuell[name] = Math.min(z, max);
+  }
+  const hoehe = parseFloat(document.getElementById("baum-hoehe").value);
+  if (BAUMHOEHEN.includes(hoehe)) aktuell.baumHoehe = hoehe;
+  const sDicke = parseFloat(document.getElementById("staffage-dicke").value);
+  if (DICKEN.includes(sDicke)) aktuell.staffageDicke = sDicke;
   dickenfelderAnpassen();
 }
 
@@ -225,6 +347,10 @@ function werteAufraeumen(werte) {
     return Number.isFinite(z) && z > 0 ? z : ersatz;
   };
   const dicke = (wert, ersatz) => (DICKEN.includes(parseFloat(wert)) ? parseFloat(wert) : ersatz);
+  const anzahl = (wert, max) => {
+    const z = parseInt(wert, 10);
+    return Number.isFinite(z) && z >= 0 ? Math.min(z, max) : 0;
+  };
   const farbe = (wert, ersatz) => (typeof wert === "string" && /^#[0-9a-f]{6}$/i.test(wert) ? wert.toLowerCase() : ersatz);
   const f = werte.farben || {};
   return {
@@ -234,6 +360,10 @@ function werteAufraeumen(werte) {
     platteBreite: zahl(werte.platteBreite, STARTWERTE.platteBreite),
     platteHoehe: zahl(werte.platteHoehe, STARTWERTE.platteHoehe),
     wandaufbau: WANDAUFBAU.includes(werte.wandaufbau) ? werte.wandaufbau : STARTWERTE.wandaufbau,
+    menschen: anzahl(werte.menschen, 50),
+    baeume: anzahl(werte.baeume, 30),
+    baumHoehe: BAUMHOEHEN.includes(parseFloat(werte.baumHoehe)) ? parseFloat(werte.baumHoehe) : STARTWERTE.baumHoehe,
+    staffageDicke: dicke(werte.staffageDicke, STARTWERTE.staffageDicke),
     farben: {
       schneiden: farbe(f.schneiden, HOCHSCHUL_FARBEN.schneiden),
       ritzen: farbe(f.ritzen, HOCHSCHUL_FARBEN.ritzen),
@@ -316,7 +446,11 @@ function auswahlFuellen() {
   const ueberschreiben = document.getElementById("vorlage-ueberschreiben");
   const zeigen = passend === KEINE && zuletztVorlage !== null && !auswahl.hidden;
   ueberschreiben.hidden = !zeigen;
-  if (zeigen) ueberschreiben.textContent = "„" + zuletztVorlage + "“ überschreiben";
+  if (zeigen) {
+    const text = "„" + zuletztVorlage + "“ überschreiben";
+    ueberschreiben.title = text;
+    ueberschreiben.setAttribute("aria-label", text);
+  }
 }
 
 // Werte einer Vorlage übernehmen und alles neu rechnen
@@ -433,7 +567,11 @@ function vorlagenStarten() {
     loeschenKnopf.hidden = an;
     abbrechenKnopf.hidden = !an;
     beschriftung.textContent = an ? "Name der neuen Vorlage" : "Vorlage wählen";
-    speichernKnopf.textContent = an ? "Speichern" : "Als Vorlage speichern";
+    // Symbol wechseln: Lesezeichen mit Plus ↔ Haken (bestätigen)
+    const text = an ? "Speichern" : "Als Vorlage speichern";
+    speichernKnopf.title = text;
+    speichernKnopf.setAttribute("aria-label", text);
+    speichernKnopf.classList.toggle("bestaetigen", an);
     if (!an) auswahlFuellen(); // Liste und „Überschreiben“-Knopf wieder richtig zeigen
     if (an) {
       nameFeld.value = "";
@@ -498,6 +636,13 @@ function vorlagenStarten() {
 
   // Vorlage aus einer Datei laden
   const importFeld = document.getElementById("vorlage-import");
+  // Symbol-Knopf „Datei laden“ auch mit der Tastatur bedienbar (Enter / Leertaste)
+  document.getElementById("vorlage-import-knopf").addEventListener("keydown", (ereignis) => {
+    if (ereignis.key === "Enter" || ereignis.key === " ") {
+      ereignis.preventDefault();
+      importFeld.click();
+    }
+  });
   importFeld.addEventListener("change", async () => {
     const datei = importFeld.files[0];
     importFeld.value = ""; // damit dieselbe Datei nochmal gewählt werden kann

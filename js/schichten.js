@@ -318,6 +318,7 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
         schicht: s.schicht,
         beschreibung: f.wofuer === "fassade" ? `Fassade ${r.wort}, ${s.wort}` : `Dachfläche ${r.wort}`,
         dicke: s.dicke,
+        tiefe: s.tiefe, // mm: wie weit die Vorderseite hinter der Außenfläche liegt (für die Modell-Vorschau)
         aussen: umriss.map((p) => [p[0] * k, p[1] * k]),
         loecher: s.mitLoechern ? f.loecher.map((l) => l.map((p) => [p[0] * k, p[1] * k])) : [],
         ritzlinien: ritzlinien.map((r) => ({ punkte: r.punkte.map((p) => [p[0] * k, p[1] * k]), geschlossen: r.geschlossen })),

@@ -330,6 +330,145 @@ summary {
   cursor: pointer;
 }
 
+/* ---------- Kleine Symbol-Knöpfe (Vorlagen) ---------- */
+.icon-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 1px solid var(--akzent);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.icon-knopf[hidden] {
+  display: none;
+}
+.icon-knopf svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.icon-knopf:hover:not(:disabled) {
+  background: var(--flaeche);
+  border-color: var(--akzent-hover);
+}
+.icon-knopf.haupt-knopf {
+  background: var(--akzent);
+  color: var(--akzent-text);
+}
+.icon-knopf:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.icon-knopf:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+/* „Als Vorlage speichern“: normal Lesezeichen mit Plus, beim Benennen ein Haken */
+.icon-knopf .icon-ok { display: none; }
+.icon-knopf.bestaetigen .icon-neu { display: none; }
+.icon-knopf.bestaetigen .icon-ok { display: block; }
+.icon-knopf.bestaetigen {
+  background: var(--akzent);
+  color: var(--akzent-text);
+}
+/* kleiner senkrechter Strich zwischen den Gruppen */
+.icon-trenner {
+  width: 1px;
+  height: 1.4rem;
+  background: var(--linie);
+  margin: 0 0.15rem;
+}
+
+/* ---------- Vorschaubild zum Wandaufbau (Ansicht + Schnitt) ---------- */
+.wandbild {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--linie);
+  border-radius: 0.75rem;
+  background: var(--hintergrund);
+}
+.wandbild svg {
+  display: block;
+  width: 100%;
+  max-width: 24rem;
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+}
+.wandbild svg text {
+  font-size: 9px;
+  fill: var(--text);
+}
+.wandbild svg .wandbild-titel {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  fill: var(--text-leise);
+}
+.wandbild figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-leise);
+}
+.wandbild .leise-klein {
+  opacity: 0.75;
+}
+/* 3D-Vorschau des Gebäudes in der Datei-Karte (js/betrachter.js) */
+.karte-canvas {
+  display: block;
+  width: 100%;
+  height: 16rem;
+  border: 1px solid var(--linie);
+  border-radius: 0.75rem;
+  cursor: grab;
+}
+.modell-canvas {
+  height: 22rem;
+}
+.karte-canvas:active {
+  cursor: grabbing;
+}
+.karte-canvas:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+
+/* 3D-Ecke zum Drehen (js/wand3d.js) */
+.wand3d {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--linie);
+  padding-top: 0.5rem;
+}
+.wand3d-titel {
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--text-leise);
+}
+.wand3d svg {
+  display: block;
+  width: 100%;
+  max-width: 20rem;
+  height: auto;
+  aspect-ratio: 220 / 190;
+  margin: 0 auto;
+  cursor: grab;
+  touch-action: none;       /* Ziehen dreht, statt die Seite zu scrollen */
+}
+.wand3d svg:active {
+  cursor: grabbing;
+}
+.wand3d svg:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
 /* ---------- Startseite ---------- */
 /* Liegt über der Arbeitsseite, bis man auf „Erstelle deine Laserdatei“ klickt */
 .startseite {

@@ -406,7 +406,10 @@ export function uebersichtBauen(daten) {
 
   // Teileliste
   const platteVon = new Map();
-  platten.forEach((p, i) => p.teile.forEach((t) => platteVon.set(t.name, i + 1)));
+  // Platte mit Pappdicke, z. B. „2 (1 mm)“ – Teile verschiedener Dicke liegen auf verschiedenen Platten
+  platten.forEach((p, i) =>
+    p.teile.forEach((t) => platteVon.set(t.name, `${i + 1} (${String(p.dicke ?? t.teil?.dicke ?? "").replace(".", ",")} mm)`))
+  );
   blatt.append(element("h2", "", "Teileliste"));
   const tabelle = element("table");
   const kopf = element("tr");
@@ -472,6 +475,12 @@ export function uebersichtBauen(daten) {
   );
   if (aufbau === "eine-geritzt") {
     hinweise.append(element("li", "", "Fenster und Türen sind nur angeritzt (blau). Die Wand bleibt geschlossen – Türen bis zum Boden auch."));
+  }
+  if (teile.some((t) => t.name.startsWith("M-"))) {
+    hinweise.append(element("li", "", "Menschen (M-01 …): Die Lasche unter den Füßen umknicken und aufkleben oder in einen schmalen Schlitz in der Grundplatte stecken."));
+  }
+  if (teile.some((t) => t.name.startsWith("B-"))) {
+    hinweise.append(element("li", "", "Bäume (B-01A + B-01B …): Teil A (Schlitz von oben) und Teil B (Schlitz von unten) mit derselben Zahl über Kreuz ineinanderstecken. Der Schlitz ist so breit wie die Pappe; bei Bedarf einen Tropfen Kleber."));
   }
   if (alleEcken.some((c) => Math.abs(Math.cos(c.phi)) > 0.02)) {
     hinweise.append(element("li", "", "Schräge Ecken, Grate und Kehlen (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));

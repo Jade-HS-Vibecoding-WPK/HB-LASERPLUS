@@ -161,8 +161,7 @@
               <details class="karte-details mt-3 text-sm" hidden>
                 <summary class="text-leise">Das steckt in der Datei</summary>
                 <div class="karte-bauteile mt-3"></div>
-              </details>
-            </div>
+              </details>            </div>
             <button type="button" class="datei-entfernen" aria-label="Datei entfernen" title="Datei entfernen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
             </button>
@@ -195,17 +194,28 @@
               <select class="feld" id="vorlage-auswahl"></select>
               <input class="feld" type="text" id="vorlage-name" maxlength="60" placeholder="Name der neuen Vorlage, z. B. Wettbewerb 1:200" autocomplete="off" hidden>
             </label>
-            <div class="flex flex-wrap gap-2 mt-3">
+            <!-- Kleine Symbol-Knöpfe. Was sie tun, steht im Tooltip (title) und für Vorlese-Programme im aria-label. -->
+            <div class="flex flex-wrap items-center gap-2 mt-2">
               <!-- erscheint, wenn man eine eigene Vorlage gewählt und danach etwas geändert hat -->
-              <button type="button" class="knopf haupt-knopf text-sm" id="vorlage-ueberschreiben" hidden>Vorlage überschreiben</button>
-              <button type="button" class="knopf text-sm" id="vorlage-speichern">Als Vorlage speichern</button>
-              <button type="button" class="knopf text-sm" id="vorlage-loeschen">Vorlage löschen</button>
-              <button type="button" class="knopf text-sm" id="vorlage-abbrechen" hidden>Abbrechen</button>
-            </div>
-            <div class="flex flex-wrap gap-2 mt-2">
-              <button type="button" class="knopf text-sm" id="vorlage-export">Als Datei speichern</button>
-              <label class="knopf text-sm">
-                Datei laden
+              <button type="button" class="icon-knopf haupt-knopf" id="vorlage-ueberschreiben" title="Vorlage überschreiben" aria-label="Vorlage überschreiben" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3"/><rect x="8" y="13" width="8" height="6"/></svg>
+              </button>
+              <button type="button" class="icon-knopf" id="vorlage-speichern" title="Als Vorlage speichern" aria-label="Als Vorlage speichern">
+                <svg class="icon-neu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/><path d="M12 7v6M9 10h6"/></svg>
+                <svg class="icon-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+              </button>
+              <button type="button" class="icon-knopf" id="vorlage-loeschen" title="Vorlage löschen" aria-label="Vorlage löschen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
+              </button>
+              <button type="button" class="icon-knopf" id="vorlage-abbrechen" title="Abbrechen" aria-label="Abbrechen" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+              </button>
+              <span class="icon-trenner" aria-hidden="true"></span>
+              <button type="button" class="icon-knopf" id="vorlage-export" title="Als Datei speichern (zum Mitnehmen)" aria-label="Vorlage als Datei speichern">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+              </button>
+              <label class="icon-knopf" id="vorlage-import-knopf" tabindex="0" role="button" title="Vorlage aus Datei laden" aria-label="Vorlage aus Datei laden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></svg>
                 <input type="file" id="vorlage-import" accept=".json,application/json" hidden>
               </label>
             </div>
@@ -216,8 +226,12 @@
             <legend class="titel text-xs font-bold text-leise mb-3">Modell</legend>
             <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-2 gap-4">
               <label class="flex flex-col gap-1 text-sm lg:col-span-2">
-                Maßstab 1 :
-                <input class="feld" type="number" id="massstab" value="100" min="1" step="1">
+                Maßstab
+                <!-- „1 :“ steht direkt vor dem Feld, man tippt nur die zweite Zahl (z. B. 100) -->
+                <span class="flex items-center gap-2">
+                  <span class="text-base whitespace-nowrap shrink-0" aria-hidden="true">1&nbsp;:</span>
+                  <input class="feld" type="number" id="massstab" value="100" min="1" step="1" aria-label="Maßstab 1 zu">
+                </span>
               </label>
               <!-- Wandaufbau: zwei Schichten (wie bisher) oder eine Schicht -->
               <label class="flex flex-col gap-1 text-sm sm:col-span-3 lg:col-span-2">
@@ -228,6 +242,8 @@
                   <option value="eine-ohne">Eine Schicht, ohne Fenster und Türen</option>
                 </select>
               </label>
+              <!-- Vorschaubild zum Wandaufbau: Ansicht und Schnitt, wird in js/einstellungen.js gezeichnet -->
+              <figure class="wandbild sm:col-span-3 lg:col-span-2" id="wandaufbau-bild" aria-live="polite"></figure>
               <label class="flex flex-col gap-1 text-sm">
                 <span id="dicke-innen-text">Pappdicke innen</span>
                 <select class="feld" id="dicke-innen">
@@ -259,6 +275,38 @@
                 <input class="feld" type="number" id="platte-hoehe" value="600" min="1">
               </label>
             </div>
+          </fieldset>
+
+          <!-- Staffage: Menschen und Bäume als zusätzliche Laserteile (js/staffage.js) -->
+          <fieldset class="border-t border-linie pt-5">
+            <legend class="titel text-xs font-bold text-leise mb-3">Menschen und Bäume</legend>
+            <div class="grid grid-cols-3 lg:grid-cols-2 gap-4">
+              <label class="flex flex-col gap-1 text-sm">
+                Menschen
+                <input class="feld" type="number" id="menschen" value="0" min="0" max="50" step="1">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Bäume
+                <input class="feld" type="number" id="baeume" value="0" min="0" max="30" step="1">
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Baumhöhe
+                <select class="feld" id="baum-hoehe">
+                  <option value="6">6 m (klein)</option>
+                  <option value="10" selected>10 m (mittel)</option>
+                  <option value="15">15 m (groß)</option>
+                </select>
+              </label>
+              <label class="flex flex-col gap-1 text-sm">
+                Pappdicke
+                <select class="feld" id="staffage-dicke">
+                  <option value="1" selected>1 mm</option>
+                  <option value="1.5">1,5 mm</option>
+                  <option value="2">2 mm</option>
+                </select>
+              </label>
+            </div>
+            <p class="text-xs text-leise mt-2">Selbst gezeichnete Formen, frei nutzbar. Menschen 1,75 m mit Fußlasche, Bäume als Steckbaum aus zwei Teilen (A und B über Kreuz stecken), im eingestellten Maßstab. Ist die Pappdicke anders als bei den Wänden, kommen sie auf eine eigene Platte.</p>
           </fieldset>
 
           <fieldset class="border-t border-linie pt-5">
@@ -307,6 +355,13 @@
         <!-- Leere Laserplatte (Hintergrundfarbe mit gelbem Rahmen), solange noch nichts erstellt ist -->
         <div id="vorschau" class="platte rounded-sm mb-2"></div>
         <p id="vorschau-text" class="text-xs text-leise mb-5">Hier erscheinen die Laserplatten, sobald du auf „Laserplatten erstellen“ klickst.</p>
+
+        <!-- Modell-Vorschau: die Pappteile in 3D zusammengesetzt (js/modell3d.js) -->
+        <details id="modell3d" class="mb-6" open hidden>
+          <summary class="titel text-xs font-bold text-leise">So wird dein Modell (3D)</summary>
+          <canvas id="modell-canvas" class="karte-canvas modell-canvas mt-3" role="img" aria-label="3D-Vorschau des fertigen Pappmodells. Ziehen dreht, Mausrad zoomt, Doppelklick setzt zurück."></canvas>
+          <p id="modell-legende" class="mt-2 text-xs text-leise"></p>
+        </details>
 
         <!-- Die fertigen Platten, je mit eigenem DXF-Knopf -->
         <div id="platten" class="space-y-6 mb-5" hidden></div>

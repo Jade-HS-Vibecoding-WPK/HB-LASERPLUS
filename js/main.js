@@ -30,6 +30,9 @@ import { verteilen } from "./verteilen.js";
 import { uebersichtBauen } from "./uebersicht.js";
 import { farbmodusStarten } from "./farbmodus.js";
 import { druck3dStarten } from "./druck3d.js"; // ZUSATZ 3D: Seite für 3D-Druck-Dateien
+import { Betrachter } from "./betrachter.js"; // 3D-Vorschau (von Svenjas Zusatz 3D übernommen, unverändert)
+import { modellTeile, grundrissBreite } from "./modell3d.js";
+import { staffageTeile } from "./staffage.js";
 
 // Knopf hell/dunkel (Sonne/Mond) anschließen
 farbmodusStarten();
@@ -474,6 +477,8 @@ function berechnen() {
     }
     liste.push({ nummer, name: g.datei.name, flaechen: g.flaechen, ecken: g.ecken });
   }
+  // Menschen und Bäume (Staffage) kommen mit auf die Platten
+  teile.push(...staffageTeile(e));
   // Alle Teile aller Gebäude teilen sich die Platten (spart Pappe)
   const { platten, zuGross } = verteilen(teile, e);
   ergebnis = { teile, platten, zuGross, einstellungen: e, gebaeude: liste, mehrere };
@@ -498,6 +503,61 @@ erstellenKnopf.addEventListener("click", () => {
 });
 
 // ---------------------------------------------------------
+// Modell-Vorschau (Bereich 3): alle Pappteile in 3D zusammengesetzt,
+// so wie das Modell nach dem Kleben aussieht. Ändert sich eine
+// Einstellung (z. B. Wandaufbau), wird neu gerechnet und neu gezeigt.
+// Mehrere Gebäude stehen nebeneinander (nicht in ihrer echten Lage).
+// ---------------------------------------------------------
+var modellBetrachter = null; // „var“, weil modellZeigen schon beim Start aufgerufen werden kann
+
+function modellZeigen() {
+  const modellFeld = document.getElementById("modell3d");
+  const modellLeinwand = document.getElementById("modell-canvas");
+  const modellLegende = document.getElementById("modell-legende");
+  if (!ergebnis || ergebnis.teile.length === 0) {
+    modellFeld.hidden = true;
+    return;
+  }
+  modellFeld.hidden = false;
+  if (!modellBetrachter) modellBetrachter = new Betrachter(modellLeinwand);
+  const { teile, einstellungen: e, gebaeude: liste } = ergebnis;
+  const k = 1000 / e.massstab;
+  const alle = [];
+  let naechstesX = 0;
+  for (const b of liste) {
+    const eigene = teile.filter((t) => t.gebaeude === b.nummer);
+    if (!eigene.length) continue;
+    // erst ohne Versatz bauen, um die Breite zu kennen, dann daneben stellen
+    const probe = modellTeile(b.flaechen, eigene, k, e.farben.ritzen);
+    const r = grundrissBreite(probe);
+    const versatz = [naechstesX - r.x0, 0];
+    alle.push(...(versatz[0] === 0 ? probe : modellTeile(b.flaechen, eigene, k, e.farben.ritzen, versatz)));
+    naechstesX += r.x1 - r.x0 + 20; // 2 cm Abstand zwischen den Gebäuden
+  }
+  modellBetrachter.setzen(alle, null);
+  const aufbau = e.wandaufbau || "zwei";
+  const eintraege = [
+    [[216, 205, 189], aufbau === "zwei" ? "Außenschicht (A)" : "Wand (A)"],
+    ...(aufbau === "zwei" ? [[[169, 157, 138], "Innenschicht (I)"]] : []),
+    [[205, 97, 72], "Dach (D)"],
+  ];
+  modellLegende.replaceChildren(
+    ...eintraege.map(([farbe, text]) => {
+      const eintrag = element("span", "inline-flex items-center gap-1 mr-3");
+      const punkt = element("span", "inline-block w-3 h-3 rounded-sm");
+      punkt.style.background = `rgb(${farbe.join(",")})`;
+      eintrag.append(punkt, document.createTextNode(text));
+      return eintrag;
+    }),
+    document.createTextNode(
+      (aufbau === "eine-geritzt" ? "Blaue Linien = geritzt. " : "") +
+        "Echte Maße und Pappdicken, so wie die Teile auf den Platten. Ziehen = drehen, Mausrad = zoomen, Doppelklick = zurück." +
+        (liste.length > 1 ? " Mehrere Gebäude stehen nebeneinander, nicht in ihrer echten Lage." : "")
+    )
+  );
+}
+
+// ---------------------------------------------------------
 // Ergebnis zeigen: Warnungen, Platten, Knöpfe
 // ---------------------------------------------------------
 function zeigeErgebnis() {
@@ -510,6 +570,7 @@ function zeigeErgebnis() {
   warnungenFeld.replaceChildren();
   warnungenFeld.hidden = true;
   plattenFeld.replaceChildren();
+  modellZeigen();
   if (!hatErgebnis) return;
 
   const { teile, platten, zuGross, einstellungen: e, gebaeude: liste, mehrere } = ergebnis;
@@ -552,19 +613,39 @@ function zeigeErgebnis() {
       (mehrere ? `${liste.length} Gebäude: ` : "") +
         `${fassaden} Fassaden (${
           (e.wandaufbau || "zwei") === "zwei" ? "je Außen- und Innenschicht" : e.wandaufbau === "eine-geritzt" ? "je eine Schicht, Öffnungen geritzt" : "je eine Schicht, ohne Öffnungen"
-        }) und ${dach} Dachflächen = ${teile.length} Teile ` +
+        }) und ${dach} Dachflächen` +
+        (e.menschen ? `, ${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"}` : "") +
+        (e.baeume ? `, ${e.baeume} ${e.baeume === 1 ? "Baum" : "Bäume"} (je 2 Teile)` : "") +
+        ` = ${teile.length} Teile ` +
         `auf ${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} (Maßstab 1:${e.massstab}).`
     )
   );
+  // Verschiedene Pappdicken: getrennte Platten, das sagen wir deutlich
+  const dicken = [...new Set(platten.map((p) => p.dicke))];
+  if (dicken.length > 1) {
+    const teilText = dicken
+      .map((d) => {
+        const anzahl = platten.filter((p) => p.dicke === d).length;
+        return `${anzahl} ${anzahl === 1 ? "Platte" : "Platten"} ${mmText(d)} Pappe`;
+      })
+      .join(" und ");
+    plattenFeld.append(
+      element("p", "text-sm", `Weil du verschiedene Pappdicken gewählt hast, liegen die Teile getrennt: ${teilText}. Achte beim Lasern auf die richtige Pappe.`)
+    );
+  }
 
   // Je Platte: Überschrift, DXF-Knopf, Bild
   platten.forEach((platte, i) => {
     const block = element("div", "");
     const kopf = element("div", "flex flex-wrap items-center justify-between gap-2 mb-2");
     kopf.append(
-      element("h3", "titel text-xs font-bold text-leise", `Platte ${i + 1} von ${platten.length} · ${platte.teile.length} Teile`)
+      element(
+        "h3",
+        "titel text-xs font-bold text-leise",
+        `Platte ${i + 1} von ${platten.length} · Pappe ${mmText(platte.dicke)} · ${platte.teile.length} Teile`
+      )
     );
-    const knopf = element("button", "knopf text-sm", `DXF Platte ${i + 1}`);
+    const knopf = element("button", "knopf text-sm", `DXF Platte ${i + 1} (${mmText(platte.dicke)})`);
     knopf.type = "button";
     knopf.addEventListener("click", () => platteHerunterladen(i));
     kopf.append(knopf);
@@ -590,7 +671,14 @@ function platteHerunterladen(i) {
   const { platten, einstellungen: e } = ergebnis;
   const zwei = (z) => String(z).padStart(2, "0");
   const text = platteAlsDxf(platten[i], e.farben);
-  dxfHerunterladen(text, `${dateiBasis()}_Platte-${zwei(i + 1)}-von-${zwei(platten.length)}.dxf`);
+  // Pappdicke im Dateinamen, z. B. „…_Platte-02-von-03_Pappe-1-5mm.dxf“
+  const dicke = String(platten[i].dicke).replace(".", "-") + "mm";
+  dxfHerunterladen(text, `${dateiBasis()}_Platte-${zwei(i + 1)}-von-${zwei(platten.length)}_Pappe-${dicke}.dxf`);
+}
+
+// 1.5 → „1,5 mm“
+function mmText(z) {
+  return String(z).replace(".", ",") + " mm";
 }
 
 alleDxfKnopf.addEventListener("click", () => {
