@@ -101,13 +101,13 @@ Hell oder dunkel richtet sich **automatisch nach der Systemeinstellung** (`prefe
 | Linien / Rahmen | `#FFCC99` Sandy | `#4A3129` |
 | Text | `#2B1A14` | `#FFEAD9` Papaya Whip |
 | Text leise | `#7A4A3A` | `#FFCC99` Sandy |
-| Akzent (Buttons, aktiv) | `#FF6347` Tomato | `#FF8C69` Salmon |
-| Akzent Hover | `#F97A5D` Coral | `#FFA07A` Light Coral |
+| Akzent (Buttons, Zahlen, aktiv) | `#CD6148` **Logo-Orange** (seit 18.11., aus `Bilder/logo.svg` gemessen; vorher `#FF6347` Tomato) | `#FF8C69` Salmon |
+| Akzent Hover | `#D7765F` helleres Logo-Orange | `#FFA07A` Light Coral |
 | Vorschau: Platte | `#FFF8F3` wie Seitenhintergrund, dünne Kante `#FFCC99` Sandy | `#1C1411` wie Seitenhintergrund, dünne Kante `#4A3129` |
 | Vorschau: Linien | die eingestellten **Laserfarben** (siehe unten) | dieselben |
 
 - Farben werden als CSS-Variablen auf `:root` festgelegt und für dunkel unter `@media (prefers-color-scheme: dark)` neu gesetzt.
-- **Buttontext auf Tomato/Salmon ist dunkel (`#2B1A14`), nicht weiß.** Weiß auf Tomato ist zu kontrastarm.
+- **Buttontext auf dem Akzent ist dunkel, nicht weiß:** hell `#1C110D` auf Logo-Orange, dunkel `#2B1A14` auf Salmon. Weiß wäre zu kontrastarm.
 
 ### Eigene Gestaltungsentscheidung (Kursaufgabe Tag 2)
 

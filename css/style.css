@@ -13,9 +13,9 @@
   --linie:       #FFCC99;   /* Sandy – Rahmen und Linien */
   --text:        #2B1A14;
   --text-leise:  #7A4A3A;
-  --akzent:      #FF6347;   /* Tomato – Buttons, aktiv */
-  --akzent-hover:#F97A5D;   /* Coral */
-  --akzent-text: #2B1A14;   /* dunkler Text auf Tomato (besser lesbar als weiß) */
+  --akzent:      #CD6148;   /* Logo-Orange (aus Bilder/logo.svg gemessen) – Buttons, Zahlen, aktiv. Vorher Tomato #FF6347 */
+  --akzent-hover:#D7765F;   /* etwas helleres Logo-Orange */
+  --akzent-text: #1C110D;   /* dunkler Text auf dem Logo-Orange (besser lesbar als weiß) */
 
   color-scheme: light;
 }
