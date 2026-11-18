@@ -328,16 +328,8 @@ function karteBauen(g) {
     details: li.querySelector(".karte-details"),
     bauteile: li.querySelector(".karte-bauteile"),
     entfernen: li.querySelector(".datei-entfernen"),
-    vorschau3d: li.querySelector(".karte-3d"),
-    leinwand: li.querySelector(".karte-canvas"),
-    legende: li.querySelector(".karte-3d-legende"),
   };
   g.karte = karte;
-  // Den 3D-Betrachter erst anlegen, wenn die Vorschau aufgeklappt wird
-  // (spart Rechenzeit, wenn viele Gebäude abgelegt sind)
-  karte.vorschau3d.addEventListener("toggle", () => {
-    if (karte.vorschau3d.open) vorschau3dZeigen(g);
-  });
   karte.entfernen.addEventListener("click", () => gebaeudeEntfernen(g));
   karte.tauschen.addEventListener("change", () => {
     if (karte.tauschen.files[0]) dateiTauschen(g, karte.tauschen.files[0]);
@@ -358,56 +350,7 @@ function karteFuellen(g, zustand) {
   k.li.title = g.datei.name; // ganzer Name beim Darüberfahren, falls er abgeschnitten ist
   k.info.textContent = groesseLesbar(g.datei.size) + " · " + zustand;
   k.entfernen.setAttribute("aria-label", "„" + g.datei.name + "“ entfernen");
-  if (!g.info) {
-    k.details.hidden = true;
-    k.vorschau3d.hidden = true;
-  }
-}
-
-// ---------------------------------------------------------
-// 3D-Vorschau des gelesenen Gebäudes in seiner Karte.
-// Zeigt alle Bauteile der Gebäudehülle, die die App benutzt,
-// eingefärbt nach ihrer Rolle – so sieht man sofort, ob die
-// Datei richtig gelesen wurde (z. B. ob ein Morph als Wand gilt).
-// ---------------------------------------------------------
-const FARBE_3D = {
-  wand: [216, 205, 189],     // Graupappe
-  dach: [205, 97, 72],       // Logo-Orange
-  koerper: [176, 160, 205],  // Morph als ganzer Gebäudekörper
-  ignorieren: [130, 130, 130],
-};
-
-function vorschau3dZeigen(g) {
-  const k = g.karte;
-  if (!g.info || !k.vorschau3d.open) return;
-  if (!g.betrachter) g.betrachter = new Betrachter(k.leinwand);
-  const teile = [];
-  const gezeigt = new Set();
-  for (const teil of g.info.huelle) {
-    const rolle = teil.art === "proxy" ? g.proxyWahl.get(teil.bauteil) || "ignorieren" : teil.art;
-    gezeigt.add(rolle);
-    // web-ifc: Meter, y nach oben (Norden = −z). Betrachter: mm, z nach oben, y = Norden.
-    const d = teil.dreiecke;
-    const mm = new Float32Array(d.length);
-    for (let i = 0; i + 2 < d.length; i += 3) {
-      mm[i] = d[i] * 1000;
-      mm[i + 1] = -d[i + 2] * 1000;
-      mm[i + 2] = d[i + 1] * 1000;
-    }
-    teile.push({ dreiecke: mm, farbe: FARBE_3D[rolle] || FARBE_3D.ignorieren });
-  }
-  g.betrachter.setzen(teile, null);
-  const namen = { wand: "Wand", dach: "Dach", koerper: "Morph als Gebäudekörper", ignorieren: "ignoriert" };
-  k.legende.replaceChildren(
-    ...[...gezeigt].map((rolle) => {
-      const eintrag = element("span", "inline-flex items-center gap-1 mr-3");
-      const punkt = element("span", "inline-block w-3 h-3 rounded-sm");
-      punkt.style.background = `rgb(${(FARBE_3D[rolle] || FARBE_3D.ignorieren).join(",")})`;
-      eintrag.append(punkt, document.createTextNode(namen[rolle] || rolle));
-      return eintrag;
-    }),
-    document.createTextNode(" · Ziehen = drehen, Mausrad = zoomen, Doppelklick = zurück.")
-  );
+  if (!g.info) k.details.hidden = true;
 }
 
 // Bauteil-Liste eines Gebäudes in seine Karte schreiben
@@ -468,7 +411,6 @@ function bauteileZeigen(g) {
         g.proxyWahl.set(p.id, auswahl.value);
         g.flaechen = null; // neu flach legen
         g.ecken = null;
-        vorschau3dZeigen(g); // Farben in der 3D-Vorschau anpassen
         if (ergebnis) berechnen();
       });
       reihe.append(auswahl);
@@ -479,10 +421,6 @@ function bauteileZeigen(g) {
 
   g.karte.bauteile.replaceChildren(...inhalt);
   g.karte.details.hidden = false;
-  // 3D-Vorschau: bei nur einem Gebäude gleich aufgeklappt
-  g.karte.vorschau3d.hidden = false;
-  if (gebaeude.length === 1) g.karte.vorschau3d.open = true;
-  vorschau3dZeigen(g);
   // Aufgeklappt bei nur einem Gebäude oder wenn es Hinweise gibt
   g.karte.details.open = gebaeude.length === 1 || e.hinweise.length > 0;
 }
