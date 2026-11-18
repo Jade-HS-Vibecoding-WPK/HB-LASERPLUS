@@ -11,7 +11,8 @@
 //   - mindestens 3 mm zwischen den Teilen
 //   - die Nummer steht NEBEN dem Teil (darunter), nie darauf, und wird geritzt
 //   - Teile, die nicht auf die Platte passen, werden gemeldet, nicht verkleinert
-// Reihenfolge in der Datei je Teil: zuerst die Löcher, dann der Umriss,
+// Reihenfolge in der Datei je Teil: zuerst die Ritzlinien (angeritzte
+// Fenster/Türen bei einer Schicht), dann die Löcher, dann der Umriss,
 // damit sich das Teil nicht vorher aus der Platte löst.
 // =========================================================
 
@@ -35,7 +36,11 @@ function rahmenVon(punkte) {
 // Ein Teil um 90° drehen (für Teile, die nur hochkant passen)
 function drehen(form) {
   const d = (p) => [p[1], -p[0]];
-  return { aussen: form.aussen.map(d), loecher: form.loecher.map((l) => l.map(d)) };
+  return {
+    aussen: form.aussen.map(d),
+    loecher: form.loecher.map((l) => l.map(d)),
+    ritzlinien: form.ritzlinien.map((r) => ({ punkte: r.punkte.map(d), geschlossen: r.geschlossen })),
+  };
 }
 
 // teile: aus schichten.js (aussen/loecher in mm), e: Einstellungen
@@ -48,7 +53,7 @@ export function verteilen(teile, e) {
   for (const teil of teile) {
     const text = textLinien(teil.name, SCHRIFT);
     const mass = (r) => ({ b: Math.max(r.b, text.breite), h: r.h + SCHRIFT + SCHRIFT_ABSTAND });
-    let form = { aussen: teil.aussen, loecher: teil.loecher };
+    let form = { aussen: teil.aussen, loecher: teil.loecher, ritzlinien: teil.ritzlinien || [] };
     let r = rahmenVon(form.aussen);
     let m = mass(r);
     let gedreht = false;
@@ -92,6 +97,8 @@ export function verteilen(teile, e) {
     const dx = x - k.r.x0;
     const dy = y + SCHRIFT + SCHRIFT_ABSTAND - k.r.y0;
     const schieben = (p) => [p[0] + dx, p[1] + dy];
+    // Zuerst ritzen (angeritzte Fenster/Türen bei einer Schicht), dann Löcher, dann Umriss
+    for (const r of k.form.ritzlinien) platte.linien.push({ ebene: "RITZEN", punkte: r.punkte.map(schieben), geschlossen: r.geschlossen });
     for (const loch of k.form.loecher) platte.linien.push({ ebene: "SCHNITT", punkte: loch.map(schieben), geschlossen: true });
     platte.linien.push({ ebene: "SCHNITT", punkte: k.form.aussen.map(schieben), geschlossen: true });
     for (const strich of k.text.linien) {

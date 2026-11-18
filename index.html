@@ -195,15 +195,24 @@
                 Maßstab 1 :
                 <input class="feld" type="number" id="massstab" value="100" min="1" step="1">
               </label>
+              <!-- Wandaufbau: zwei Schichten (wie bisher) oder eine Schicht -->
+              <label class="flex flex-col gap-1 text-sm sm:col-span-3 lg:col-span-2">
+                Wandaufbau
+                <select class="feld" id="wandaufbau">
+                  <option value="zwei" selected>Zwei Schichten (außen mit Fenstern und Türen ausgeschnitten, innen geschlossen)</option>
+                  <option value="eine-geritzt">Eine Schicht, Fenster und Türen geritzt</option>
+                  <option value="eine-ohne">Eine Schicht, ohne Fenster und Türen</option>
+                </select>
+              </label>
               <label class="flex flex-col gap-1 text-sm">
-                Pappdicke innen
+                <span id="dicke-innen-text">Pappdicke innen</span>
                 <select class="feld" id="dicke-innen">
                   <option value="1">1 mm</option>
                   <option value="1.5">1,5 mm</option>
                   <option value="2" selected>2 mm</option>
                 </select>
               </label>
-              <label class="flex flex-col gap-1 text-sm">
+              <label class="flex flex-col gap-1 text-sm" id="dicke-aussen-feld">
                 Pappdicke außen
                 <select class="feld" id="dicke-aussen">
                   <option value="1" selected>1 mm</option>

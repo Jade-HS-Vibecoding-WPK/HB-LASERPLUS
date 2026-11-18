@@ -1,9 +1,12 @@
 // =========================================================
 // Schichten, Ecken und Nummern
 //
-// Aus jeder Fassadenfläche werden zwei Pappen:
+// Aus jeder Fassadenfläche werden (Einstellung „Wandaufbau“):
+//   zwei Pappen (Standard):
 //   - Außenschicht (A): mit Fenstern und Türen als Löcher
 //   - Innenschicht (I): geschlossen, tragend
+//   oder eine Pappe (A), geschlossen, Fenster und Türen
+//   wahlweise angeritzt oder ganz weggelassen
 // Jede Dachfläche wird eine Pappe (eine Schicht, Dicke = Pappdicke innen).
 //
 // Nummern: A-001 = Außenschicht, I-001 = Innenschicht derselben Fassade,
@@ -240,6 +243,11 @@ export function himmelsrichtung(n) {
 export function teileBauen(flaechen, ecken, e, vorsatz = "") {
   const k = 1000 / e.massstab; // Meter → mm im Modell
   const ta = e.dickeAussen, ti = e.dickeInnen, td = e.dickeInnen;
+  // Wandaufbau (Einstellung): "zwei" = Außen- + Innenschicht,
+  // "eine-geritzt" / "eine-ohne" = nur eine Schicht (Dicke = Pappdicke innen,
+  // im Formular dann „Pappdicke Wand und Dach“ genannt)
+  const aufbau = e.wandaufbau || "zwei";
+  const eineSchicht = aufbau !== "zwei";
 
   // Nummern: Fassaden im Uhrzeigersinn ab Norden, danach das Dach
   const nummer = new Map();
@@ -258,19 +266,37 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
 
     // Schichten: tiefe = wie weit die Vorderseite hinter der echten Außenfläche liegt.
     // eKlein/eGross = bis zu welcher Tiefe der Nachbarfläche die Platte reicht
-    const schichten =
-      f.wofuer === "fassade"
-        ? [
-            { schicht: "A", wort: "Außenschicht", tiefe: 0, dicke: ta, mitLoechern: true, eKlein: 0, eGross: ta },
-            { schicht: "I", wort: "Innenschicht", tiefe: ta, dicke: ti, mitLoechern: false, eKlein: ta, eGross: ta + ti },
-          ]
-        : [{ schicht: "", wort: "Dachplatte", tiefe: 0, dicke: td, mitLoechern: true, eKlein: 0, eGross: td }];
+    // ritzen = Fenster und Türen nicht ausschneiden, sondern anritzen
+    let schichten;
+    if (f.wofuer !== "fassade") {
+      schichten = [{ schicht: "", wort: "Dachplatte", tiefe: 0, dicke: td, mitLoechern: true, eKlein: 0, eGross: td }];
+    } else if (eineSchicht) {
+      const wort = aufbau === "eine-geritzt" ? "Wand, eine Schicht, Öffnungen geritzt" : "Wand, eine Schicht, ohne Öffnungen";
+      schichten = [{ schicht: "A", wort, tiefe: 0, dicke: ti, mitLoechern: false, ritzen: aufbau === "eine-geritzt", eKlein: 0, eGross: ti }];
+    } else {
+      schichten = [
+        { schicht: "A", wort: "Außenschicht", tiefe: 0, dicke: ta, mitLoechern: true, eKlein: 0, eGross: ta },
+        { schicht: "I", wort: "Innenschicht", tiefe: ta, dicke: ti, mitLoechern: false, eKlein: ta, eGross: ta + ti },
+      ];
+    }
 
     for (const s of schichten) {
       // Fassaden: kleine Stufen (z. B. vom Dach eingeschnittene Giebelecken) glätten
       let umriss = f.wofuer === "fassade" ? stufenGlaetten(f.aussen) : f.aussen.map((p) => [p[0], p[1]]);
-      // Innenschicht geschlossen: auch Aussparungen am unteren Rand (Türen bis zum Boden) füllen
-      if (f.wofuer === "fassade" && !s.mitLoechern) umriss = unterkanteSchliessen(umriss);
+      // Geschlossene Wand (Innenschicht oder eine Schicht): auch Aussparungen am
+      // unteren Rand (Türen bis zum Boden) füllen. Die Umrisse dieser Türen
+      // merken wir uns, falls sie angeritzt werden sollen.
+      const tuerAussparungen = [];
+      if (f.wofuer === "fassade" && !s.mitLoechern) umriss = unterkanteSchliessen(umriss, tuerAussparungen);
+      // Ritzlinien (in Meter): Fenster/Türen als geschlossene Linien,
+      // Türen bis zum Boden als offener Linienzug (unten ist ja die Schnittkante –
+      // dort darf nicht noch einmal geritzt werden, sonst brennt die Pappe)
+      const ritzlinien = s.ritzen
+        ? [
+            ...f.loecher.map((l) => ({ punkte: l, geschlossen: true })),
+            ...tuerAussparungen.map((t) => ({ punkte: t, geschlossen: false })),
+          ]
+        : [];
       const eckInfo = [];
       for (const c of meineEcken) {
         const laeuftDurch = c.durch === index;
@@ -294,6 +320,7 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
         dicke: s.dicke,
         aussen: umriss.map((p) => [p[0] * k, p[1] * k]),
         loecher: s.mitLoechern ? f.loecher.map((l) => l.map((p) => [p[0] * k, p[1] * k])) : [],
+        ritzlinien: ritzlinien.map((r) => ({ punkte: r.punkte.map((p) => [p[0] * k, p[1] * k]), geschlossen: r.geschlossen })),
         ecken: eckInfo,
       });
     }
@@ -354,7 +381,9 @@ function schnittpunkt(a, b, c, d) {
 // rechts wieder auf ihr an, ohne seitlich darüber hinaus zu gehen, ist
 // das eine Aussparung – sie wird durch eine gerade Linie ersetzt.
 // ---------------------------------------------------------
-function unterkanteSchliessen(umriss) {
+// aussparungen (wahlweise): Liste, in die jede geschlossene Aussparung als
+// offener Linienzug gelegt wird (von der Unterkante hoch, rüber, wieder runter).
+function unterkanteSchliessen(umriss, aussparungen = null) {
   const n = umriss.length;
   const vmin = Math.min(...umriss.map((p) => p[1]));
   const unten = (p) => Math.abs(p[1] - vmin) < 1e-3;
@@ -383,6 +412,11 @@ function unterkanteSchliessen(umriss) {
           innerhalb = z[0] >= p[0] - 1e-6 && z[0] <= q[0] + 1e-6;
         }
         if (innerhalb) {
+          if (aussparungen) {
+            const zug = [];
+            for (let m = 0; m <= k; m++) zug.push(umriss[(idx + m) % n]);
+            aussparungen.push(zug);
+          }
           i += k; // Umweg überspringen, weiter bei q
           continue;
         }

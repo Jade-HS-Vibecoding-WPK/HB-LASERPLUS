@@ -121,6 +121,10 @@ export function uebersichtBauen(daten) {
   const { einstellungen: e, gebaeude, teile, platten, mehrere } = daten;
   const blatt = element("div", "blatt");
   const alleEcken = gebaeude.flatMap((b) => b.ecken);
+  // Wandaufbau: zwei Schichten (Standard) oder eine Schicht
+  const aufbau = e.wandaufbau || "zwei";
+  const eineSchicht = aufbau !== "zwei";
+  const mm = (z) => String(z).replace(".", ",") + " mm";
 
   // Kopf
   blatt.append(element("h1", "", "Erstelle deine Laserdatei · Übersichtsblatt"));
@@ -129,8 +133,10 @@ export function uebersichtBauen(daten) {
     element(
       "p",
       "klein",
-      `${dateien} · Maßstab 1:${e.massstab} · Pappe innen ${String(e.dickeInnen).replace(".", ",")} mm, ` +
-        `außen ${String(e.dickeAussen).replace(".", ",")} mm · Dach ${String(e.dickeInnen).replace(".", ",")} mm · ` +
+      `${dateien} · Maßstab 1:${e.massstab} · ` +
+        (eineSchicht
+          ? `Wände eine Schicht (${aufbau === "eine-geritzt" ? "Fenster und Türen geritzt" : "ohne Fenster und Türen"}), Pappe ${mm(e.dickeInnen)} · Dach ${mm(e.dickeInnen)} · `
+          : `Pappe innen ${mm(e.dickeInnen)}, außen ${mm(e.dickeAussen)} · Dach ${mm(e.dickeInnen)} · `) +
         `${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} ${e.platteBreite} × ${e.platteHoehe} mm · ` +
         new Date().toLocaleDateString("de-DE")
     )
@@ -139,16 +145,36 @@ export function uebersichtBauen(daten) {
   // Legende: was bedeuten die Nummern?
   blatt.append(element("h2", "", "Legende"));
   const legende = element("ul");
-  legende.append(
-    element("li", "", "A-001, A-002 … = Außenschicht einer Fassade, mit Fenstern und Türen. Wird außen auf die Innenschicht geklebt."),
-    element("li", "", "I-001, I-002 … = Innenschicht derselben Fassade, geschlossen. Die Innenschichten bilden den tragenden Kasten."),
-    element("li", "", "D-001, D-002 … = Dachfläche."),
-    element("li", "", "Gleiche Zahl bei A und I = gleiche Fassade: A-001 kommt auf I-001. Im Grundriss steht diese Zahl an der Fassade."),
-    element("li", "", "Die Nummern sind blau neben das Teil auf die Restpappe geritzt, nicht auf das Teil selbst.")
-  );
+  if (eineSchicht) {
+    legende.append(
+      element(
+        "li",
+        "",
+        aufbau === "eine-geritzt"
+          ? "A-001, A-002 … = Wand einer Fassade, eine Schicht. Fenster und Türen sind blau angeritzt, nicht ausgeschnitten."
+          : "A-001, A-002 … = Wand einer Fassade, eine Schicht, ohne Fenster und Türen."
+      ),
+      element("li", "", "D-001, D-002 … = Dachfläche."),
+      element("li", "", "Im Grundriss steht die Zahl an der Fassade (001 = A-001)."),
+      element("li", "", "Die Nummern sind blau neben das Teil auf die Restpappe geritzt, nicht auf das Teil selbst.")
+    );
+  } else {
+    legende.append(
+      element("li", "", "A-001, A-002 … = Außenschicht einer Fassade, mit Fenstern und Türen. Wird außen auf die Innenschicht geklebt."),
+      element("li", "", "I-001, I-002 … = Innenschicht derselben Fassade, geschlossen. Die Innenschichten bilden den tragenden Kasten."),
+      element("li", "", "D-001, D-002 … = Dachfläche."),
+      element("li", "", "Gleiche Zahl bei A und I = gleiche Fassade: A-001 kommt auf I-001. Im Grundriss steht diese Zahl an der Fassade."),
+      element("li", "", "Die Nummern sind blau neben das Teil auf die Restpappe geritzt, nicht auf das Teil selbst.")
+    );
+  }
   if (mehrere) {
     legende.append(
-      element("li", "", "Mehrere Gebäude: Vorne steht die Gebäude-Nummer. 2-A-001 = Gebäude 2, Außenschicht der Fassade 001.")
+      element(
+        "li",
+        "",
+        "Mehrere Gebäude: Vorne steht die Gebäude-Nummer. 2-A-001 = Gebäude 2, " +
+          (eineSchicht ? "Wand der Fassade 001." : "Außenschicht der Fassade 001.")
+      )
     );
   }
   blatt.append(legende);
@@ -169,7 +195,9 @@ export function uebersichtBauen(daten) {
     element(
       "p",
       "klein",
-      "Fassaden als dicke Linien mit ihrer Zahl (dazu gehören A- und I-Teil mit derselben Zahl), Dachflächen gestrichelt mit D-Nummer. Blick von oben, Norden oben." +
+      (eineSchicht
+        ? "Fassaden als dicke Linien mit ihrer Zahl (das A-Teil mit derselben Zahl), Dachflächen gestrichelt mit D-Nummer. Blick von oben, Norden oben."
+        : "Fassaden als dicke Linien mit ihrer Zahl (dazu gehören A- und I-Teil mit derselben Zahl), Dachflächen gestrichelt mit D-Nummer. Blick von oben, Norden oben.") +
         (mehrere ? " Jedes Gebäude ist für sich gezeichnet, nicht in seiner Lage zu den anderen." : "")
     )
   );
@@ -188,7 +216,16 @@ export function uebersichtBauen(daten) {
     const zeile = element("tr");
     zeile.append(
       element("td", "teilnummer", t.name),
-      element("td", "", t.beschreibung + (t.loecher.length ? ` (${t.loecher.length} Öffnungen)` : "")),
+      element(
+        "td",
+        "",
+        t.beschreibung +
+          (t.loecher.length
+            ? ` (${t.loecher.length} Öffnungen)`
+            : t.ritzlinien && t.ritzlinien.length
+              ? ` (${t.ritzlinien.length} Öffnungen geritzt)`
+              : "")
+      ),
       element("td", "", `${b.toFixed(1).replace(".", ",")} × ${h.toFixed(1).replace(".", ",")} mm`),
       element("td", "", platteVon.has(t.name) ? String(platteVon.get(t.name)) : "passt nicht")
     );
@@ -209,11 +246,19 @@ export function uebersichtBauen(daten) {
     const beispiel = beispielA ? `, also ${beispielA.name} auf ${beispielA.name.replace(/A-(\d+)$/, "I-$1")}` : "";
     if (mehrere) blatt.append(element("h3", "gebaeude-titel", `Gebäude ${b.nummer} · ${b.name}`));
     const schritte = element("ol");
-    schritte.append(
-      element("li", "", `Innenschichten zu einem Kasten kleben: ${namen((t) => t.schicht === "I")}. Die Innenschichten sind geschlossen und tragen das Modell.`),
-      element("li", "", `Außenschichten (mit Fenstern und Türen) auf die passenden Innenschichten kleben: ${namen((t) => t.schicht === "A")}. Gleiche Zahl = gleiche Fassade${beispiel}.`),
-      element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Zuerst die gekürzten Dachflächen, dann die durchlaufenden – sie überlappen am First.`)
-    );
+    const dachSchritt = element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Zuerst die gekürzten Dachflächen, dann die durchlaufenden – sie überlappen am First.`);
+    if (eineSchicht) {
+      schritte.append(
+        element("li", "", `Wände zu einem Kasten kleben: ${namen((t) => t.schicht === "A")}. An jeder Ecke läuft eine Wand durch, die andere stößt dagegen.`),
+        dachSchritt
+      );
+    } else {
+      schritte.append(
+        element("li", "", `Innenschichten zu einem Kasten kleben: ${namen((t) => t.schicht === "I")}. Die Innenschichten sind geschlossen und tragen das Modell.`),
+        element("li", "", `Außenschichten (mit Fenstern und Türen) auf die passenden Innenschichten kleben: ${namen((t) => t.schicht === "A")}. Gleiche Zahl = gleiche Fassade${beispiel}.`),
+        dachSchritt
+      );
+    }
     blatt.append(schritte);
   }
 
@@ -223,6 +268,9 @@ export function uebersichtBauen(daten) {
   hinweise.append(
     element("li", "", "An den Ecken läuft immer eine Fassade durch, die andere ist um die Pappdicke(n) kürzer. Die App hat das schon eingerechnet – die Außenmaße stimmen.")
   );
+  if (aufbau === "eine-geritzt") {
+    hinweise.append(element("li", "", "Fenster und Türen sind nur angeritzt (blau). Die Wand bleibt geschlossen – Türen bis zum Boden auch."));
+  }
   if (alleEcken.some((c) => Math.abs(Math.cos(c.phi)) > 0.02)) {
     hinweise.append(element("li", "", "Schräge Ecken, Grate und Kehlen (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));
   }
