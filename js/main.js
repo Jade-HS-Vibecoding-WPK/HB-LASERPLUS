@@ -32,6 +32,7 @@ import { farbmodusStarten } from "./farbmodus.js";
 import { Betrachter } from "./betrachter.js"; // 3D-Vorschau (von Svenjas Zusatz 3D übernommen, unverändert)
 import { modellTeile, grundrissBreite } from "./modell3d.js";
 import { staffageTeile } from "./staffage.js";
+import { vrKnopfAnschliessen } from "./vr.js"; // ZUSATZ VR
 
 // Knopf hell/dunkel (Sonne/Mond) anschließen
 farbmodusStarten();
@@ -484,6 +485,19 @@ erstellenKnopf.addEventListener("click", () => {
 // Mehrere Gebäude stehen nebeneinander (nicht in ihrer echten Lage).
 // ---------------------------------------------------------
 var modellBetrachter = null; // „var“, weil modellZeigen schon beim Start aufgerufen werden kann
+var letztesModell = null; // ZUSATZ VR: zuletzt gezeigtes Modell (Dreiecke) für die Brille
+
+// ZUSATZ VR: Knopf „Auf dem Tisch ansehen (Meta Quest)“. Mit Sicherheitsnetz,
+// damit ein Fehler hier nie die Laser-Seite stört.
+try {
+  vrKnopfAnschliessen(
+    document.getElementById("vr-knopf"),
+    document.getElementById("vr-hinweis"),
+    () => letztesModell
+  ).catch((fehler) => console.error("VR-Knopf:", fehler));
+} catch (fehler) {
+  console.error("VR-Knopf:", fehler);
+}
 
 function modellZeigen() {
   const modellFeld = document.getElementById("modell3d");
@@ -510,6 +524,7 @@ function modellZeigen() {
     naechstesX += r.x1 - r.x0 + 20; // 2 cm Abstand zwischen den Gebäuden
   }
   modellBetrachter.setzen(alle, null);
+  letztesModell = alle; // ZUSATZ VR: dasselbe Modell auch für die Brille
   const aufbau = e.wandaufbau || "zwei";
   const eintraege = [
     [[216, 205, 189], aufbau === "zwei" ? "Außenschicht (A)" : "Wand (A)"],

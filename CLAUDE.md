@@ -56,6 +56,7 @@ Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdeck
     - **Am Ende jeder Antwort, in der Dateien geändert wurden**, steht in großen Buchstaben mit Ausrufezeichen, wohin hochgeladen wird, z. B. **HOCHLADEN IN: MAIN !** oder **HOCHLADEN IN: ZUSATZ-3D !**
     - Änderungen an der Basis gehören immer zuerst nach `main`. Danach `main` in `zusatz-3d` übernehmen (GitHub Desktop: auf `zusatz-3d` umschalten → **Branch → Merge into current branch… → main**), damit die Zusatzversion die Basis-Änderungen auch hat.
     - Die Anweisung **„Entferne alles aus der Zusatzversion und ändere die App zur Basisversion“** heißt: `zusatz-3d` nicht nach `main` übernehmen; `main` bleibt, wie es ist.
+    - **Dritter Branch (seit 18.11.): `VR-Modell-Zusatz`** = Zusatz „Modell in der Meta Quest 3 auf dem Tisch ansehen“ (WebXR, Mixed Reality). Von `main` abgezweigt. Kommt nur nach `main`, wenn er funktioniert und das Team zustimmt. VR-Code steht in `js/vr.js`; in gemeinsamen Dateien (`index.html`, `js/main.js`, `css/style.css`) sind die Stellen mit **„ZUSATZ VR“** markiert, damit Konflikte beim Zusammenführen klein bleiben. Am Ende einer Antwort dann: **HOCHLADEN IN: VR-MODELL-ZUSATZ !**
 
 ---
 

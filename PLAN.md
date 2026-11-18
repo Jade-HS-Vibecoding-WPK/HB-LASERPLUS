@@ -226,6 +226,13 @@ Wir arbeiten mit zwei Branches in GitHub (Regeln dazu: CLAUDE.md, Regel 11).
 - ✅ **Getrennte Platten nach Pappdicke** (18.11., Fehler gefunden von Alison): Eine Laserplatte ist eine Pappe mit einer Dicke. Darum verteilt `js/verteilen.js` die Teile je Pappdicke auf eigene Platten (z. B. Außenschicht 1 mm, Innenschicht und Dach 2 mm). Die Dicke steht über jeder Platte, im DXF-Dateinamen (`…_Pappe-1-5mm.dxf`) und in der Teileliste des Übersichtsblatts. Das Dach hat weiter die Pappdicke innen (bewusst so entschieden).
 - ✅ **Menschen und Bäume (Staffage)** (18.11., Idee von Alison, bewusst vor dem Freeze gebaut): In Bereich 2 „Menschen und Bäume“: Anzahl Menschen (0–50), Anzahl Bäume (0–30), Baumhöhe (6 / 10 / 15 m) und eigene Pappdicke (1 / 1,5 / 2 mm, Start 1 mm). Selbst gezeichnete, frei nutzbare Formen (`js/staffage.js`), kein Internet: **Mensch** 1,75 m mit Fußlasche (Nummer `M-01` …), **Steckbaum** aus zwei Teilen mit Schlitz in Pappdicke, Teil A von oben, Teil B von unten bis zur Mitte (Nummern `B-01A` + `B-01B`). Kommen automatisch mit auf die Platten (bei anderer Pappdicke auf eine eigene Platte), stehen in der Teileliste, Hinweise zum Aufkleben/Zusammenstecken im Übersichtsblatt. Werden in Vorlagen mitgespeichert. **Ehrlich:** mit Probe-Teilen im Browser geprüft, noch nicht mit echter IFC und noch nicht gelasert; bei kleinen Maßstäben (z. B. 1:500) werden Menschen sehr klein (ca. 3,5 mm). Die Formen sind schlicht.
 
+### Zusatz VR (`VR-Modell-Zusatz`, seit 18.11.)
+
+- **Idee von Alison:** Das fertige Pappmodell in der **Meta Quest 3** als virtuelles Modell auf dem echten Tisch ansehen (Mixed Reality über **WebXR**, im Quest-Browser eingebaut, keine Bibliothek).
+- **Geplant:** In Bereich 3 unter der Modell-Vorschau ein Knopf „Auf dem Tisch ansehen (Meta Quest)“. Das Modell erscheint in **echter Modellgröße** (1:100 → so groß wie das Pappmodell). Mit dem Controller auf den Tisch zielen und drücken = abstellen, Greiftaste = drehen. Code in `js/vr.js`.
+- **Hürde (ehrlich):** WebXR läuft nur auf sicheren Seiten (HTTPS). Zum Testen entweder Quest per USB mit Port-Weiterleitung (Entwicklermodus + Meta Quest Developer Hub) oder später über eine HTTPS-Adresse. Claude kann ohne Brille nicht testen; Tests macht Alison mit der Quest.
+- Kommt nur nach `main`, wenn es zuverlässig läuft. Sonst: Ausblick in der Präsentation.
+
 ### Zusatzversion (`zusatz-3d`): geplant
 
 - Startseite mit **zwei Karten**: „Erstelle deine Laserdatei“ (DXF) und „Erstelle deine 3D-Druck-Datei“ (STL), je mit einem Platzhalter-Kasten für ein Bild.

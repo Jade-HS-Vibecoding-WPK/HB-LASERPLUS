@@ -337,6 +337,11 @@
           <summary class="titel text-xs font-bold text-leise">So wird dein Modell (3D)</summary>
           <canvas id="modell-canvas" class="karte-canvas modell-canvas mt-3" role="img" aria-label="3D-Vorschau des fertigen Pappmodells. Ziehen dreht, Mausrad zoomt, Doppelklick setzt zurück."></canvas>
           <p id="modell-legende" class="mt-2 text-xs text-leise"></p>
+          <!-- ZUSATZ VR: Modell in der Meta Quest 3 auf dem Tisch ansehen (js/vr.js) -->
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button type="button" class="knopf text-sm" id="vr-knopf" disabled>Auf dem Tisch ansehen (Meta Quest)</button>
+            <p id="vr-hinweis" class="text-xs text-leise flex-1 min-w-[12rem]" role="status" aria-live="polite"></p>
+          </div>
         </details>
 
         <!-- Die fertigen Platten, je mit eigenem DXF-Knopf -->
