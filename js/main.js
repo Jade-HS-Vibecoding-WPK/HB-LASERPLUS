@@ -29,6 +29,8 @@ import { eckenFinden, teileBauen } from "./schichten.js";
 import { verteilen } from "./verteilen.js";
 import { uebersichtBauen } from "./uebersicht.js";
 import { farbmodusStarten } from "./farbmodus.js";
+import { Betrachter } from "./betrachter.js"; // 3D-Vorschau (von Svenjas Zusatz 3D übernommen, unverändert)
+import { modellTeile, grundrissBreite } from "./modell3d.js";
 
 // Knopf hell/dunkel (Sonne/Mond) anschließen
 farbmodusStarten();
@@ -326,8 +328,16 @@ function karteBauen(g) {
     details: li.querySelector(".karte-details"),
     bauteile: li.querySelector(".karte-bauteile"),
     entfernen: li.querySelector(".datei-entfernen"),
+    vorschau3d: li.querySelector(".karte-3d"),
+    leinwand: li.querySelector(".karte-canvas"),
+    legende: li.querySelector(".karte-3d-legende"),
   };
   g.karte = karte;
+  // Den 3D-Betrachter erst anlegen, wenn die Vorschau aufgeklappt wird
+  // (spart Rechenzeit, wenn viele Gebäude abgelegt sind)
+  karte.vorschau3d.addEventListener("toggle", () => {
+    if (karte.vorschau3d.open) vorschau3dZeigen(g);
+  });
   karte.entfernen.addEventListener("click", () => gebaeudeEntfernen(g));
   karte.tauschen.addEventListener("change", () => {
     if (karte.tauschen.files[0]) dateiTauschen(g, karte.tauschen.files[0]);
@@ -348,7 +358,56 @@ function karteFuellen(g, zustand) {
   k.li.title = g.datei.name; // ganzer Name beim Darüberfahren, falls er abgeschnitten ist
   k.info.textContent = groesseLesbar(g.datei.size) + " · " + zustand;
   k.entfernen.setAttribute("aria-label", "„" + g.datei.name + "“ entfernen");
-  if (!g.info) k.details.hidden = true;
+  if (!g.info) {
+    k.details.hidden = true;
+    k.vorschau3d.hidden = true;
+  }
+}
+
+// ---------------------------------------------------------
+// 3D-Vorschau des gelesenen Gebäudes in seiner Karte.
+// Zeigt alle Bauteile der Gebäudehülle, die die App benutzt,
+// eingefärbt nach ihrer Rolle – so sieht man sofort, ob die
+// Datei richtig gelesen wurde (z. B. ob ein Morph als Wand gilt).
+// ---------------------------------------------------------
+const FARBE_3D = {
+  wand: [216, 205, 189],     // Graupappe
+  dach: [205, 97, 72],       // Logo-Orange
+  koerper: [176, 160, 205],  // Morph als ganzer Gebäudekörper
+  ignorieren: [130, 130, 130],
+};
+
+function vorschau3dZeigen(g) {
+  const k = g.karte;
+  if (!g.info || !k.vorschau3d.open) return;
+  if (!g.betrachter) g.betrachter = new Betrachter(k.leinwand);
+  const teile = [];
+  const gezeigt = new Set();
+  for (const teil of g.info.huelle) {
+    const rolle = teil.art === "proxy" ? g.proxyWahl.get(teil.bauteil) || "ignorieren" : teil.art;
+    gezeigt.add(rolle);
+    // web-ifc: Meter, y nach oben (Norden = −z). Betrachter: mm, z nach oben, y = Norden.
+    const d = teil.dreiecke;
+    const mm = new Float32Array(d.length);
+    for (let i = 0; i + 2 < d.length; i += 3) {
+      mm[i] = d[i] * 1000;
+      mm[i + 1] = -d[i + 2] * 1000;
+      mm[i + 2] = d[i + 1] * 1000;
+    }
+    teile.push({ dreiecke: mm, farbe: FARBE_3D[rolle] || FARBE_3D.ignorieren });
+  }
+  g.betrachter.setzen(teile, null);
+  const namen = { wand: "Wand", dach: "Dach", koerper: "Morph als Gebäudekörper", ignorieren: "ignoriert" };
+  k.legende.replaceChildren(
+    ...[...gezeigt].map((rolle) => {
+      const eintrag = element("span", "inline-flex items-center gap-1 mr-3");
+      const punkt = element("span", "inline-block w-3 h-3 rounded-sm");
+      punkt.style.background = `rgb(${(FARBE_3D[rolle] || FARBE_3D.ignorieren).join(",")})`;
+      eintrag.append(punkt, document.createTextNode(namen[rolle] || rolle));
+      return eintrag;
+    }),
+    document.createTextNode(" · Ziehen = drehen, Mausrad = zoomen, Doppelklick = zurück.")
+  );
 }
 
 // Bauteil-Liste eines Gebäudes in seine Karte schreiben
@@ -409,6 +468,7 @@ function bauteileZeigen(g) {
         g.proxyWahl.set(p.id, auswahl.value);
         g.flaechen = null; // neu flach legen
         g.ecken = null;
+        vorschau3dZeigen(g); // Farben in der 3D-Vorschau anpassen
         if (ergebnis) berechnen();
       });
       reihe.append(auswahl);
@@ -419,6 +479,10 @@ function bauteileZeigen(g) {
 
   g.karte.bauteile.replaceChildren(...inhalt);
   g.karte.details.hidden = false;
+  // 3D-Vorschau: bei nur einem Gebäude gleich aufgeklappt
+  g.karte.vorschau3d.hidden = false;
+  if (gebaeude.length === 1) g.karte.vorschau3d.open = true;
+  vorschau3dZeigen(g);
   // Aufgeklappt bei nur einem Gebäude oder wenn es Hinweise gibt
   g.karte.details.open = gebaeude.length === 1 || e.hinweise.length > 0;
 }
@@ -473,6 +537,61 @@ erstellenKnopf.addEventListener("click", () => {
 });
 
 // ---------------------------------------------------------
+// Modell-Vorschau (Bereich 3): alle Pappteile in 3D zusammengesetzt,
+// so wie das Modell nach dem Kleben aussieht. Ändert sich eine
+// Einstellung (z. B. Wandaufbau), wird neu gerechnet und neu gezeigt.
+// Mehrere Gebäude stehen nebeneinander (nicht in ihrer echten Lage).
+// ---------------------------------------------------------
+var modellBetrachter = null; // „var“, weil modellZeigen schon beim Start aufgerufen werden kann
+
+function modellZeigen() {
+  const modellFeld = document.getElementById("modell3d");
+  const modellLeinwand = document.getElementById("modell-canvas");
+  const modellLegende = document.getElementById("modell-legende");
+  if (!ergebnis || ergebnis.teile.length === 0) {
+    modellFeld.hidden = true;
+    return;
+  }
+  modellFeld.hidden = false;
+  if (!modellBetrachter) modellBetrachter = new Betrachter(modellLeinwand);
+  const { teile, einstellungen: e, gebaeude: liste } = ergebnis;
+  const k = 1000 / e.massstab;
+  const alle = [];
+  let naechstesX = 0;
+  for (const b of liste) {
+    const eigene = teile.filter((t) => t.gebaeude === b.nummer);
+    if (!eigene.length) continue;
+    // erst ohne Versatz bauen, um die Breite zu kennen, dann daneben stellen
+    const probe = modellTeile(b.flaechen, eigene, k, e.farben.ritzen);
+    const r = grundrissBreite(probe);
+    const versatz = [naechstesX - r.x0, 0];
+    alle.push(...(versatz[0] === 0 ? probe : modellTeile(b.flaechen, eigene, k, e.farben.ritzen, versatz)));
+    naechstesX += r.x1 - r.x0 + 20; // 2 cm Abstand zwischen den Gebäuden
+  }
+  modellBetrachter.setzen(alle, null);
+  const aufbau = e.wandaufbau || "zwei";
+  const eintraege = [
+    [[216, 205, 189], aufbau === "zwei" ? "Außenschicht (A)" : "Wand (A)"],
+    ...(aufbau === "zwei" ? [[[169, 157, 138], "Innenschicht (I)"]] : []),
+    [[205, 97, 72], "Dach (D)"],
+  ];
+  modellLegende.replaceChildren(
+    ...eintraege.map(([farbe, text]) => {
+      const eintrag = element("span", "inline-flex items-center gap-1 mr-3");
+      const punkt = element("span", "inline-block w-3 h-3 rounded-sm");
+      punkt.style.background = `rgb(${farbe.join(",")})`;
+      eintrag.append(punkt, document.createTextNode(text));
+      return eintrag;
+    }),
+    document.createTextNode(
+      (aufbau === "eine-geritzt" ? "Blaue Linien = geritzt. " : "") +
+        "Echte Maße und Pappdicken, so wie die Teile auf den Platten. Ziehen = drehen, Mausrad = zoomen, Doppelklick = zurück." +
+        (liste.length > 1 ? " Mehrere Gebäude stehen nebeneinander, nicht in ihrer echten Lage." : "")
+    )
+  );
+}
+
+// ---------------------------------------------------------
 // Ergebnis zeigen: Warnungen, Platten, Knöpfe
 // ---------------------------------------------------------
 function zeigeErgebnis() {
@@ -485,6 +604,7 @@ function zeigeErgebnis() {
   warnungenFeld.replaceChildren();
   warnungenFeld.hidden = true;
   plattenFeld.replaceChildren();
+  modellZeigen();
   if (!hatErgebnis) return;
 
   const { teile, platten, zuGross, einstellungen: e, gebaeude: liste, mehrere } = ergebnis;

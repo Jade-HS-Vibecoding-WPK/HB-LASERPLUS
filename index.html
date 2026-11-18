@@ -138,6 +138,12 @@
                 <summary class="text-leise">Das steckt in der Datei</summary>
                 <div class="karte-bauteile mt-3"></div>
               </details>
+              <!-- 3D-Vorschau des gelesenen Gebäudes (Should 1; Betrachter: js/betrachter.js) -->
+              <details class="karte-3d mt-2 text-sm" hidden>
+                <summary class="text-leise">3D-Vorschau</summary>
+                <canvas class="karte-canvas mt-3" role="img" aria-label="3D-Vorschau des Gebäudes. Ziehen dreht, Mausrad zoomt, Doppelklick setzt zurück."></canvas>
+                <p class="karte-3d-legende mt-2 text-xs text-leise"></p>
+              </details>
             </div>
             <button type="button" class="datei-entfernen" aria-label="Datei entfernen" title="Datei entfernen">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -285,6 +291,13 @@
         <!-- Leere Laserplatte (Hintergrundfarbe mit gelbem Rahmen), solange noch nichts erstellt ist -->
         <div id="vorschau" class="platte rounded-sm mb-2"></div>
         <p id="vorschau-text" class="text-xs text-leise mb-5">Hier erscheinen die Laserplatten, sobald du auf „Laserplatten erstellen“ klickst.</p>
+
+        <!-- Modell-Vorschau: die Pappteile in 3D zusammengesetzt (js/modell3d.js) -->
+        <details id="modell3d" class="mb-6" open hidden>
+          <summary class="titel text-xs font-bold text-leise">So wird dein Modell (3D)</summary>
+          <canvas id="modell-canvas" class="karte-canvas modell-canvas mt-3" role="img" aria-label="3D-Vorschau des fertigen Pappmodells. Ziehen dreht, Mausrad zoomt, Doppelklick setzt zurück."></canvas>
+          <p id="modell-legende" class="mt-2 text-xs text-leise"></p>
+        </details>
 
         <!-- Die fertigen Platten, je mit eigenem DXF-Knopf -->
         <div id="platten" class="space-y-6 mb-5" hidden></div>

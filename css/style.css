@@ -365,6 +365,26 @@ summary {
 .wandbild .leise-klein {
   opacity: 0.75;
 }
+/* 3D-Vorschau des Gebäudes in der Datei-Karte (js/betrachter.js) */
+.karte-canvas {
+  display: block;
+  width: 100%;
+  height: 16rem;
+  border: 1px solid var(--linie);
+  border-radius: 0.75rem;
+  cursor: grab;
+}
+.modell-canvas {
+  height: 22rem;
+}
+.karte-canvas:active {
+  cursor: grabbing;
+}
+.karte-canvas:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+
 /* 3D-Ecke zum Drehen (js/wand3d.js) */
 .wand3d {
   margin-top: 0.75rem;
