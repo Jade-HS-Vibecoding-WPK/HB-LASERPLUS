@@ -224,7 +224,8 @@ Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Au�
 
 Hier landen Ideen, die während der Woche auftauchen. Sie werden nicht sofort gebaut, sondern erst, wenn Zeit ist.
 
-- …
+- **Eigene Vorlagen für die Einstellungen** (Idee von Alison, 18.11.) → **bewusst vorgezogen und gebaut am 18.11.**: In Bereich 2 kann man Maßstab, Pappdicken, Plattengröße und Linienfarben unter einem Namen als Vorlage speichern, wählen und löschen. „Jade HS Standard“ ist fest eingebaut und setzt nur Plattengröße 1000 × 600 mm und die Laserfarben der Werkstatt; Maßstab und Pappdicken bleiben. Die Vorlagen liegen nur im eigenen Browser (`localStorage`). Mit „Als Datei speichern“ / „Datei laden“ (kleine .json-Datei) nimmt man sie auf einen anderen Rechner mit oder gibt sie weiter.
+- **Benutzer-Accounts** (Idee von Alison, 18.11.): Jede Person meldet sich an, und ihre Vorlagen liegen online. **Nicht diese Woche:** Dafür bräuchte es einen Server bzw. einen fremden Dienst (verstößt gegen Regel 4 und 10), Passwörter und eine Datenschutzerklärung. Guter Punkt für „Was als Nächstes kommt“ in der Präsentation.
 
 ---
 

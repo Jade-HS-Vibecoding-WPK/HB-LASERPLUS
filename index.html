@@ -118,7 +118,33 @@
 
         <form id="einstellungen" class="space-y-6">
 
+          <!-- Vorlagen: eigene Einstellungen unter einem Namen merken (nur in diesem Browser) -->
           <fieldset>
+            <legend class="titel text-xs font-bold text-leise mb-3">Vorlage</legend>
+            <!-- Beim Speichern wird aus der Auswahlliste ein Namensfeld -->
+            <label class="flex flex-col gap-1 text-sm">
+              <span id="vorlage-beschriftung">Vorlage wählen</span>
+              <select class="feld" id="vorlage-auswahl"></select>
+              <input class="feld" type="text" id="vorlage-name" maxlength="60" placeholder="Name der neuen Vorlage, z. B. Wettbewerb 1:200" autocomplete="off" hidden>
+            </label>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <!-- erscheint, wenn man eine eigene Vorlage gewählt und danach etwas geändert hat -->
+              <button type="button" class="knopf haupt-knopf text-sm" id="vorlage-ueberschreiben" hidden>Vorlage überschreiben</button>
+              <button type="button" class="knopf text-sm" id="vorlage-speichern">Als Vorlage speichern</button>
+              <button type="button" class="knopf text-sm" id="vorlage-loeschen">Vorlage löschen</button>
+              <button type="button" class="knopf text-sm" id="vorlage-abbrechen" hidden>Abbrechen</button>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-2">
+              <button type="button" class="knopf text-sm" id="vorlage-export">Als Datei speichern</button>
+              <label class="knopf text-sm">
+                Datei laden
+                <input type="file" id="vorlage-import" accept=".json,application/json" hidden>
+              </label>
+            </div>
+            <p id="vorlage-status" class="text-xs text-leise mt-2" role="status" aria-live="polite">Deine Vorlagen bleiben in diesem Browser auf deinem Rechner. Mit „Als Datei speichern“ nimmst du sie auf einen anderen Rechner mit.</p>
+          </fieldset>
+
+          <fieldset class="border-t border-linie pt-5">
             <legend class="titel text-xs font-bold text-leise mb-3">Modell</legend>
             <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-2 gap-4">
               <label class="flex flex-col gap-1 text-sm lg:col-span-2">
