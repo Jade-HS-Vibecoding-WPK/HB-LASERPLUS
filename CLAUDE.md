@@ -71,7 +71,7 @@ Ruhig, aufgeräumt, viel Weißraum.
 
 1. **Datei ablegen**: Ablagefläche mit gestrichelter Linie für **eine oder mehrere IFC-Dateien** (je Datei ein Gebäude, auch mehrere auf einmal, höchstens 12). Sind Dateien da, wird die Fläche klein („Weitere IFC-Dateien hierher ziehen“), und darunter steht je Gebäude eine **Datei-Karte** (seit 18.11.): Datei-Symbol, bei mehreren „Gebäude 1 · …“, Name, Größe und Status, **✕ zum Entfernen** (nur dieses Gebäude), „Andere Datei wählen“ zum Austauschen; eine Datei auf eine Karte ziehen tauscht ebenfalls aus. Unpassende Dateien werden mit Hinweis in der Ablagefläche abgelehnt. In jeder Karte zum Aufklappen die **Bauteil-Liste** („Das steckt in der Datei“) mit Hinweisen und der Auswahl für nicht klassifizierte Morphs
 2. **Einstellungen**: Maßstab (Zahlenfeld, Start 1:100), Dicke innen und Dicke außen (je eine Auswahl 1 / 1,5 / 2 mm, Start innen 2 mm, außen 1 mm), Plattengröße (Start 1000 × 600 mm), **Linienfarben** (Schneiden, Ritzen, Rahmen, Gravieren; voreingestellt nach den Werkstatt-Regeln). Ganz oben **Vorlagen** (seit 18.11.): eigene Einstellungen unter einem Namen speichern, wählen, überschreiben, löschen und als .json-Datei mitnehmen, nur im eigenen Browser. Die feste Vorlage **„Jade HS Standard“** setzt nur Plattengröße 1000 × 600 mm und Laserfarben zurück, Maßstab und Pappdicken bleiben (ersetzt den früheren Knopf „Auf Hochschul-Werte zurücksetzen“). Die Seite **merkt sich alle Einstellungen** im Browser (`localStorage`), nichts geht an einen Server. Am Ende der Knopf **„Laserplatten erstellen“**; auf breiten Bildschirmen bleibt er unten in der Spalte immer sichtbar.
-3. **Vorschau & Download**: Warnungen, Platten-Vorschau mit einem DXF-Knopf je Platte, „Alle DXF herunterladen“, „Übersichtsblatt drucken“. Ändert sich danach eine Einstellung, rechnet die App sofort neu.
+3. **Vorschau & Download**: Warnungen, **Modell-Vorschau „So wird dein Modell (3D)“** (seit 18.11.: die fertigen Pappteile in 3D zusammengesetzt, drehbar; `js/modell3d.js` + `js/betrachter.js`), Platten-Vorschau mit einem DXF-Knopf je Platte, „Alle DXF herunterladen“, „Übersichtsblatt drucken“. Ändert sich danach eine Einstellung, rechnet die App sofort neu.
 
 Hell oder dunkel richtet sich **automatisch nach der Systemeinstellung** (`prefers-color-scheme`). Seit 18.11. gibt es zusätzlich einen **Knopf Sonne/Mond** (auf der Startseite oben rechts, auf der Arbeitsseite rechts in der Kopfzeile), der umschaltet und sich die Wahl im Browser merkt (`js/farbmodus.js`, Merkmal `data-theme` am `<html>`, Farben in `css/style.css`). Die Seite muss auch auf schmalen Bildschirmen funktionieren.
 
@@ -136,7 +136,7 @@ Deutsch, Du-Form, kurz und freundlich. Fehlermeldungen sagen, **was zu tun ist**
   - **Tailwind** für das Layout, über das CDN mit fester Version **3.4.16** (`https://cdn.tailwindcss.com/3.4.16`, kein Build-Schritt). Eigene Farben als Tailwind-Theme aus den CSS-Variablen oben.
   - **Google Fonts** nur für die Ersatzschrift „Didact Gothic“
   - **web-ifc 0.0.78**: liest IFC im Browser (WASM). Liegt im Projekt unter `lib/web-ifc/` (von der Nutzerin als npm-Paket heruntergeladen), wird also nicht aus dem Internet geladen. Läuft im einfachen Modus mit einem Prozessorkern (`Init(undefined, true)`). **Achtung:** `StreamMeshes` hat in 0.0.78 einen Fehler (falsche Anzahl Argumente), darum `StreamAllMeshes` und selbst filtern. Lizenz MPL-2.0, `LICENSE.md` muss im Ordner bleiben.
-  - **three.js**: noch nicht eingebunden. Nur nötig für die 3D-Vorschau (Should).
+  - **three.js**: nicht eingebunden und nicht nötig. Die 3D-Vorschau nutzt **WebGL** direkt (im Browser eingebaut) über `js/betrachter.js` (von Svenja aus `zusatz-3d`, auf `main` unverändert übernommen – nur dort ändern und dann in beide Branches bringen, damit die Datei gleich bleibt).
   - Polygon-Vereinigung: **ohne Bibliothek**, selbst geschrieben in `js/abwickeln.js` (gegenläufige Kanten heben sich auf, übrig bleiben Umriss und Löcher).
   - **DXF wird selbst geschrieben** (ASCII, wenige Elementtypen), ohne Bibliothek
 
@@ -154,6 +154,8 @@ js/verteilen.js     – Teile auf Platten verteilen, Nummern daneben
 js/linienschrift.js – Nummern als Linien (zum Ritzen)
 js/dxf.js           – DXF schreiben
 js/wand3d.js        – drehbare 3D-Skizze einer Hausecke zum Wandaufbau (ohne Bibliothek)
+js/modell3d.js      – Modell-Vorschau: fertige Pappteile wieder in 3D zusammensetzen
+js/betrachter.js    – WebGL-Betrachter (von Zusatz 3D übernommen, unverändert)
 js/farbmodus.js     – Knopf hell/dunkel (Sonne/Mond)
 js/uebersicht.js    – Übersichtsblatt zum Drucken
 lib/web-ifc/        – IFC-Bibliothek 0.0.78 (wird mit hochgeladen, siehe .gitignore „!lib/“)
