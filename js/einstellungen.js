@@ -7,6 +7,8 @@
 // Nichts davon geht an einen Server.
 // =========================================================
 
+import { wand3dZeichnen } from "./wand3d.js";
+
 // Name des Notizzettels im Browser
 const SPEICHER_NAME = "ifc-laser-einstellungen";
 
@@ -111,6 +113,101 @@ function dickenfelderAnpassen() {
   const eineSchicht = aktuell.wandaufbau !== "zwei";
   document.getElementById("dicke-innen-text").textContent = eineSchicht ? "Pappdicke Wand und Dach" : "Pappdicke innen";
   document.getElementById("dicke-aussen-feld").style.display = eineSchicht ? "none" : "";
+  wandbildZeichnen();
+}
+
+// ---------------------------------------------------------
+// Vorschaubild zum Wandaufbau (unter der Auswahl „Wandaufbau“):
+// links eine kleine Fassade (Ansicht), rechts ein Schnitt durch die Wand.
+// Linien in den eingestellten Laserfarben: Rot = schneiden, Blau = ritzen.
+// Nur eine Skizze – sie zeigt das Prinzip, nicht dein Gebäude.
+// ---------------------------------------------------------
+function wandbildZeichnen() {
+  const ort = document.getElementById("wandaufbau-bild");
+  if (!ort) return;
+  const aufbau = aktuell.wandaufbau;
+  const rot = aktuell.farben.schneiden, blau = aktuell.farben.ritzen;
+  const pappeAussen = "#d8cdbd", pappeInnen = "#a99d8a"; // Graupappe hell / dunkler (innen)
+  const punkte = (liste) => liste.map((p) => p.join(",")).join(" ");
+
+  // --- Ansicht: Haus mit Satteldach, ein Fenster, eine Tür bis zum Boden ---
+  const fenster = [[38, 62], [72, 62], [72, 88], [38, 88]];
+  const fenster2 = [[118, 62], [146, 62], [146, 88], [118, 88]];
+  const tuer = [[84, 122], [84, 84], [104, 84], [104, 122]]; // offen nach unten
+  const wandOhneTuer = [[20, 122], [20, 44], [92, 12], [164, 44], [164, 122]];
+  const wandMitTuer = [[20, 122], [20, 44], [92, 12], [164, 44], [164, 122], [104, 122], [104, 84], [84, 84], [84, 122]];
+  let ansicht = "";
+  if (aufbau === "zwei") {
+    // hinten die Innenschicht (geschlossen, dunkler), davor die Außenschicht mit Löchern
+    ansicht +=
+      `<polygon points="${punkte(wandOhneTuer)}" fill="${pappeInnen}" />` +
+      `<path d="M${punkte(wandMitTuer)}Z M${punkte(fenster)}Z M${punkte(fenster2)}Z" fill="${pappeAussen}" fill-rule="evenodd" stroke="${rot}" stroke-width="1.6" />`;
+  } else {
+    ansicht += `<polygon points="${punkte(wandOhneTuer)}" fill="${pappeAussen}" stroke="${rot}" stroke-width="1.6" />`;
+    if (aufbau === "eine-geritzt") {
+      ansicht +=
+        `<polygon points="${punkte(fenster)}" fill="none" stroke="${blau}" stroke-width="1.4" />` +
+        `<polygon points="${punkte(fenster2)}" fill="none" stroke="${blau}" stroke-width="1.4" />` +
+        `<polyline points="${punkte(tuer)}" fill="none" stroke="${blau}" stroke-width="1.4" />`;
+    }
+  }
+
+  // --- Schnitt durch die Wand (Pappdicken stark vergrößert) ---
+  const F = 9; // 1 mm = 9 Bildpunkte
+  const x0 = 236, y0 = 18, h = 104;
+  let schnitt = "";
+  let dickeText;
+  if (aufbau === "zwei") {
+    const ta = aktuell.dickeAussen * F, ti = aktuell.dickeInnen * F;
+    schnitt +=
+      `<rect x="${x0}" y="${y0}" width="${ta}" height="${h}" fill="${pappeAussen}" stroke="${rot}" stroke-width="1.2" />` +
+      `<rect x="${x0 + ta}" y="${y0}" width="${ti}" height="${h}" fill="${pappeInnen}" stroke="${rot}" stroke-width="1.2" />` +
+      `<text x="${x0 + ta / 2}" y="${y0 + h + 12}" text-anchor="middle">A</text>` +
+      `<text x="${x0 + ta + ti / 2}" y="${y0 + h + 12}" text-anchor="middle">I</text>`;
+    dickeText = `${zahlText(aktuell.dickeAussen)} + ${zahlText(aktuell.dickeInnen)} mm`;
+  } else {
+    const t = aktuell.dickeInnen * F;
+    schnitt +=
+      `<rect x="${x0}" y="${y0}" width="${t}" height="${h}" fill="${pappeAussen}" stroke="${rot}" stroke-width="1.2" />` +
+      `<text x="${x0 + t / 2}" y="${y0 + h + 12}" text-anchor="middle">A</text>`;
+    dickeText = `${zahlText(aktuell.dickeInnen)} mm`;
+  }
+  schnitt +=
+    `<text x="${x0 - 8}" y="${y0 + h / 2}" text-anchor="end">außen</text>` +
+    `<text x="${x0 + 52}" y="${y0 + h / 2}" text-anchor="start">innen</text>` +
+    `<text x="${x0 + 14}" y="${y0 + h + 25}" text-anchor="middle">${dickeText}</text>`;
+
+  const beschreibung = {
+    zwei: "Zwei Pappen je Fassade: außen (A) mit ausgeschnittenen Fenstern und Türen, dahinter innen (I) geschlossen.",
+    "eine-geritzt": "Eine Pappe je Fassade, geschlossen. Fenster und Türen werden nur angeritzt (blau).",
+    "eine-ohne": "Eine Pappe je Fassade, geschlossen, ohne Fenster und Türen – ein reines Massenmodell.",
+  }[aufbau];
+
+  ort.innerHTML =
+    `<svg viewBox="0 0 330 152" role="img" aria-label="Skizze Wandaufbau: ${beschreibung}">` +
+    `<text x="92" y="6" text-anchor="middle" class="wandbild-titel">Ansicht</text>` +
+    ansicht +
+    `<text x="250" y="6" text-anchor="middle" class="wandbild-titel">Schnitt</text>` +
+    schnitt +
+    `</svg>` +
+    // 3D-Skizze einer Hausecke zum Drehen (js/wand3d.js)
+    `<div class="wand3d">` +
+    `<p class="wand3d-titel">3D-Ecke · ziehen = drehen, Mausrad = zoomen, Doppelklick = zurück</p>` +
+    `<svg id="wand3d-svg" tabindex="0" role="img" aria-label="3D-Skizze einer Hausecke zum Drehen"></svg>` +
+    `</div>` +
+    `<figcaption>${beschreibung} <span class="leise-klein">Skizze, Pappdicken vergrößert. In 3D: Die Nordwand läuft an der Ecke durch, die Westwand ist gekürzt.</span></figcaption>`;
+
+  wand3dZeichnen(document.getElementById("wand3d-svg"), {
+    aufbau,
+    dickeAussen: aktuell.dickeAussen,
+    dickeInnen: aktuell.dickeInnen,
+    farben: aktuell.farben,
+  });
+}
+
+// 1.5 → „1,5“
+function zahlText(z) {
+  return String(z).replace(".", ",");
 }
 
 function felderLesen() {
@@ -122,6 +219,8 @@ function felderLesen() {
   for (const [name, id] of Object.entries(FARBFELDER)) {
     aktuell.farben[name] = document.getElementById(id).value;
   }
+  // (das Vorschaubild zum Wandaufbau wird in dickenfelderAnpassen neu gezeichnet,
+  //  so folgt es auch den Pappdicken und Linienfarben)
   const aufbau = document.getElementById("wandaufbau").value;
   if (WANDAUFBAU.includes(aufbau)) aktuell.wandaufbau = aufbau;
   dickenfelderAnpassen();

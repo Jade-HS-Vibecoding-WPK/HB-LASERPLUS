@@ -153,6 +153,7 @@ js/schichten.js     – Ecken finden, Innen-/Außenschicht, Eckenausgleich, Numm
 js/verteilen.js     – Teile auf Platten verteilen, Nummern daneben
 js/linienschrift.js – Nummern als Linien (zum Ritzen)
 js/dxf.js           – DXF schreiben
+js/wand3d.js        – drehbare 3D-Skizze einer Hausecke zum Wandaufbau (ohne Bibliothek)
 js/farbmodus.js     – Knopf hell/dunkel (Sonne/Mond)
 js/uebersicht.js    – Übersichtsblatt zum Drucken
 lib/web-ifc/        – IFC-Bibliothek 0.0.78 (wird mit hochgeladen, siehe .gitignore „!lib/“)

@@ -330,6 +330,71 @@ summary {
   cursor: pointer;
 }
 
+/* ---------- Vorschaubild zum Wandaufbau (Ansicht + Schnitt) ---------- */
+.wandbild {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--linie);
+  border-radius: 0.75rem;
+  background: var(--hintergrund);
+}
+.wandbild svg {
+  display: block;
+  width: 100%;
+  max-width: 24rem;
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+}
+.wandbild svg text {
+  font-size: 9px;
+  fill: var(--text);
+}
+.wandbild svg .wandbild-titel {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  fill: var(--text-leise);
+}
+.wandbild figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-leise);
+}
+.wandbild .leise-klein {
+  opacity: 0.75;
+}
+/* 3D-Ecke zum Drehen (js/wand3d.js) */
+.wand3d {
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--linie);
+  padding-top: 0.5rem;
+}
+.wand3d-titel {
+  font-size: 0.7rem;
+  text-align: center;
+  color: var(--text-leise);
+}
+.wand3d svg {
+  display: block;
+  width: 100%;
+  max-width: 20rem;
+  height: auto;
+  aspect-ratio: 220 / 190;
+  margin: 0 auto;
+  cursor: grab;
+  touch-action: none;       /* Ziehen dreht, statt die Seite zu scrollen */
+}
+.wand3d svg:active {
+  cursor: grabbing;
+}
+.wand3d svg:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+  border-radius: 0.5rem;
+}
+
 /* ---------- Startseite ---------- */
 /* Liegt über der Arbeitsseite, bis man auf „Erstelle deine Laserdatei“ klickt */
 .startseite {
