@@ -330,6 +330,60 @@ summary {
   cursor: pointer;
 }
 
+/* ---------- Kleine Symbol-Knöpfe (Vorlagen) ---------- */
+.icon-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 1px solid var(--akzent);
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.icon-knopf[hidden] {
+  display: none;
+}
+.icon-knopf svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.icon-knopf:hover:not(:disabled) {
+  background: var(--flaeche);
+  border-color: var(--akzent-hover);
+}
+.icon-knopf.haupt-knopf {
+  background: var(--akzent);
+  color: var(--akzent-text);
+}
+.icon-knopf:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.icon-knopf:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+/* „Als Vorlage speichern“: normal Lesezeichen mit Plus, beim Benennen ein Haken */
+.icon-knopf .icon-ok { display: none; }
+.icon-knopf.bestaetigen .icon-neu { display: none; }
+.icon-knopf.bestaetigen .icon-ok { display: block; }
+.icon-knopf.bestaetigen {
+  background: var(--akzent);
+  color: var(--akzent-text);
+}
+/* kleiner senkrechter Strich zwischen den Gruppen */
+.icon-trenner {
+  width: 1px;
+  height: 1.4rem;
+  background: var(--linie);
+  margin: 0 0.15rem;
+}
+
 /* ---------- Vorschaubild zum Wandaufbau (Ansicht + Schnitt) ---------- */
 .wandbild {
   margin: 0;

@@ -170,17 +170,28 @@
               <select class="feld" id="vorlage-auswahl"></select>
               <input class="feld" type="text" id="vorlage-name" maxlength="60" placeholder="Name der neuen Vorlage, z. B. Wettbewerb 1:200" autocomplete="off" hidden>
             </label>
-            <div class="flex flex-wrap gap-2 mt-3">
+            <!-- Kleine Symbol-Knöpfe. Was sie tun, steht im Tooltip (title) und für Vorlese-Programme im aria-label. -->
+            <div class="flex flex-wrap items-center gap-2 mt-2">
               <!-- erscheint, wenn man eine eigene Vorlage gewählt und danach etwas geändert hat -->
-              <button type="button" class="knopf haupt-knopf text-sm" id="vorlage-ueberschreiben" hidden>Vorlage überschreiben</button>
-              <button type="button" class="knopf text-sm" id="vorlage-speichern">Als Vorlage speichern</button>
-              <button type="button" class="knopf text-sm" id="vorlage-loeschen">Vorlage löschen</button>
-              <button type="button" class="knopf text-sm" id="vorlage-abbrechen" hidden>Abbrechen</button>
-            </div>
-            <div class="flex flex-wrap gap-2 mt-2">
-              <button type="button" class="knopf text-sm" id="vorlage-export">Als Datei speichern</button>
-              <label class="knopf text-sm">
-                Datei laden
+              <button type="button" class="icon-knopf haupt-knopf" id="vorlage-ueberschreiben" title="Vorlage überschreiben" aria-label="Vorlage überschreiben" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3"/><rect x="8" y="13" width="8" height="6"/></svg>
+              </button>
+              <button type="button" class="icon-knopf" id="vorlage-speichern" title="Als Vorlage speichern" aria-label="Als Vorlage speichern">
+                <svg class="icon-neu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4z"/><path d="M12 7v6M9 10h6"/></svg>
+                <svg class="icon-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+              </button>
+              <button type="button" class="icon-knopf" id="vorlage-loeschen" title="Vorlage löschen" aria-label="Vorlage löschen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>
+              </button>
+              <button type="button" class="icon-knopf" id="vorlage-abbrechen" title="Abbrechen" aria-label="Abbrechen" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+              </button>
+              <span class="icon-trenner" aria-hidden="true"></span>
+              <button type="button" class="icon-knopf" id="vorlage-export" title="Als Datei speichern (zum Mitnehmen)" aria-label="Vorlage als Datei speichern">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+              </button>
+              <label class="icon-knopf" id="vorlage-import-knopf" tabindex="0" role="button" title="Vorlage aus Datei laden" aria-label="Vorlage aus Datei laden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></svg>
                 <input type="file" id="vorlage-import" accept=".json,application/json" hidden>
               </label>
             </div>

@@ -415,7 +415,11 @@ function auswahlFuellen() {
   const ueberschreiben = document.getElementById("vorlage-ueberschreiben");
   const zeigen = passend === KEINE && zuletztVorlage !== null && !auswahl.hidden;
   ueberschreiben.hidden = !zeigen;
-  if (zeigen) ueberschreiben.textContent = "„" + zuletztVorlage + "“ überschreiben";
+  if (zeigen) {
+    const text = "„" + zuletztVorlage + "“ überschreiben";
+    ueberschreiben.title = text;
+    ueberschreiben.setAttribute("aria-label", text);
+  }
 }
 
 // Werte einer Vorlage übernehmen und alles neu rechnen
@@ -532,7 +536,11 @@ function vorlagenStarten() {
     loeschenKnopf.hidden = an;
     abbrechenKnopf.hidden = !an;
     beschriftung.textContent = an ? "Name der neuen Vorlage" : "Vorlage wählen";
-    speichernKnopf.textContent = an ? "Speichern" : "Als Vorlage speichern";
+    // Symbol wechseln: Lesezeichen mit Plus ↔ Haken (bestätigen)
+    const text = an ? "Speichern" : "Als Vorlage speichern";
+    speichernKnopf.title = text;
+    speichernKnopf.setAttribute("aria-label", text);
+    speichernKnopf.classList.toggle("bestaetigen", an);
     if (!an) auswahlFuellen(); // Liste und „Überschreiben“-Knopf wieder richtig zeigen
     if (an) {
       nameFeld.value = "";
@@ -597,6 +605,13 @@ function vorlagenStarten() {
 
   // Vorlage aus einer Datei laden
   const importFeld = document.getElementById("vorlage-import");
+  // Symbol-Knopf „Datei laden“ auch mit der Tastatur bedienbar (Enter / Leertaste)
+  document.getElementById("vorlage-import-knopf").addEventListener("keydown", (ereignis) => {
+    if (ereignis.key === "Enter" || ereignis.key === " ") {
+      ereignis.preventDefault();
+      importFeld.click();
+    }
+  });
   importFeld.addEventListener("change", async () => {
     const datei = importFeld.files[0];
     importFeld.value = ""; // damit dieselbe Datei nochmal gewählt werden kann
