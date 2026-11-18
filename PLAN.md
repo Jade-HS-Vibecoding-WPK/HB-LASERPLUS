@@ -159,7 +159,7 @@ Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Au�
 - Die Webseite anlegen: eine Seite mit drei Bereichen (1 Datei ablegen, 2 Einstellungen, 3 Vorschau und Download) ✅
 - Das Aussehen umsetzen mit Tailwind: Farben, Schrift (Century Gothic, Ersatz von Google Fonts), hell und dunkel ✅
 - Datei ablegen: Die Ablagefläche nimmt eine .ifc-Datei an (Ziehen oder „Datei auswählen“) und zeigt Name und Größe. Andere Dateien bekommen einen Hinweis. Mit einer echten Archicad-IFC getestet ✅
-- Die Felder für die Einstellungen bauen (Maßstab, Dicken, Plattengröße, Linienfarben) und im Browser speichern ✅ (der Knopf „Auf Hochschul-Werte zurücksetzen“ setzt Linienfarben **und** Plattengröße 1000 × 600 mm zurück; Maßstab und Pappdicken bleiben)
+- Die Felder für die Einstellungen bauen (Maßstab, Dicken, Plattengröße, Linienfarben) und im Browser speichern ✅ (seit 18.11. über die Vorlage „Jade HS Standard“: setzt Linienfarben **und** Plattengröße 1000 × 600 mm zurück, Maßstab und Pappdicken bleiben; der frühere Knopf „Auf Hochschul-Werte zurücksetzen“ ist entfernt)
 - Die Vorschau als echte Laserplatte zeichnen (Hintergrundfarbe der Seite statt Graupappe, gelber Rahmen, Laserfarben) ✅ mit den echten Teilen aus der IFC
 - Eine Vorschau in der Claude-App einrichten, damit du jede Änderung sofort siehst ✅
 - ~~DXF mit einem selbst ausgedachten Testhaus ausprobieren~~ → gleich mit den echten Test-IFCs gemacht ✅ (Mittwoch-Punkte vorgezogen: IFC einlesen, Fassaden flach legen, Schichten, Ecken, First, Verteilen, Übersichtsblatt)

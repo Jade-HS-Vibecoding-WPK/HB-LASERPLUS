@@ -142,18 +142,9 @@ export function einstellungenStarten() {
     felderFuellen();
   });
 
+  // Zurück auf die Werkstatt-Werte geht über die Vorlage „Jade HS Standard“
+  // (der frühere Knopf „Auf Hochschul-Werte zurücksetzen“ wurde am 18.11. entfernt).
   vorlagenStarten();
-
-  // Knopf „Auf Hochschul-Werte zurücksetzen“:
-  // Laserfarben und Plattengröße (gelber Rahmen 1000 × 600 mm) der Werkstatt.
-  // Maßstab und Pappdicken bleiben, die sind deine eigene Wahl.
-  document.getElementById("farben-zuruecksetzen").addEventListener("click", () => {
-    aktuell.farben = { ...HOCHSCHUL_FARBEN };
-    aktuell.platteBreite = STARTWERTE.platteBreite;
-    aktuell.platteHoehe = STARTWERTE.platteHoehe;
-    felderFuellen();
-    geaendert();
-  });
 }
 
 // =========================================================
