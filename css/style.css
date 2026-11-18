@@ -20,9 +20,14 @@
   color-scheme: light;
 }
 
-/* ---------- Farbtöpfe: DUNKEL (automatisch nach Systemeinstellung) ---------- */
+/* ---------- Farbtöpfe: DUNKEL ----------
+   Zwei Wege führen zu dunkel:
+   1. automatisch, wenn das System auf dunkel steht – außer man hat
+      mit dem Knopf (Sonne/Mond) ausdrücklich „hell“ gewählt
+   2. mit dem Knopf ausdrücklich „dunkel“ gewählt (data-theme="dark")
+   Beide Blöcke enthalten dieselben Farben. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --hintergrund: #1C1411;  /* warmes Fast-Schwarz */
     --flaeche:     #2A1E19;
     --linie:       #4A3129;
@@ -33,6 +38,59 @@
     --akzent-text: #2B1A14;
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --hintergrund: #1C1411;
+  --flaeche:     #2A1E19;
+  --linie:       #4A3129;
+  --text:        #FFEAD9;
+  --text-leise:  #FFCC99;
+  --akzent:      #FF8C69;
+  --akzent-hover:#FFA07A;
+  --akzent-text: #2B1A14;
+  color-scheme: dark;
+}
+
+/* ---------- Knopf hell/dunkel (Sonne/Mond) ---------- */
+.farbmodus-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border: 1px solid var(--linie);
+  border-radius: 9999px;
+  background: var(--flaeche);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.farbmodus-knopf:hover {
+  border-color: var(--akzent);
+}
+.farbmodus-knopf:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+.farbmodus-knopf svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+/* Im hellen Modus den Mond zeigen (= „dunkel einschalten“), im dunklen die Sonne */
+.farbmodus-knopf .sonne { display: none; }
+.farbmodus-knopf .mond  { display: block; }
+:root[data-theme="dark"] .farbmodus-knopf .sonne { display: block; }
+:root[data-theme="dark"] .farbmodus-knopf .mond  { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .farbmodus-knopf .sonne { display: block; }
+  :root:not([data-theme="light"]) .farbmodus-knopf .mond  { display: none; }
+}
+/* Auf der Startseite oben rechts in der Ecke */
+.startseite .farbmodus-knopf {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
 /* ---------- Ganze Seite ---------- */
@@ -178,9 +236,25 @@ summary {
   overflow-y: auto;
   background: var(--hintergrund);
   display: flex;
+  cursor: pointer;            /* ein Klick irgendwo blendet sie aus */
+  /* Dauer des Fades: hier ändern (und in js/main.js die Wartezeit FADE_MS) */
+  transition: opacity 1.6s ease-in-out, filter 1.6s ease-in-out, transform 1.6s ease-in-out;
+}
+/* Ausblenden: langsam durchsichtig werden, dabei leicht unscharf und
+   ein kleines Stück größer – wie ein Bild, das sich auflöst.
+   Danach ganz weg (hidden). */
+.startseite.ausblenden {
+  opacity: 0;
+  filter: blur(6px);
+  transform: scale(1.04);
+  pointer-events: none;
 }
 .startseite[hidden] {
   display: none;
+}
+/* Wer im System „weniger Bewegung“ eingestellt hat, bekommt kein Fade */
+@media (prefers-reduced-motion: reduce) {
+  .startseite { transition: none; }
 }
 .startseite-inhalt {
   margin: auto;              /* mittig, auch wenn der Inhalt höher als das Fenster ist */

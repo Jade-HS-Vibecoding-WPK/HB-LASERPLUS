@@ -21,6 +21,10 @@ import { flaechenFinden } from "./abwickeln.js";
 import { eckenFinden, teileBauen } from "./schichten.js";
 import { verteilen } from "./verteilen.js";
 import { uebersichtBauen } from "./uebersicht.js";
+import { farbmodusStarten } from "./farbmodus.js";
+
+// Knopf hell/dunkel (Sonne/Mond) anschließen
+farbmodusStarten();
 
 // ---------------------------------------------------------
 // Startseite: erscheint bei jedem Öffnen und Neuladen.
@@ -29,11 +33,26 @@ import { uebersichtBauen } from "./uebersicht.js";
 const startseite = document.getElementById("startseite");
 const arbeitsseite = document.getElementById("arbeitsseite");
 const startKnopf = document.getElementById("start-knopf");
-startKnopf.addEventListener("click", () => {
-  startseite.hidden = true;
+
+// Startseite sanft ausblenden (Fade, siehe .startseite.ausblenden in style.css)
+function startseiteSchliessen() {
+  if (startseite.classList.contains("ausblenden")) return; // läuft schon
   arbeitsseite.inert = false;
   document.documentElement.classList.remove("start-offen");
   window.scrollTo(0, 0);
+  startseite.classList.add("ausblenden");
+  // Nach dem Fade ganz entfernen (Dauer wie in style.css, 1,6 s).
+  // Falls das Fade abgeschaltet ist („weniger Bewegung“), passiert es sofort.
+  const FADE_MS = 1600;
+  const ohneBewegung = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  setTimeout(() => { startseite.hidden = true; }, ohneBewegung ? 0 : FADE_MS + 100);
+}
+
+// Ein Klick irgendwo auf die Startseite (auch auf den Knopf) blendet sie aus –
+// nur nicht der Knopf für hell/dunkel
+startseite.addEventListener("click", (ereignis) => {
+  if (ereignis.target.closest(".farbmodus-knopf")) return;
+  startseiteSchliessen();
 });
 startKnopf.focus();
 

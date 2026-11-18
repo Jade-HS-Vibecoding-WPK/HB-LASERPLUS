@@ -57,7 +57,7 @@ Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdeck
 
 Ruhig, aufgeräumt, viel Weißraum.
 
-**Startseite** (erscheint bei jedem Öffnen und Neuladen, liegt über der Arbeitsseite): großes Logo, „IFC → LASER“, ein Satz zur App, Platz für ein Beispielbild und der Knopf **„Erstelle deine Laserdatei“**, der die Startseite ausblendet. Das Beispielbild erscheint automatisch, sobald die Datei `Bilder/beispiel.jpg` existiert.
+**Startseite** (erscheint bei jedem Öffnen und Neuladen, liegt über der Arbeitsseite): großes Logo, „IFC → LASER“, ein Satz zur App, Platz für ein Beispielbild und der Knopf **„Erstelle deine Laserdatei“**. Ein Klick irgendwo auf die Startseite (außer auf Sonne/Mond) blendet sie **sanft aus** (Fade 1,6 s mit leichter Unschärfe und Vergrößerung; bei „weniger Bewegung“ im System ohne Fade). Das Beispielbild erscheint automatisch, sobald die Datei `Bilder/beispiel.jpg` existiert.
 
 **Arbeitsseite**: kleines Logo in der Kopfzeile, darunter drei klar nummerierte Bereiche. Ab 1024 px Breite **zweigeteilt**: links (etwa ⅔) oben Bereich 1, unten Bereich 3; rechts (etwa ⅓) Bereich 2, der beim Scrollen stehen bleibt. Schmaler: untereinander 1 → 2 → 3.
 
@@ -65,7 +65,7 @@ Ruhig, aufgeräumt, viel Weißraum.
 2. **Einstellungen**: Maßstab (Zahlenfeld, Start 1:100), Dicke innen und Dicke außen (je eine Auswahl 1 / 1,5 / 2 mm, Start innen 2 mm, außen 1 mm), Plattengröße (Start 1000 × 600 mm), **Linienfarben** (Schneiden, Ritzen, Rahmen, Gravieren; voreingestellt nach den Werkstatt-Regeln). Ganz oben **Vorlagen** (seit 18.11.): eigene Einstellungen unter einem Namen speichern, wählen, überschreiben, löschen und als .json-Datei mitnehmen, nur im eigenen Browser. Die feste Vorlage **„Jade HS Standard“** setzt nur Plattengröße 1000 × 600 mm und Laserfarben zurück, Maßstab und Pappdicken bleiben (ersetzt den früheren Knopf „Auf Hochschul-Werte zurücksetzen“). Die Seite **merkt sich alle Einstellungen** im Browser (`localStorage`), nichts geht an einen Server. Am Ende der Knopf **„Laserplatten erstellen“**; auf breiten Bildschirmen bleibt er unten in der Spalte immer sichtbar.
 3. **Vorschau & Download**: Warnungen, Platten-Vorschau mit einem DXF-Knopf je Platte, „Alle DXF herunterladen“, „Übersichtsblatt drucken“. Ändert sich danach eine Einstellung, rechnet die App sofort neu.
 
-Hell oder dunkel richtet sich **automatisch nach der Systemeinstellung** (`prefers-color-scheme`). Die Seite muss auch auf schmalen Bildschirmen funktionieren.
+Hell oder dunkel richtet sich **automatisch nach der Systemeinstellung** (`prefers-color-scheme`). Seit 18.11. gibt es zusätzlich einen **Knopf Sonne/Mond** (auf der Startseite oben rechts, auf der Arbeitsseite rechts in der Kopfzeile), der umschaltet und sich die Wahl im Browser merkt (`js/farbmodus.js`, Merkmal `data-theme` am `<html>`, Farben in `css/style.css`). Die Seite muss auch auf schmalen Bildschirmen funktionieren.
 
 ### Logo
 
@@ -145,6 +145,7 @@ js/schichten.js     – Ecken finden, Innen-/Außenschicht, Eckenausgleich, Numm
 js/verteilen.js     – Teile auf Platten verteilen, Nummern daneben
 js/linienschrift.js – Nummern als Linien (zum Ritzen)
 js/dxf.js           – DXF schreiben
+js/farbmodus.js     – Knopf hell/dunkel (Sonne/Mond)
 js/uebersicht.js    – Übersichtsblatt zum Drucken
 lib/web-ifc/        – IFC-Bibliothek 0.0.78 (wird mit hochgeladen, siehe .gitignore „!lib/“)
 Bilder/             – logo.svg, später beispiel.jpg (Beispielbild für die Startseite)
