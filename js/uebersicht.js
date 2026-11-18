@@ -114,19 +114,22 @@ function grundriss(flaechen, nummerVon) {
 
 // ---------------------------------------------------------
 // Das ganze Blatt bauen
-// daten: { dateiName, einstellungen, flaechen, teile, platten, ecken }
+// daten: { einstellungen, gebaeude: [{ nummer, name, flaechen, ecken }], teile, platten, mehrere }
+//   mehrere = mehr als ein Gebäude (dann steht die Gebäude-Nummer vor den Teilenummern)
 // ---------------------------------------------------------
 export function uebersichtBauen(daten) {
-  const { dateiName, einstellungen: e, flaechen, teile, platten, ecken } = daten;
+  const { einstellungen: e, gebaeude, teile, platten, mehrere } = daten;
   const blatt = element("div", "blatt");
+  const alleEcken = gebaeude.flatMap((b) => b.ecken);
 
   // Kopf
-  blatt.append(element("h1", "", "IFC → Laser · Übersichtsblatt"));
+  blatt.append(element("h1", "", "Erstelle deine Laserdatei · Übersichtsblatt"));
+  const dateien = mehrere ? gebaeude.map((b) => `Gebäude ${b.nummer}: ${b.name}`).join(" · ") : gebaeude[0].name;
   blatt.append(
     element(
       "p",
       "klein",
-      `${dateiName} · Maßstab 1:${e.massstab} · Pappe innen ${String(e.dickeInnen).replace(".", ",")} mm, ` +
+      `${dateien} · Maßstab 1:${e.massstab} · Pappe innen ${String(e.dickeInnen).replace(".", ",")} mm, ` +
         `außen ${String(e.dickeAussen).replace(".", ",")} mm · Dach ${String(e.dickeInnen).replace(".", ",")} mm · ` +
         `${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} ${e.platteBreite} × ${e.platteHoehe} mm · ` +
         new Date().toLocaleDateString("de-DE")
@@ -143,20 +146,31 @@ export function uebersichtBauen(daten) {
     element("li", "", "Gleiche Zahl bei A und I = gleiche Fassade: A-001 kommt auf I-001. Im Grundriss steht diese Zahl an der Fassade."),
     element("li", "", "Die Nummern sind blau neben das Teil auf die Restpappe geritzt, nicht auf das Teil selbst.")
   );
+  if (mehrere) {
+    legende.append(
+      element("li", "", "Mehrere Gebäude: Vorne steht die Gebäude-Nummer. 2-A-001 = Gebäude 2, Außenschicht der Fassade 001.")
+    );
+  }
   blatt.append(legende);
 
-  // Grundriss: an den Fassaden die Zahl (z. B. 001), an den Dachflächen die D-Nummer
-  const nummerVon = new Map();
-  for (const t of teile) {
-    if (!nummerVon.has(t.flaecheIndex)) nummerVon.set(t.flaecheIndex, t.wofuer === "fassade" ? t.nummer : t.name);
+  // Grundriss je Gebäude: an den Fassaden die Zahl (z. B. 001), an den Dachflächen die D-Nummer
+  blatt.append(element("h2", "", mehrere ? "Grundrisse" : "Grundriss"));
+  for (const b of gebaeude) {
+    const nummerVon = new Map();
+    for (const t of teile) {
+      if (t.gebaeude !== b.nummer || nummerVon.has(t.flaecheIndex)) continue;
+      nummerVon.set(t.flaecheIndex, t.wofuer === "fassade" ? t.nummer : t.name);
+    }
+    if (mehrere) blatt.append(element("h3", "gebaeude-titel", `Gebäude ${b.nummer} · ${b.name}`));
+    if (nummerVon.size) blatt.append(grundriss(b.flaechen, nummerVon));
+    else blatt.append(element("p", "klein", "Keine Außenflächen gefunden."));
   }
-  blatt.append(element("h2", "", "Grundriss"));
-  blatt.append(grundriss(flaechen, nummerVon));
   blatt.append(
     element(
       "p",
       "klein",
-      "Fassaden als dicke Linien mit ihrer Zahl (dazu gehören A- und I-Teil mit derselben Zahl), Dachflächen gestrichelt mit D-Nummer. Blick von oben, Norden oben."
+      "Fassaden als dicke Linien mit ihrer Zahl (dazu gehören A- und I-Teil mit derselben Zahl), Dachflächen gestrichelt mit D-Nummer. Blick von oben, Norden oben." +
+        (mehrere ? " Jedes Gebäude ist für sich gezeichnet, nicht in seiner Lage zu den anderen." : "")
     )
   );
 
@@ -182,17 +196,26 @@ export function uebersichtBauen(daten) {
   }
   blatt.append(tabelle);
 
-  // Reihenfolge beim Kleben
-  const namen = (filter) => teile.filter(filter).map((t) => t.name).join(", ") || "–";
+  // Reihenfolge beim Kleben (bei mehreren Gebäuden je Gebäude)
   blatt.append(element("h2", "", "Reihenfolge beim Kleben"));
-  const schritte = element("ol");
-  schritte.append(
-    element("li", "", "Jedes Teil gleich nach dem Herauslösen auf der Rückseite mit Bleistift beschriften – die geritzte Nummer steht nur auf der Restpappe."),
-    element("li", "", `Innenschichten zu einem Kasten kleben: ${namen((t) => t.schicht === "I")}. Die Innenschichten sind geschlossen und tragen das Modell.`),
-    element("li", "", `Außenschichten (mit Fenstern und Türen) auf die passenden Innenschichten kleben: ${namen((t) => t.schicht === "A")}. Gleiche Zahl = gleiche Fassade, also A-001 auf I-001.`),
-    element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Zuerst die gekürzten Dachflächen, dann die durchlaufenden – sie überlappen am First.`)
+  blatt.append(
+    element("p", "", "Jedes Teil gleich nach dem Herauslösen auf der Rückseite mit Bleistift beschriften – die geritzte Nummer steht nur auf der Restpappe.")
   );
-  blatt.append(schritte);
+  for (const b of gebaeude) {
+    const eigene = teile.filter((t) => t.gebaeude === b.nummer);
+    if (!eigene.length) continue;
+    const namen = (filter) => eigene.filter(filter).map((t) => t.name).join(", ") || "–";
+    const beispielA = eigene.find((t) => t.schicht === "A");
+    const beispiel = beispielA ? `, also ${beispielA.name} auf ${beispielA.name.replace(/A-(\d+)$/, "I-$1")}` : "";
+    if (mehrere) blatt.append(element("h3", "gebaeude-titel", `Gebäude ${b.nummer} · ${b.name}`));
+    const schritte = element("ol");
+    schritte.append(
+      element("li", "", `Innenschichten zu einem Kasten kleben: ${namen((t) => t.schicht === "I")}. Die Innenschichten sind geschlossen und tragen das Modell.`),
+      element("li", "", `Außenschichten (mit Fenstern und Türen) auf die passenden Innenschichten kleben: ${namen((t) => t.schicht === "A")}. Gleiche Zahl = gleiche Fassade${beispiel}.`),
+      element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Zuerst die gekürzten Dachflächen, dann die durchlaufenden – sie überlappen am First.`)
+    );
+    blatt.append(schritte);
+  }
 
   // Hinweise
   blatt.append(element("h2", "", "Hinweise"));
@@ -200,10 +223,10 @@ export function uebersichtBauen(daten) {
   hinweise.append(
     element("li", "", "An den Ecken läuft immer eine Fassade durch, die andere ist um die Pappdicke(n) kürzer. Die App hat das schon eingerechnet – die Außenmaße stimmen.")
   );
-  if (ecken.some((c) => Math.abs(Math.cos(c.phi)) > 0.02)) {
+  if (alleEcken.some((c) => Math.abs(Math.cos(c.phi)) > 0.02)) {
     hinweise.append(element("li", "", "Schräge Ecken, Grate und Kehlen (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));
   }
-  if (ecken.some((c) => c.gemischt)) {
+  if (alleEcken.some((c) => c.gemischt)) {
     hinweise.append(element("li", "", "Das Gebäude hat eine ungerade Zahl von Ecken: An einer Ecke laufen zwei Platten in derselben Rolle zusammen. Dort beim Kleben kurz anhalten und prüfen."));
   }
   hinweise.append(

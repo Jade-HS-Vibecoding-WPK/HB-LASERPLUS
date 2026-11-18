@@ -43,7 +43,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 
 | Thema | Entscheidung |
 |---|---|
-| Modell | Ein einzelnes Gebäude, detailliert |
+| Modell | Ein Gebäude, detailliert. Seit 18.11. auch mehrere Gebäude auf einmal (je IFC-Datei eins), jedes für sich, ohne Lageplan |
 | Zerlegung | Plattenmodell: das Dach und jede Außenwand (Fassadenseite) als eigene Pappe |
 | Wandaufbau | 2 Schichten: Innenschicht geschlossen und tragend, Außenschicht mit ausgeschnittenen Fenstern und Türen, aufgeklebt |
 | Dach | 1 Schicht |
@@ -139,7 +139,7 @@ Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Au�
 
 - Runde Wände (dein „2. Schritt“)
 - Innenwände, Geschossdecken, Bodenplatte
-- Umgebungsmodell mit mehreren Gebäuden, Gelände
+- Umgebungsmodell: Gebäude in ihrer echten Lage zueinander (Lageplan), Gelände. (Mehrere Gebäude auf einmal gehen seit 18.11., aber jedes für sich.)
 
 ---
 
@@ -199,6 +199,32 @@ Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Au�
   4. Was als Nächstes kommt (runde Wände, Stecksystem …)
 - **Notfallplan:** Bildschirmfotos oder ein kurzes Video der Vorführung und eine schon heruntergeladene DXF bereithalten, falls das Internet streikt
 - Am Code wird nichts mehr geändert.
+
+---
+
+## Basis- und Zusatzversion (seit 18.11.)
+
+Wir arbeiten mit zwei Branches in GitHub (Regeln dazu: CLAUDE.md, Regel 11).
+
+| Branch | Was | Wann |
+|---|---|---|
+| `main` | **Basisversion**. Wird am Freitag präsentiert, GitHub Pages zeigt immer `main`. | Bleibt auf jeden Fall. |
+| `zusatz-3d` | **Zusatzversion**: 3D-Druck-Dateien im STL-Format. | Kommt nur nach `main`, wenn sie bis Donnerstag 12:00 (Freeze) funktioniert. |
+
+**„Entferne alles aus der Zusatzversion und ändere die App zur Basisversion“** heißt: `zusatz-3d` wird nicht nach `main` übernommen, `main` bleibt, wie es ist.
+
+### Basisversion (`main`): Änderungen ab 18.11.
+
+- ✅ **Datei-Karten mit ✕:** Je abgelegter Datei eine kleine Karte mit Dateiname, Größe und Status. ✕ entfernt die Datei (samt ihrer Bauteil-Liste), „Andere Datei wählen“ tauscht sie aus, und eine Datei kann man auch direkt auf die Karte ziehen.
+- ✅ **Mehrere Gebäude:** Mehrere IFC-Dateien auf einmal oder nacheinander ablegen, je Datei ein Gebäude (höchstens 12). Die Ablagefläche bleibt (klein) sichtbar. Alle Teile teilen sich die Platten. Nummern mit Gebäude-Nummer davor (`2-A-001`), bei nur einem Gebäude wie bisher (`A-001`). Übersichtsblatt: je Gebäude ein Grundriss und eine Klebe-Reihenfolge, Legende erklärt die Gebäude-Nummer. Mit allen drei Test-IFCs zusammen geprüft (44 Teile auf einer Platte). **Nicht dabei:** echte Lage der Gebäude zueinander (Lageplan).
+- ✅ **Titel der Arbeitsseite** und des Übersichtsblatts: „Erstelle deine Laserdatei“ (vorher „IFC → Laser“).
+
+### Zusatzversion (`zusatz-3d`): geplant
+
+- Startseite mit **zwei Karten**: „Erstelle deine Laserdatei“ (DXF) und „Erstelle deine 3D-Druck-Datei“ (STL), je mit einem Platzhalter-Kasten für ein Bild.
+- Eigene **3D-Seite**, aufgebaut wie die Laser-Seite: 1 Datei ablegen, 2 Einstellungen für den 3D-Druck (Maßstab, Druckbett-Größe, Mindest-Wandstärke, Sockel ja/nein, Dach als eigenes Teil ja/nein), 3 **3D-Vorschau** (drehen, zoomen) und **STL-Download**.
+- STL wird selbst geschrieben (wie die DXF). Die 3D-Vorschau braucht **three.js** mit fester Version, von euch in `lib/three/` abgelegt.
+- Ehrlich: Ob die STL sauber druckt, zeigt erst der Slicer (Cura, PrusaSlicer, Bambu Studio). Die IFC-Bauteile sind einzelne Körper, die sich berühren oder überlappen.
 
 ---
 

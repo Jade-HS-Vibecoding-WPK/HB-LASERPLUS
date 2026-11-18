@@ -7,7 +7,7 @@ Der genaue Fahrplan mit Must / Should / Could und Tagesetappen steht in [PLAN.md
 
 ## Ziel
 
-Eine **Webseite**, die aus einer **.ifc-Datei** eines einzelnen Gebäudes fertige **Laserdateien (DXF)** für ein **Pappmodell** macht:
+Eine **Webseite**, die aus einer **.ifc-Datei** eines Gebäudes fertige **Laserdateien (DXF)** für ein **Pappmodell** macht. Seit 18.11. auch für **mehrere Gebäude** auf einmal (je IFC-Datei ein Gebäude):
 
 - Das **Dach** und **jede Fassadenseite** werden zu je einer flachen Platte, so gezeichnet, wie man sie von außen sieht.
 - Jede Wand hat **zwei Schichten**: eine **Innenschicht** (geschlossen, tragend) und eine **Außenschicht** mit ausgeschnittenen Fenstern und Türen, die aufgeklebt wird. Das Dach hat **eine Schicht**.
@@ -17,7 +17,7 @@ Eine **Webseite**, die aus einer **.ifc-Datei** eines einzelnen Gebäudes fertig
 - Dazu gibt es ein **Übersichtsblatt zum Ausdrucken**: Legende der Nummern, Grundriss, welches Teil wohin gehört, Reihenfolge beim Kleben. Die Website erinnert daran, es zu speichern oder zu drucken.
 - Verbindung: **Kleben ist Pflicht**, ein Stecksystem (Zinken an den Innenschicht-Ecken) ist ein Extra.
 
-Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdecken, Bodenplatte, Umgebung mit mehreren Gebäuden, Gelände.
+Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdecken, Bodenplatte, Gelände, ein **Lageplan** (mehrere Gebäude in ihrer echten Lage zueinander). Mehrere Gebäude gehen seit 18.11., aber jedes für sich.
 
 ---
 
@@ -48,6 +48,13 @@ Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdeck
 8. **Ehrlich sein:** Wenn etwas nicht oder nur ungefähr funktioniert (z. B. schräge Ecken), sag das klar und trag es in PLAN.md ein.
 9. **Bibliotheken nur mit fester Versionsnummer** einbinden, nie „latest“.
 10. **Erlaubt von außen sind nur Google Fonts und Tailwind** (Entscheidung vom 17.11.), jeweils mit fester Version. Alle anderen Bibliotheken liegen im Projekt unter `lib/` (zurzeit nur web-ifc). Keine anderen Dienste, keine Analyse-Dienste, und die IFC-Datei wird nie irgendwohin geschickt (Regel 4). Hinweis: Beim Laden von Google Fonts sieht Google die IP-Adresse der Besucher. Für das Kursprojekt ist das bewusst in Ordnung.
+11. **Zwei Branches (seit 18.11.), immer den richtigen nennen.**
+    - `main` = **Basisversion**. Sie wird am Freitag präsentiert, GitHub Pages zeigt immer `main`.
+    - `zusatz-3d` = **Zusatzversion** (3D-Druck-Dateien im STL-Format). Klappt sie bis zum Freeze nicht, kommt sie **nicht** nach `main`. Was alles dazugehört, steht in PLAN.md unter „Basis- und Zusatzversion“.
+    - **Vor jedem Arbeitsschritt** schreibst du zuerst, in welchen Branch die Änderung gehört („Ziel-Branch: main“), und fragst, auf welchem Branch GitHub Desktop gerade steht. Stimmt es nicht, erst umschalten lassen, dann arbeiten.
+    - **Am Ende jeder Antwort, in der Dateien geändert wurden**, steht in großen Buchstaben mit Ausrufezeichen, wohin hochgeladen wird, z. B. **HOCHLADEN IN: MAIN !** oder **HOCHLADEN IN: ZUSATZ-3D !**
+    - Änderungen an der Basis gehören immer zuerst nach `main`. Danach `main` in `zusatz-3d` übernehmen (GitHub Desktop: auf `zusatz-3d` umschalten → **Branch → Merge into current branch… → main**), damit die Zusatzversion die Basis-Änderungen auch hat.
+    - Die Anweisung **„Entferne alles aus der Zusatzversion und ändere die App zur Basisversion“** heißt: `zusatz-3d` nicht nach `main` übernehmen; `main` bleibt, wie es ist.
 
 ---
 
@@ -59,9 +66,9 @@ Ruhig, aufgeräumt, viel Weißraum.
 
 **Startseite** (erscheint bei jedem Öffnen und Neuladen, liegt über der Arbeitsseite): großes Logo, „IFC → LASER“, ein Satz zur App, Platz für ein Beispielbild und der Knopf **„Erstelle deine Laserdatei“**. Ein Klick irgendwo auf die Startseite (außer auf Sonne/Mond) blendet sie **sanft aus** (Fade 1,6 s mit leichter Unschärfe und Vergrößerung; bei „weniger Bewegung“ im System ohne Fade). Das Beispielbild erscheint automatisch, sobald die Datei `Bilder/beispiel.jpg` existiert.
 
-**Arbeitsseite**: kleines Logo in der Kopfzeile, darunter drei klar nummerierte Bereiche. Ab 1024 px Breite **zweigeteilt**: links (etwa ⅔) oben Bereich 1, unten Bereich 3; rechts (etwa ⅓) Bereich 2, der beim Scrollen stehen bleibt. Schmaler: untereinander 1 → 2 → 3.
+**Arbeitsseite**: kleines Logo und Titel **„Erstelle deine Laserdatei“** in der Kopfzeile (seit 18.11., vorher „IFC → Laser“; die Startseite und der Browser-Tab heißen weiter „IFC → Laser“), darunter drei klar nummerierte Bereiche. Ab 1024 px Breite **zweigeteilt**: links (etwa ⅔) oben Bereich 1, unten Bereich 3; rechts (etwa ⅓) Bereich 2, der beim Scrollen stehen bleibt. Schmaler: untereinander 1 → 2 → 3.
 
-1. **Datei ablegen**: große Ablagefläche mit gestrichelter Linie, darunter nach dem Lesen die **Bauteil-Liste** („Das steckt in deiner Datei“) mit Hinweisen und der Auswahl für nicht klassifizierte Morphs
+1. **Datei ablegen**: Ablagefläche mit gestrichelter Linie für **eine oder mehrere IFC-Dateien** (je Datei ein Gebäude, auch mehrere auf einmal, höchstens 12). Sind Dateien da, wird die Fläche klein („Weitere IFC-Dateien hierher ziehen“), und darunter steht je Gebäude eine **Datei-Karte** (seit 18.11.): Datei-Symbol, bei mehreren „Gebäude 1 · …“, Name, Größe und Status, **✕ zum Entfernen** (nur dieses Gebäude), „Andere Datei wählen“ zum Austauschen; eine Datei auf eine Karte ziehen tauscht ebenfalls aus. Unpassende Dateien werden mit Hinweis in der Ablagefläche abgelehnt. In jeder Karte zum Aufklappen die **Bauteil-Liste** („Das steckt in der Datei“) mit Hinweisen und der Auswahl für nicht klassifizierte Morphs
 2. **Einstellungen**: Maßstab (Zahlenfeld, Start 1:100), Dicke innen und Dicke außen (je eine Auswahl 1 / 1,5 / 2 mm, Start innen 2 mm, außen 1 mm), Plattengröße (Start 1000 × 600 mm), **Linienfarben** (Schneiden, Ritzen, Rahmen, Gravieren; voreingestellt nach den Werkstatt-Regeln). Ganz oben **Vorlagen** (seit 18.11.): eigene Einstellungen unter einem Namen speichern, wählen, überschreiben, löschen und als .json-Datei mitnehmen, nur im eigenen Browser. Die feste Vorlage **„Jade HS Standard“** setzt nur Plattengröße 1000 × 600 mm und Laserfarben zurück, Maßstab und Pappdicken bleiben (ersetzt den früheren Knopf „Auf Hochschul-Werte zurücksetzen“). Die Seite **merkt sich alle Einstellungen** im Browser (`localStorage`), nichts geht an einen Server. Am Ende der Knopf **„Laserplatten erstellen“**; auf breiten Bildschirmen bleibt er unten in der Spalte immer sichtbar.
 3. **Vorschau & Download**: Warnungen, Platten-Vorschau mit einem DXF-Knopf je Platte, „Alle DXF herunterladen“, „Übersichtsblatt drucken“. Ändert sich danach eine Einstellung, rechnet die App sofort neu.
 
@@ -183,7 +190,7 @@ Datei- und Ordnernamen ohne Umlaute. Kommentare im Code auf Deutsch und einfach.
    - **Schräge Winkel** (Must): Die Kürzung wird über parallel versetzte Linien im Grundriss berechnet, damit die Außenmaße genauso stimmen wie bei 90°. Der Laser schneidet senkrecht, darum bleibt an spitzen oder stumpfen Ecken eine kleine Keilfuge. Das Übersichtsblatt weist darauf hin.
    - **Dach** (Must): Das Dach liegt auf. Die Wände werden oben um die Dachdicke gekürzt, beim Steildach entlang der Dachneigung, und die Giebelwände sind oben passend abgeschrägt. Am First überlappt eine Dachplatte die andere. Die überlappende Platte wird so verlängert, dass die Firsthöhe stimmt.
 9. **Verteilen**: Standard-Platte 1000 × 600 mm (einstellbar). Die Teile kommen als Rechteck-Hüllen in Reihen auf die Platte („Regal-Verfahren“), groß zuerst. Abstand zwischen den Teilen mindestens 3 mm **plus Platz für die Nummer**, **mindestens 10 mm Abstand zum gelben Rahmen** (Werkstatt-Regel, im Code zentral als `RAND_ABSTAND` in `js/dxf.js`). Teile, die größer als die Platte sind, lösen eine Warnung aus und werden nicht stumm verkleinert.
-10. **Nummern**: Schema `Schicht-Zahl` (geändert am 17.11., vorher `N-001-A`): `A-001` = Außenschicht, `I-001` = Innenschicht derselben Fassade, `D-001` = Dachfläche. Gleiche Zahl bei A und I = gleiche Fassade. Die Himmelsrichtung steht nur noch in der Teileliste des Übersichtsblatts. Fassaden werden im Uhrzeigersinn ab Norden durchnummeriert, die Dachflächen getrennt ab `D-001`. Norden ist zurzeit der Projekt-Norden der IFC („TrueNorth“ noch nicht gelesen, Should 4). Die Zahl ist die Reihenfolge beim Kleben. Die Nummer steht **neben** dem Teil auf der Restpappe, nie innerhalb der Kontur, und wird **geritzt** (Ebene `RITZEN`, blau). Das Schema ist an einer Stelle im Code zentral änderbar (`teileBauen` in `js/schichten.js`). In der Linienschrift bekommt das `I` Querstriche oben und unten, damit man es nicht mit einer `1` verwechselt.
+10. **Nummern**: Schema `Schicht-Zahl` (geändert am 17.11., vorher `N-001-A`): `A-001` = Außenschicht, `I-001` = Innenschicht derselben Fassade, `D-001` = Dachfläche. Gleiche Zahl bei A und I = gleiche Fassade. **Bei mehreren Gebäuden** steht die Gebäude-Nummer davor: `2-A-001` = Gebäude 2 (Reihenfolge der Karten; beim Entfernen rücken die Nummern nach). Alle Teile aller Gebäude teilen sich die Platten; das Übersichtsblatt hat je Gebäude einen Grundriss und eine Klebe-Reihenfolge. Die Himmelsrichtung steht nur noch in der Teileliste des Übersichtsblatts. Fassaden werden im Uhrzeigersinn ab Norden durchnummeriert, die Dachflächen getrennt ab `D-001`. Norden ist zurzeit der Projekt-Norden der IFC („TrueNorth“ noch nicht gelesen, Should 4). Die Zahl ist die Reihenfolge beim Kleben. Die Nummer steht **neben** dem Teil auf der Restpappe, nie innerhalb der Kontur, und wird **geritzt** (Ebene `RITZEN`, blau). Das Schema ist an einer Stelle im Code zentral änderbar (`teileBauen` in `js/schichten.js`). In der Linienschrift bekommt das `I` Querstriche oben und unten, damit man es nicht mit einer `1` verwechselt.
 
 ### Laser-Regeln für die DXF
 

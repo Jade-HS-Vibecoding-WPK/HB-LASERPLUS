@@ -86,7 +86,7 @@
         <image href="Bilder/logo.svg" width="2481" height="3508"></image>
       </svg>
       <div class="flex-1 min-w-0">
-        <p class="titel text-2xl sm:text-3xl font-bold">IFC → Laser</p>
+        <p class="titel text-2xl sm:text-3xl font-bold">Erstelle deine Laserdatei</p>
         <p class="mt-1 text-leise">Aus deinem Gebäudemodell werden fertige Laserdateien für ein Pappmodell.</p>
       </div>
       <!-- Knopf hell/dunkel, rechts in der Kopfzeile -->
@@ -104,20 +104,46 @@
           <span class="nummer">1</span> Datei ablegen
         </h2>
 
+        <!-- Ablagefläche: eine oder mehrere IFC-Dateien (je Datei ein Gebäude).
+             Sobald Dateien da sind, wird sie kleiner („ablage-kompakt“). -->
         <div id="ablage" class="ablage rounded-xl px-4 py-10 sm:py-12 text-center space-y-3">
-          <p class="text-lg font-bold">IFC-Datei hierher ziehen</p>
-          <p class="text-leise">oder</p>
-          <label class="knopf haupt-knopf">
-            Datei auswählen
-            <input type="file" id="datei-eingabe" accept=".ifc" hidden>
+          <p id="ablage-titel" class="text-lg font-bold">IFC-Dateien hierher ziehen</p>
+          <p class="nur-gross text-leise">oder</p>
+          <label class="knopf haupt-knopf" tabindex="0">
+            Dateien auswählen
+            <input type="file" id="datei-eingabe" accept=".ifc" multiple hidden>
           </label>
-          <p class="text-sm text-leise pt-2">Deine Datei bleibt auf deinem Rechner. Nichts wird hochgeladen.</p>
-          <!-- Hier steht nach dem Ablegen der Dateiname oder ein Hinweis -->
+          <p class="nur-gross text-sm text-leise pt-2">Je Datei ein Gebäude, auch mehrere auf einmal. Deine Dateien bleiben auf deinem Rechner, nichts wird hochgeladen.</p>
+          <!-- Hier steht ein Hinweis, wenn eine Datei nicht passt -->
           <p id="datei-status" class="datei-status" role="status" aria-live="polite" hidden></p>
         </div>
 
-        <!-- Bauteil-Liste: was in der IFC-Datei steckt (erscheint nach dem Lesen) -->
-        <div id="bauteile" class="mt-5 bg-hintergrund border border-linie rounded-xl p-4 sm:p-5" aria-live="polite" hidden></div>
+        <!-- Datei-Karten: eine je Gebäude (werden aus der Vorlage unten erzeugt).
+             ✕ entfernt dieses Gebäude, „Andere Datei wählen“ tauscht nur diese Datei aus.
+             Eine Datei auf eine Karte ziehen tauscht ebenfalls aus. -->
+        <ul id="datei-liste" class="mt-4 space-y-3" aria-label="Abgelegte IFC-Dateien"></ul>
+
+        <template id="karten-vorlage">
+          <li class="datei-karte rounded-xl">
+            <div class="datei-symbol" aria-hidden="true">IFC</div>
+            <div class="min-w-0 flex-1">
+              <p class="font-bold truncate"><span class="karte-nummer"></span><span class="karte-name"></span></p>
+              <p class="karte-info text-sm text-leise" role="status" aria-live="polite"></p>
+              <label class="datei-tauschen text-sm" tabindex="0">
+                Andere Datei wählen
+                <input type="file" class="karte-tauschen" accept=".ifc" hidden>
+              </label>
+              <!-- Bauteil-Liste dieses Gebäudes (erscheint nach dem Lesen) -->
+              <details class="karte-details mt-3 text-sm" hidden>
+                <summary class="text-leise">Das steckt in der Datei</summary>
+                <div class="karte-bauteile mt-3"></div>
+              </details>
+            </div>
+            <button type="button" class="datei-entfernen" aria-label="Datei entfernen" title="Datei entfernen">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </li>
+        </template>
 
         <details class="mt-5 text-sm">
           <summary class="text-leise">Tipps für den Export aus Archicad</summary>

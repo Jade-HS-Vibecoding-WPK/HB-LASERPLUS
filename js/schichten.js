@@ -235,8 +235,9 @@ export function himmelsrichtung(n) {
 // ---------------------------------------------------------
 // Teile bauen: Schichten, Eckenausgleich, Nummern
 // e = Einstellungen (massstab, dickeInnen, dickeAussen)
+// vorsatz = steht vor jeder Nummer, bei mehreren Gebäuden z. B. „2-“ → „2-A-001“
 // ---------------------------------------------------------
-export function teileBauen(flaechen, ecken, e) {
+export function teileBauen(flaechen, ecken, e, vorsatz = "") {
   const k = 1000 / e.massstab; // Meter → mm im Modell
   const ta = e.dickeAussen, ti = e.dickeInnen, td = e.dickeInnen;
 
@@ -282,10 +283,10 @@ export function teileBauen(flaechen, ecken, e) {
       }
       // Nummern: A-001 = Außenschicht, I-001 = Innenschicht derselben Fassade, D-001 = Dachfläche
       const zahl = drei(nummer.get(index));
-      const name = f.wofuer === "fassade" ? `${s.schicht}-${zahl}` : `D-${zahl}`;
+      const name = vorsatz + (f.wofuer === "fassade" ? `${s.schicht}-${zahl}` : `D-${zahl}`);
       teile.push({
         name,
-        nummer: zahl,
+        nummer: vorsatz + zahl,
         flaecheIndex: index,
         wofuer: f.wofuer,
         schicht: s.schicht,

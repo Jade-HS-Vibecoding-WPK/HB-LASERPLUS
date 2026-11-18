@@ -1,11 +1,11 @@
 # IFC → Laser
 
-Eine Webseite, die aus der **IFC-Datei eines einzelnen Gebäudes** fertige **Laserdateien (DXF)** für ein **Pappmodell** macht.
+Eine Webseite, die aus der **IFC-Datei eines Gebäudes** fertige **Laserdateien (DXF)** für ein **Pappmodell** macht – auch für **mehrere Gebäude** auf einmal (je Datei ein Gebäude).
 
 - Jede Fassade wird eine flache Platte, so wie man sie von außen sieht, das Dach ebenso.
 - Jede Wand bekommt **zwei Schichten**: eine geschlossene Innenschicht und eine Außenschicht mit ausgeschnittenen Fenstern und Türen.
 - An den Ecken überlappen die Platten. Die App kürzt sie um die Pappdicken, damit die Außenmaße stimmen, auch bei schrägen Ecken und am First.
-- Die Teile werden auf Laserplatten (Standard 1000 × 600 mm) verteilt. Neben jedes Teil wird seine Nummer geritzt: `A-001` = Außenschicht, `I-001` = Innenschicht derselben Fassade, `D-001` = Dachfläche.
+- Die Teile werden auf Laserplatten (Standard 1000 × 600 mm) verteilt. Neben jedes Teil wird seine Nummer geritzt: `A-001` = Außenschicht, `I-001` = Innenschicht derselben Fassade, `D-001` = Dachfläche. Bei mehreren Gebäuden steht die Gebäude-Nummer davor, z. B. `2-A-001`.
 - Dazu gibt es ein **Übersichtsblatt** zum Ausdrucken: Legende der Nummern, Grundriss mit Nummern, Teileliste und Reihenfolge beim Kleben. **Speichere oder drucke es** – nur darauf steht, wie geklebt wird.
 
 Entstanden im WPK Vibecoding an der Jade Hochschule, 2026.
@@ -13,7 +13,7 @@ Entstanden im WPK Vibecoding an der Jade Hochschule, 2026.
 ## So benutzt du die App
 
 1. Auf der Startseite **„Erstelle deine Laserdatei“** klicken.
-2. **IFC-Datei ablegen** (links oben, z. B. aus Archicad). Die App zeigt, was in der Datei steckt.
+2. **Eine oder mehrere IFC-Dateien ablegen** (links oben, z. B. aus Archicad). Jede Datei bekommt eine Karte: Dort steht, was in ihr steckt, und mit ✕ nimmst du sie wieder heraus.
 3. **Einstellungen** prüfen (rechts): Maßstab, Pappdicke innen und außen (1 / 1,5 / 2 mm), Plattengröße, Linienfarben.
 4. **„Laserplatten erstellen“** klicken (unter den Einstellungen). Die Platten erscheinen links unten in der Vorschau.
 5. **DXF herunterladen** (eine Datei pro Platte) und das **Übersichtsblatt drucken oder als PDF speichern**.

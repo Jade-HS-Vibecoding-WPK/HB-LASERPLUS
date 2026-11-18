@@ -5,14 +5,21 @@
 // etwas passiert, wenn man klickt oder eine Datei ablegt.
 //
 // Ablauf:
-//   1. Datei ablegen → IFC lesen (js/ifc-lesen.js) → Bauteil-Liste
-//   2. Einstellungen (js/einstellungen.js)
+//   1. Eine oder mehrere IFC-Dateien ablegen – je Datei ein Gebäude.
+//      Jede Datei wird gelesen (js/ifc-lesen.js) und bekommt eine Karte
+//      mit ✕ (entfernen), „Andere Datei wählen“ (austauschen) und ihrer
+//      Bauteil-Liste.
+//   2. Einstellungen (js/einstellungen.js), gelten für alle Gebäude.
 //   3. „Laserplatten erstellen“:
-//        Flächen flach legen (js/abwickeln.js)
+//        je Gebäude Flächen flach legen (js/abwickeln.js)
 //        → Ecken und Schichten (js/schichten.js)
-//        → auf Platten verteilen, Nummern daneben (js/verteilen.js)
+//        → alle Teile gemeinsam auf Platten verteilen (js/verteilen.js)
 //        → Vorschau, DXF je Platte (js/dxf.js), Übersichtsblatt (js/uebersicht.js)
-//   Ändert sich danach eine Einstellung, wird sofort neu gerechnet.
+//   Ändert sich danach eine Einstellung oder die Liste der Gebäude,
+//   wird sofort neu gerechnet.
+//
+// Nummern: bei einem Gebäude A-001 / I-001 / D-001, bei mehreren mit
+// der Gebäude-Nummer davor, z. B. 2-A-001.
 // =========================================================
 
 import { einstellungenStarten, beiAenderung, holeEinstellungen } from "./einstellungen.js";
@@ -60,9 +67,12 @@ startKnopf.focus();
 // Bauteile der Seite
 // ---------------------------------------------------------
 const ablage = document.getElementById("ablage");
+const ablageTitel = document.getElementById("ablage-titel");
 const dateiEingabe = document.getElementById("datei-eingabe");
+const dateiWaehlenKnopf = dateiEingabe.closest("label");
 const dateiStatus = document.getElementById("datei-status");
-const bauteileFeld = document.getElementById("bauteile");
+const dateiListe = document.getElementById("datei-liste");
+const kartenVorlage = document.getElementById("karten-vorlage");
 const erstellenKnopf = document.getElementById("erstellen");
 const erstellenHinweis = document.getElementById("erstellen-hinweis");
 const warnungenFeld = document.getElementById("warnungen");
@@ -76,12 +86,17 @@ const druckblatt = document.getElementById("druckblatt");
 // ---------------------------------------------------------
 // Was wir uns merken (alles nur hier im Browser)
 // ---------------------------------------------------------
-let ifcInfo = null;          // Ergebnis von ifcLesen (Bauteil-Liste und Dreiecke)
-let dateiName = "";
-const proxyWahl = new Map(); // nicht klassifizierte Bauteile: was sind sie?
-let flaechen = null;         // flach gelegte Flächen (hängen nur von der Datei ab)
-let ecken = null;
-let ergebnis = null;         // Teile und Platten (hängen auch von den Einstellungen ab)
+const MAX_GEBAEUDE = 12;
+// Alle abgelegten Gebäude, in der Reihenfolge des Ablegens. Je Gebäude:
+//   datei      – die IFC-Datei
+//   info       – Ergebnis von ifcLesen (Bauteil-Liste und Dreiecke), null solange gelesen wird
+//   proxyWahl  – nicht klassifizierte Bauteile: was sind sie?
+//   flaechen, ecken – flach gelegte Flächen (hängen nur von der Datei ab)
+//   version    – zählt hoch, wenn die Datei ausgetauscht wird (altes Lesen zählt dann nicht mehr)
+//   karte      – die Karte auf der Seite
+const gebaeude = [];
+let ergebnis = null; // Teile und Platten (hängen auch von den Einstellungen ab)
+let lesenKette = Promise.resolve(); // Dateien werden nacheinander gelesen
 
 // ---------------------------------------------------------
 // Kleine Helfer
@@ -99,10 +114,39 @@ function groesseLesbar(byte) {
   return (byte / 1024 / 1024).toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " MB";
 }
 
-function zeigeStatus(text, art) {
-  dateiStatus.textContent = text;
-  dateiStatus.className = "datei-status " + art;
-  dateiStatus.hidden = false;
+// Hinweise in der Ablagefläche zeigen (z. B. Datei passt nicht). Leere Liste = ausblenden.
+function zeigeHinweise(texte) {
+  dateiStatus.textContent = texte.join("\n");
+  dateiStatus.className = "datei-status fehler";
+  dateiStatus.hidden = texte.length === 0;
+}
+
+// Mit der Tastatur bedienbar: Enter oder Leertaste öffnet die Dateiauswahl im Knopf
+function tastaturFuerDateiknopf(knopf) {
+  knopf.addEventListener("keydown", (ereignis) => {
+    if (ereignis.key === "Enter" || ereignis.key === " ") {
+      ereignis.preventDefault();
+      knopf.querySelector("input").click();
+    }
+  });
+}
+
+// Ziehen und Ablegen auf einer Fläche anschließen
+function ablegenAnschliessen(ziel, beiAblegen) {
+  ziel.addEventListener("dragover", (ereignis) => {
+    ereignis.preventDefault();       // sonst öffnet der Browser die Datei selbst
+    ereignis.stopPropagation();
+    ziel.classList.add("drueber");   // Fläche färbt sich, solange man darüber ist
+  });
+  ziel.addEventListener("dragleave", (ereignis) => {
+    if (!ziel.contains(ereignis.relatedTarget)) ziel.classList.remove("drueber");
+  });
+  ziel.addEventListener("drop", (ereignis) => {
+    ereignis.preventDefault();
+    ereignis.stopPropagation();
+    ziel.classList.remove("drueber");
+    beiAblegen([...ereignis.dataTransfer.files]);
+  });
 }
 
 // ---------------------------------------------------------
@@ -140,84 +184,179 @@ beiAenderung((e) => {
 });
 
 // ---------------------------------------------------------
-// Datei annehmen, prüfen und lesen
+// Gebäude (IFC-Dateien) annehmen, lesen, austauschen, entfernen
 // ---------------------------------------------------------
-let leseNummer = 0; // damit eine alte Datei nicht die Liste einer neuen überschreibt
-
-function zuruecksetzen() {
-  ifcInfo = null;
-  flaechen = null;
-  ecken = null;
-  ergebnis = null;
-  proxyWahl.clear();
-  bauteileFeld.hidden = true;
-  erstellenKnopf.disabled = true;
-  erstellenHinweis.textContent = "Zuerst eine IFC-Datei ablegen.";
-  zeigeErgebnis();
-}
-
-function dateiAnnehmen(datei) {
-  if (!datei) return;
-  leseNummer++;
-  zuruecksetzen();
-
+function dateiPruefen(datei) {
   if (!datei.name.toLowerCase().trim().endsWith(".ifc")) {
-    zeigeStatus(
-      "„" + datei.name + "“ ist keine IFC-Datei. Exportiere dein Modell in Archicad als .ifc und lege diese Datei hier ab.",
-      "fehler"
-    );
-    return;
+    return "„" + datei.name + "“ ist keine IFC-Datei. Exportiere dein Modell in Archicad als .ifc und lege diese Datei hier ab.";
   }
-  if (datei.size === 0) {
-    zeigeStatus("„" + datei.name + "“ ist leer. Exportiere die IFC-Datei bitte noch einmal.", "fehler");
-    return;
-  }
-  zeigeStatus(datei.name + " · " + groesseLesbar(datei.size) + " · wird gelesen …", "ok");
-  dateiLesen(datei);
+  if (datei.size === 0) return "„" + datei.name + "“ ist leer. Exportiere die IFC-Datei bitte noch einmal.";
+  return null;
 }
 
-async function dateiLesen(datei) {
-  const nummer = leseNummer;
-  try {
-    // Der IFC-Leser wird erst geladen, wenn er gebraucht wird (er ist groß)
-    const { ifcLesen } = await import("./ifc-lesen.js");
-    const info = await ifcLesen(datei);
-    if (nummer !== leseNummer) return;
-    ifcInfo = info;
-    dateiName = datei.name;
-    // Nicht klassifizierte Bauteile: Gibt es sonst keine Wände und kein Dach,
-    // ist der Morph wohl das ganze Gebäude
-    const sonstLeer = info.waende.aussen + info.waende.ohneAngabe === 0 && info.daecher === 0;
-    for (const p of info.ohneKlasse) proxyWahl.set(p.id, sonstLeer ? "koerper" : "ignorieren");
-    zeigeStatus(datei.name + " · " + groesseLesbar(datei.size) + " · gelesen", "ok");
-    zeigeBauteile(info);
-    erstellenKnopf.disabled = false;
-    erstellenHinweis.textContent = "Prüfe kurz die Einstellungen, dann los.";
-  } catch (fehler) {
-    if (nummer !== leseNummer) return;
-    console.error(fehler);
-    if (fehler && fehler.art === "oeffnen") {
-      zeigeStatus(
-        "„" + datei.name + "“ ließ sich nicht als IFC lesen. Exportiere die Datei in Archicad noch einmal als IFC (2x3 oder 4) und lege sie neu ab.",
-        "fehler"
-      );
-    } else {
-      zeigeStatus(
-        "Der IFC-Leser ließ sich nicht starten. Lade die Seite neu. Passiert es wieder, prüfe, ob der Ordner lib/web-ifc vollständig ist.",
-        "fehler"
-      );
+// Neue Dateien dazunehmen (je Datei ein Gebäude)
+function dateienAnnehmen(dateien) {
+  const hinweise = [];
+  for (const datei of dateien) {
+    const fehler = dateiPruefen(datei);
+    if (fehler) {
+      hinweise.push(fehler);
+      continue;
     }
+    if (gebaeude.length >= MAX_GEBAEUDE) {
+      hinweise.push(`Höchstens ${MAX_GEBAEUDE} Gebäude auf einmal. „${datei.name}“ wurde nicht übernommen.`);
+      continue;
+    }
+    const g = { datei, info: null, proxyWahl: new Map(), flaechen: null, ecken: null, version: 0, karte: null };
+    gebaeude.push(g);
+    karteBauen(g);
+    lesen(g);
+  }
+  zeigeHinweise(hinweise);
+  listeAktualisieren();
+}
+
+// „Andere Datei wählen“ oder Datei auf die Karte gezogen: nur dieses Gebäude austauschen
+function dateiTauschen(g, datei) {
+  const fehler = dateiPruefen(datei);
+  if (fehler) {
+    zeigeHinweise([fehler]);
+    return;
+  }
+  zeigeHinweise([]);
+  g.datei = datei;
+  g.info = null;
+  g.proxyWahl = new Map();
+  g.flaechen = null;
+  g.ecken = null;
+  lesen(g);
+  listeAktualisieren();
+}
+
+// ✕ auf der Karte: dieses Gebäude aus der Seite nehmen.
+// Die Datei auf dem Rechner bleibt natürlich.
+function gebaeudeEntfernen(g) {
+  const i = gebaeude.indexOf(g);
+  if (i < 0) return;
+  gebaeude.splice(i, 1);
+  g.version++; // ein noch laufendes Lesen zählt nicht mehr
+  g.karte.li.remove();
+  zeigeHinweise([]);
+  listeAktualisieren();
+  // Tastatur: weiter beim nächsten Gebäude oder bei „Dateien auswählen“
+  const naechstes = gebaeude[i] || gebaeude[i - 1];
+  (naechstes ? naechstes.karte.entfernen : dateiWaehlenKnopf).focus();
+}
+
+// Datei lesen (nacheinander, damit der IFC-Leser nicht doppelt arbeitet)
+function lesen(g) {
+  const version = ++g.version;
+  karteFuellen(g, "wird gelesen …");
+  const gilt = () => version === g.version && gebaeude.includes(g);
+  lesenKette = lesenKette.then(async () => {
+    if (!gilt()) return;
+    try {
+      // Der IFC-Leser wird erst geladen, wenn er gebraucht wird (er ist groß)
+      const { ifcLesen } = await import("./ifc-lesen.js");
+      const info = await ifcLesen(g.datei);
+      if (!gilt()) return;
+      g.info = info;
+      // Nicht klassifizierte Bauteile: Gibt es sonst keine Wände und kein Dach,
+      // ist der Morph wohl das ganze Gebäude
+      const sonstLeer = info.waende.aussen + info.waende.ohneAngabe === 0 && info.daecher === 0;
+      for (const p of info.ohneKlasse) g.proxyWahl.set(p.id, sonstLeer ? "koerper" : "ignorieren");
+      karteFuellen(g, "✓ gelesen");
+      bauteileZeigen(g);
+    } catch (fehler) {
+      if (!gilt()) return;
+      console.error(fehler);
+      // Die Datei ließ sich nicht lesen: Karte wieder weg, Hinweis in der Ablagefläche
+      gebaeude.splice(gebaeude.indexOf(g), 1);
+      g.karte.li.remove();
+      zeigeHinweise([
+        fehler && fehler.art === "oeffnen"
+          ? "„" + g.datei.name + "“ ließ sich nicht als IFC lesen. Exportiere die Datei in Archicad noch einmal als IFC (2x3 oder 4) und lege sie neu ab."
+          : "Der IFC-Leser ließ sich nicht starten. Lade die Seite neu. Passiert es wieder, prüfe, ob der Ordner lib/web-ifc vollständig ist.",
+      ]);
+    }
+    listeAktualisieren();
+  });
+}
+
+// Nach jeder Änderung an der Liste: Nummern, Ablagefläche, Knopf, ggf. neu rechnen
+function listeAktualisieren() {
+  const mehrere = gebaeude.length > 1;
+  gebaeude.forEach((g, i) => {
+    g.karte.nummer.textContent = mehrere ? `Gebäude ${i + 1} · ` : "";
+  });
+  ablage.classList.toggle("ablage-kompakt", gebaeude.length > 0);
+  ablageTitel.textContent = gebaeude.length ? "Weitere IFC-Dateien hierher ziehen" : "IFC-Dateien hierher ziehen";
+
+  const fertig = gebaeude.filter((g) => g.info).length;
+  erstellenKnopf.disabled = fertig === 0;
+  if (gebaeude.length === 0) {
+    erstellenHinweis.textContent = "Zuerst eine IFC-Datei ablegen.";
+    ergebnis = null;
+    zeigeErgebnis();
+    return;
+  }
+  if (ergebnis) {
+    // Es gab schon Platten: gleich mit dem neuen Stand neu rechnen
+    if (fertig) berechnen();
+    else {
+      ergebnis = null;
+      zeigeErgebnis();
+    }
+  } else {
+    erstellenHinweis.textContent = fertig < gebaeude.length ? "Dateien werden gelesen …" : "Prüfe kurz die Einstellungen, dann los.";
   }
 }
 
 // ---------------------------------------------------------
-// Bauteil-Liste (Bereich 1)
+// Karte je Gebäude (Bereich 1)
 // ---------------------------------------------------------
-function zeigeBauteile(e) {
-  const titel = element("h3", "titel text-xs font-bold text-leise mb-2", "Das steckt in deiner Datei");
-  const kopf = element("p", "text-sm text-leise mb-4", "Format " + e.schema + " · Einheit " + e.einheit);
+function karteBauen(g) {
+  const li = kartenVorlage.content.firstElementChild.cloneNode(true);
+  const karte = {
+    li,
+    nummer: li.querySelector(".karte-nummer"),
+    name: li.querySelector(".karte-name"),
+    info: li.querySelector(".karte-info"),
+    tauschen: li.querySelector(".karte-tauschen"),
+    details: li.querySelector(".karte-details"),
+    bauteile: li.querySelector(".karte-bauteile"),
+    entfernen: li.querySelector(".datei-entfernen"),
+  };
+  g.karte = karte;
+  karte.entfernen.addEventListener("click", () => gebaeudeEntfernen(g));
+  karte.tauschen.addEventListener("change", () => {
+    if (karte.tauschen.files[0]) dateiTauschen(g, karte.tauschen.files[0]);
+    karte.tauschen.value = "";
+  });
+  tastaturFuerDateiknopf(karte.tauschen.closest("label"));
+  // Eine Datei auf die Karte ziehen = austauschen; mehrere = dazunehmen
+  ablegenAnschliessen(li, (dateien) => {
+    if (dateien.length === 1) dateiTauschen(g, dateien[0]);
+    else dateienAnnehmen(dateien);
+  });
+  dateiListe.append(li);
+}
 
-  const liste = element("dl", "grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm");
+function karteFuellen(g, zustand) {
+  const k = g.karte;
+  k.name.textContent = g.datei.name;
+  k.li.title = g.datei.name; // ganzer Name beim Darüberfahren, falls er abgeschnitten ist
+  k.info.textContent = groesseLesbar(g.datei.size) + " · " + zustand;
+  k.entfernen.setAttribute("aria-label", "„" + g.datei.name + "“ entfernen");
+  if (!g.info) k.details.hidden = true;
+}
+
+// Bauteil-Liste eines Gebäudes in seine Karte schreiben
+function bauteileZeigen(g) {
+  const e = g.info;
+  const kopf = element("p", "text-leise mb-3", "Format " + e.schema + " · Einheit " + e.einheit);
+
+  const liste = element("dl", "grid grid-cols-[auto_1fr] gap-x-6 gap-y-1");
   const zeile = (name, wert, zusatz) => {
     liste.append(element("dt", "text-leise", name));
     const feld = element("dd", "font-bold", wert);
@@ -236,7 +375,7 @@ function zeigeBauteile(e) {
   if (e.decken) zeile("Decken / Böden", String(e.decken), "werden nicht verwendet");
   zeile("Ohne Klassifizierung", String(e.ohneKlasse.length), "");
 
-  const hinweise = element("ul", "mt-4 space-y-2 text-sm");
+  const hinweise = element("ul", "mt-3 space-y-2");
   if (e.hinweise.length === 0) {
     hinweise.append(element("li", "", "✓ Außenwände und Dach sind da. Mehr brauchen wir für die Fassaden nicht."));
   }
@@ -245,17 +384,16 @@ function zeigeBauteile(e) {
     punkt.append(element("span", "text-akzent font-bold", "!"), element("span", "", text));
     hinweise.append(punkt);
   }
-
-  const teile = [titel, kopf, liste, hinweise];
+  const inhalt = [kopf, liste, hinweise];
 
   // Auswahl für nicht klassifizierte Bauteile (z. B. Morphs)
   if (e.ohneKlasse.length) {
-    const kasten = element("div", "mt-5 pt-4 border-t border-linie");
-    kasten.append(element("h4", "titel text-xs font-bold text-leise mb-3", "Nicht klassifiziert – was ist das?"));
+    const kasten = element("div", "mt-4 pt-3 border-t border-linie");
+    kasten.append(element("p", "titel text-xs font-bold text-leise mb-3", "Nicht klassifiziert – was ist das?"));
     for (const p of e.ohneKlasse) {
-      const reihe = element("label", "flex flex-wrap items-center gap-3 text-sm mb-2");
-      reihe.append(element("span", "min-w-[10rem]", p.name));
-      const auswahl = element("select", "feld w-auto");
+      const reihe = element("label", "flex flex-wrap items-center gap-3 mb-2");
+      reihe.append(element("span", "min-w-[8rem]", p.name));
+      const auswahl = element("select", "feld w-auto max-w-full"); // nie breiter als die Karte (Handy)
       for (const [wert, text] of [
         ["koerper", "Wand und Dach (ganzer Gebäudekörper)"],
         ["wand", "Wand"],
@@ -266,36 +404,54 @@ function zeigeBauteile(e) {
         option.value = wert;
         auswahl.append(option);
       }
-      auswahl.value = proxyWahl.get(p.id) || "ignorieren";
+      auswahl.value = g.proxyWahl.get(p.id) || "ignorieren";
       auswahl.addEventListener("change", () => {
-        proxyWahl.set(p.id, auswahl.value);
-        flaechen = null; // neu flach legen
-        ecken = null;
+        g.proxyWahl.set(p.id, auswahl.value);
+        g.flaechen = null; // neu flach legen
+        g.ecken = null;
         if (ergebnis) berechnen();
       });
       reihe.append(auswahl);
       kasten.append(reihe);
     }
-    teile.push(kasten);
+    inhalt.push(kasten);
   }
 
-  bauteileFeld.replaceChildren(...teile);
-  bauteileFeld.hidden = false;
+  g.karte.bauteile.replaceChildren(...inhalt);
+  g.karte.details.hidden = false;
+  // Aufgeklappt bei nur einem Gebäude oder wenn es Hinweise gibt
+  g.karte.details.open = gebaeude.length === 1 || e.hinweise.length > 0;
 }
 
 // ---------------------------------------------------------
 // Laserplatten berechnen (Bereich 3)
 // ---------------------------------------------------------
 function berechnen() {
-  if (!ifcInfo) return;
-  const e = holeEinstellungen();
-  if (!flaechen) {
-    flaechen = flaechenFinden(ifcInfo.huelle, proxyWahl);
-    ecken = eckenFinden(flaechen);
+  const fertig = gebaeude.filter((g) => g.info);
+  if (!fertig.length) {
+    ergebnis = null;
+    zeigeErgebnis();
+    return;
   }
-  const teile = teileBauen(flaechen, ecken, e);
+  const e = holeEinstellungen();
+  const mehrere = gebaeude.length > 1;
+  const teile = [];
+  const liste = [];
+  for (const g of fertig) {
+    const nummer = gebaeude.indexOf(g) + 1;
+    if (!g.flaechen) {
+      g.flaechen = flaechenFinden(g.info.huelle, g.proxyWahl);
+      g.ecken = eckenFinden(g.flaechen);
+    }
+    // Bei mehreren Gebäuden steht die Gebäude-Nummer vor der Teilenummer (2-A-001)
+    for (const t of teileBauen(g.flaechen, g.ecken, e, mehrere ? nummer + "-" : "")) {
+      teile.push({ ...t, gebaeude: nummer });
+    }
+    liste.push({ nummer, name: g.datei.name, flaechen: g.flaechen, ecken: g.ecken });
+  }
+  // Alle Teile aller Gebäude teilen sich die Platten (spart Pappe)
   const { platten, zuGross } = verteilen(teile, e);
-  ergebnis = { teile, platten, zuGross, einstellungen: e };
+  ergebnis = { teile, platten, zuGross, einstellungen: e, gebaeude: liste, mehrere };
   zeigeErgebnis();
 }
 
@@ -331,12 +487,18 @@ function zeigeErgebnis() {
   plattenFeld.replaceChildren();
   if (!hatErgebnis) return;
 
-  const { teile, platten, zuGross, einstellungen: e } = ergebnis;
+  const { teile, platten, zuGross, einstellungen: e, gebaeude: liste, mehrere } = ergebnis;
 
   // Warnungen und Hinweise
   const warnungen = [];
   if (teile.length === 0) {
     warnungen.push("Es wurden keine Außenflächen gefunden. Prüfe die Bauteil-Liste oben (Außenwände, Dach, nicht klassifizierte Bauteile).");
+  } else if (mehrere) {
+    for (const b of liste) {
+      if (!teile.some((t) => t.gebaeude === b.nummer)) {
+        warnungen.push(`Gebäude ${b.nummer} („${b.name}“): Es wurden keine Außenflächen gefunden. Prüfe seine Bauteil-Liste oben.`);
+      }
+    }
   }
   for (const t of zuGross) {
     warnungen.push(
@@ -344,7 +506,8 @@ function zeigeErgebnis() {
         "Wähle einen kleineren Maßstab (z. B. 1:200) oder eine größere Platte. Das Teil wird nicht verkleinert."
     );
   }
-  if (ecken.some((c) => flaechen[c.i].wofuer === "fassade" && Math.abs(Math.cos(c.phi)) > 0.02)) {
+  const schraeg = liste.some((b) => b.ecken.some((c) => b.flaechen[c.i].wofuer === "fassade" && Math.abs(Math.cos(c.phi)) > 0.02));
+  if (schraeg) {
     warnungen.push("Die Wände haben schräge Ecken (nicht 90°). Dort bleibt beim Kleben eine kleine Keilfuge, weil der Laser senkrecht schneidet.");
   }
   for (const text of warnungen) {
@@ -355,13 +518,14 @@ function zeigeErgebnis() {
   warnungenFeld.hidden = warnungen.length === 0;
 
   // Zusammenfassung
-  const fassaden = new Set(teile.filter((t) => t.wofuer === "fassade").map((t) => t.flaecheIndex)).size;
+  const fassaden = new Set(teile.filter((t) => t.wofuer === "fassade").map((t) => t.gebaeude + ":" + t.flaecheIndex)).size;
   const dach = teile.filter((t) => t.wofuer === "dach").length;
   plattenFeld.append(
     element(
       "p",
       "text-sm",
-      `${fassaden} Fassaden (je Außen- und Innenschicht) und ${dach} Dachflächen = ${teile.length} Teile ` +
+      (mehrere ? `${liste.length} Gebäude: ` : "") +
+        `${fassaden} Fassaden (je Außen- und Innenschicht) und ${dach} Dachflächen = ${teile.length} Teile ` +
         `auf ${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} (Maßstab 1:${e.massstab}).`
     )
   );
@@ -389,7 +553,8 @@ function zeigeErgebnis() {
 // Herunterladen und Drucken
 // ---------------------------------------------------------
 function dateiBasis() {
-  const basis = dateiName.replace(/\.ifc\s*$/i, "").trim().replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, "-");
+  if (!ergebnis || ergebnis.gebaeude.length !== 1) return "Mehrere-Gebaeude";
+  const basis = ergebnis.gebaeude[0].name.replace(/\.ifc\s*$/i, "").trim().replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, "-");
   return basis || "Modell";
 }
 
@@ -411,44 +576,25 @@ druckKnopf.addEventListener("click", () => {
   if (!ergebnis) return;
   druckblatt.replaceChildren(
     uebersichtBauen({
-      dateiName,
       einstellungen: ergebnis.einstellungen,
-      flaechen,
+      gebaeude: ergebnis.gebaeude,
       teile: ergebnis.teile,
       platten: ergebnis.platten,
-      ecken,
+      mehrere: ergebnis.mehrere,
     })
   );
   window.print();
 });
 
 // ---------------------------------------------------------
-// Datei ablegen: Knopf „Datei auswählen“ oder Ziehen
+// Dateien ablegen: Knopf „Dateien auswählen“ oder Ziehen
 // ---------------------------------------------------------
 dateiEingabe.addEventListener("change", () => {
-  dateiAnnehmen(dateiEingabe.files[0]);
-  dateiEingabe.value = ""; // damit dieselbe Datei nochmal gewählt werden kann
+  dateienAnnehmen([...dateiEingabe.files]);
+  dateiEingabe.value = ""; // damit dieselben Dateien nochmal gewählt werden können
 });
-
-ablage.addEventListener("dragover", (ereignis) => {
-  ereignis.preventDefault();          // sonst öffnet der Browser die Datei selbst
-  ablage.classList.add("drueber");    // Fläche färbt sich, solange man darüber ist
-});
-ablage.addEventListener("dragleave", (ereignis) => {
-  if (!ablage.contains(ereignis.relatedTarget)) ablage.classList.remove("drueber");
-});
-ablage.addEventListener("drop", (ereignis) => {
-  ereignis.preventDefault();
-  ablage.classList.remove("drueber");
-  const dateien = ereignis.dataTransfer.files;
-  if (dateien.length > 1) {
-    leseNummer++;
-    zuruecksetzen();
-    zeigeStatus("Bitte lege nur eine Datei ab, ein Gebäude pro Durchgang.", "fehler");
-    return;
-  }
-  dateiAnnehmen(dateien[0]);
-});
+tastaturFuerDateiknopf(dateiWaehlenKnopf);
+ablegenAnschliessen(ablage, dateienAnnehmen);
 
 // Daneben fallen gelassene Dateien nicht vom Browser öffnen lassen
 window.addEventListener("dragover", (ereignis) => ereignis.preventDefault());

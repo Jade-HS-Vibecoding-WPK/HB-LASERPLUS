@@ -134,9 +134,112 @@ body {
   border-color: var(--akzent-hover);
 }
 
+/* Kleine Ablagefläche, sobald schon Dateien da sind: alles in einer Zeile */
+.ablage.ablage-kompakt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+.ablage.ablage-kompakt > * {
+  margin-top: 0 !important;   /* Abstände von „space-y-3“ aufheben */
+}
+.ablage.ablage-kompakt #ablage-titel {
+  font-size: 1rem;
+}
+.ablage.ablage-kompakt .nur-gross {
+  display: none;
+}
+.ablage.ablage-kompakt .datei-status {
+  flex-basis: 100%;
+}
+
+/* ---------- Datei-Karten (eine je Gebäude) ---------- */
+.datei-karte {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  background: var(--hintergrund);
+  border: 1px solid var(--linie);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.datei-karte[hidden] {
+  display: none;
+}
+/* Eine neue Datei wird auf die Karte gezogen */
+.datei-karte.drueber {
+  background: var(--linie);
+  border-color: var(--akzent-hover);
+}
+/* Kleines Datei-Symbol mit „IFC“ */
+.datei-symbol {
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3.6rem;
+  border: 2px solid var(--akzent);
+  border-radius: 0.4rem 1rem 0.4rem 0.4rem; /* abgeknickte Ecke wie ein Blatt */
+  color: var(--akzent);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* „Andere Datei wählen“ als Textlink */
+.datei-tauschen {
+  display: inline-block;
+  margin-top: 0.4rem;
+  color: var(--akzent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.datei-tauschen:hover {
+  color: var(--akzent-hover);
+}
+.datei-tauschen:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+/* Runder Knopf ✕ zum Entfernen (groß genug für Finger) */
+.datei-entfernen {
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--linie);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+.datei-entfernen svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+.datei-entfernen:hover {
+  background: var(--flaeche);
+  border-color: var(--akzent);
+  color: var(--akzent);
+}
+.datei-entfernen:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
+}
+
 /* Rückmeldung nach dem Ablegen (Dateiname oder Hinweis) */
 .datei-status {
   display: inline-block;
+  white-space: pre-line;   /* mehrere Hinweise untereinander */
   margin-top: 0.75rem;
   padding: 0.5rem 1rem;
   border-radius: 0.75rem;
@@ -388,6 +491,11 @@ html.start-offen {
     border-bottom: 0.5pt solid #999;
     padding: 2pt 4pt;
     text-align: left;
+  }
+  #druckblatt .gebaeude-titel {
+    font-size: 10pt;
+    font-weight: 700;
+    margin: 0.4cm 0 0.1cm;
   }
   #druckblatt .teilnummer {
     font-weight: 700;
