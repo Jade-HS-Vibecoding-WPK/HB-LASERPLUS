@@ -31,7 +31,7 @@ import { verteilen } from "./verteilen.js";
 import { uebersichtBauen } from "./uebersicht.js";
 import { farbmodusStarten } from "./farbmodus.js";
 import { Betrachter } from "./betrachter.js"; // 3D-Vorschau (von Svenjas Zusatz 3D übernommen, unverändert)
-import { modellTeile, grundrissBreite, dachDickenMessen, FARBEN } from "./modell3d.js";
+import { modellTeile, grundrissBreite, FARBEN } from "./modell3d.js";
 import { staffageTeile } from "./staffage.js";
 
 // Knopf hell/dunkel (Sonne/Mond) anschließen
@@ -476,13 +476,7 @@ function berechnen() {
     for (const t of teileBauen(g.flaechen, g.ecken, e, mehrere ? nummer + "-" : "")) {
       teile.push({ ...t, gebaeude: nummer });
     }
-    // dachDicken: nur für die 3D-Vorschau (Dach liegt auf den Wänden),
-    // neu gemessen, sobald die Flächen neu berechnet wurden
-    if (!g.dachDicken || g.dachDickenFuer !== g.flaechen) {
-      g.dachDicken = dachDickenMessen(g.info.huelle, g.flaechen);
-      g.dachDickenFuer = g.flaechen;
-    }
-    liste.push({ nummer, name: g.datei.name, flaechen: g.flaechen, ecken: g.ecken, dachDicken: g.dachDicken });
+    liste.push({ nummer, name: g.datei.name, flaechen: g.flaechen, ecken: g.ecken });
   }
   // Menschen und Bäume (Staffage) kommen mit auf die Platten
   teile.push(...staffageTeile(e));
@@ -536,10 +530,10 @@ function modellZeigen() {
     const eigene = teile.filter((t) => t.gebaeude === b.nummer);
     if (!eigene.length) continue;
     // erst ohne Versatz bauen, um die Breite zu kennen, dann daneben stellen
-    const probe = modellTeile(b.flaechen, eigene, k, e.farben.ritzen, [0, 0], b.dachDicken);
+    const probe = modellTeile(b.flaechen, eigene, k, e.farben.ritzen, [0, 0]);
     const r = grundrissBreite(probe);
     const versatz = [naechstesX - r.x0, 0];
-    alle.push(...(versatz[0] === 0 ? probe : modellTeile(b.flaechen, eigene, k, e.farben.ritzen, versatz, b.dachDicken)));
+    alle.push(...(versatz[0] === 0 ? probe : modellTeile(b.flaechen, eigene, k, e.farben.ritzen, versatz)));
     naechstesX += r.x1 - r.x0 + 20; // 2 cm Abstand zwischen den Gebäuden
   }
   modellBetrachter.setzen(alle, null);

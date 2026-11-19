@@ -546,8 +546,25 @@ export function uebersichtBauen(daten) {
       const art = wand
         ? (c.konvex ? "Außenecke" : "Innenecke") + `, ${winkel}°`
         : (c.konvex ? "First / Grat" : "Kehle") + `, ${winkel}°`;
-      const kurz = c.durch === c.i ? c.j : c.i;
       const zeile = element("tr");
+      if (c.stumpf) {
+        // Dachkanten (seit 19.11.): stumpf, keine Platte läuft durch
+        zeile.append(
+          element("td", "teilnummer", nr),
+          element("td", "", art),
+          element("td", "teilnummer", `${namenVon(c.i)} + ${namenVon(c.j)} (Dach ${richtung(c.i)} + ${richtung(c.j)})`),
+          element(
+            "td",
+            "",
+            c.konvex
+              ? "stumpf: die Platten berühren sich mit den Unterkanten, oben bleibt eine kleine Kerbe"
+              : "stumpf: die Platten berühren sich mit den Oberkanten, darunter ist Luft"
+          )
+        );
+        tabelle.append(zeile);
+        continue;
+      }
+      const kurz = c.durch === c.i ? c.j : c.i;
       zeile.append(
         element("td", "teilnummer", nr),
         element("td", "", art + (c.gemischt ? " (Achtung: gemischte Ecke)" : "")),
@@ -622,7 +639,7 @@ export function uebersichtBauen(daten) {
     const beispiel = beispielA ? `, also ${beispielA.name} auf ${beispielA.name.replace(/A-(\d+)$/, "I-$1")}` : "";
     if (mehrere) blatt.append(element("h3", "gebaeude-titel", `Gebäude ${b.nummer} · ${b.name}`));
     const schritte = element("ol");
-    const dachSchritt = element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Zuerst die gekürzten Dachflächen, dann die durchlaufenden – sie überlappen am First.`);
+    const dachSchritt = element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Die Dachplatten liegen auf den Wänden und decken deren Oberkante ab. Am First und an Graten stoßen sie stumpf aneinander und berühren sich mit den Unterkanten.`);
     // Untersichten (seit 19.11.): vor dem Dach, solange man noch gut hinkommt
     const untersichtSchritt = eigene.some((t) => t.wofuer === "decke")
       ? [
@@ -668,15 +685,18 @@ export function uebersichtBauen(daten) {
   if (teile.some((t) => t.name.startsWith("B-"))) {
     hinweise.append(element("li", "", "Bäume: Je ein Teil mit Schlitz von oben (A) und eins mit Schlitz von unten (B) über Kreuz ineinanderstecken. Auf der Pappe steht keine Nummer – alle Bäume gleicher Höhe passen zusammen, man erkennt A und B am Schlitz. Der Schlitz ist so breit wie die Pappe; bei Bedarf einen Tropfen Kleber."));
   }
-  if (alleEcken.some((c) => Math.abs(Math.cos(c.phi)) > 0.02)) {
-    hinweise.append(element("li", "", "Schräge Ecken, Grate und Kehlen (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));
+  if (alleEcken.some((c) => !c.stumpf && Math.abs(Math.cos(c.phi)) > 0.02)) {
+    hinweise.append(element("li", "", "Schräge Wandecken (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));
+  }
+  if (alleEcken.some((c) => c.stumpf)) {
+    hinweise.append(element("li", "", "First und Grate: Die beiden Dachplatten stoßen stumpf aneinander und berühren sich mit ihren Unterkanten. Weil der Laser senkrecht schneidet, bleibt oben eine kleine Kerbe – mit Kleber füllen oder so lassen. Kehlen: Die Platten berühren sich oben, darunter ist etwas Luft."));
   }
   if (alleEcken.some((c) => c.gemischt)) {
     hinweise.append(element("li", "", "Das Gebäude hat eine ungerade Zahl von Ecken: An einer Ecke laufen zwei Platten in derselben Rolle zusammen. Dort beim Kleben kurz anhalten und prüfen."));
   }
   if (!ohneGebaeude) {
     hinweise.append(
-      element("li", "", "Wand–Dach-Anschluss: Die Wände sind so hoch wie im Modell, das Dach liegt oben auf. Ist die Dachpappe dünner als das echte Dach, sitzt das Dach im Modell minimal tiefer.")
+      element("li", "", "Wand–Dach-Anschluss: Die Wände reichen genau bis unter die Dachplatte, das Dach liegt oben auf und deckt die Oberkante der Wände ab. Die Dachhöhe stimmt mit dem Gebäude überein.")
     );
   }
   blatt.append(hinweise);
