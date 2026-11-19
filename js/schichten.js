@@ -8,9 +8,17 @@
 //   oder eine Pappe (A), geschlossen, Fenster und Türen
 //   wahlweise angeritzt oder ganz weggelassen
 // Jede Dachfläche wird eine Pappe (eine Schicht, Dicke = Pappdicke innen).
+// Jede Untersicht (Decke, die man von unten sieht, z. B. über einem
+// Rücksprung) wird ebenfalls eine Pappe (Dicke = Pappdicke innen), seit 19.11.
 //
 // Nummern: A-001 = Außenschicht, I-001 = Innenschicht derselben Fassade,
-// D-001 = Dachfläche. Fassaden im Uhrzeigersinn ab Norden, Dach getrennt.
+// D-001 = Dachfläche, U-001 = Untersicht. Fassaden im Uhrzeigersinn ab
+// Norden, Dach und Untersichten getrennt.
+//
+// Rücksprünge (seit 19.11.): Liegt hinter einer Öffnung eine zurückgesetzte
+// Außenwand, bleibt die Öffnung auch in der Innenschicht offen. Seitenwände
+// und Untersicht des Rücksprungs werden vorne um die Pappdicke(n) der
+// Fassade gekürzt, gegen die sie stoßen.
 //
 // Eckenausgleich (wie in CLAUDE.md beschrieben):
 //   An jeder Ecke läuft eine Fläche durch, die andere wird gekürzt.
@@ -23,7 +31,7 @@
 // Maße: Die Flächen kommen in Meter, die Teile gehen in mm im Modellmaßstab.
 // =========================================================
 
-import { zu3d } from "./abwickeln.js";
+import { zu3d, zu2dVon } from "./abwickeln.js";
 
 // ---------- Vektor-Helfer (3D) ----------
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -249,26 +257,37 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
   const aufbau = e.wandaufbau || "zwei";
   const eineSchicht = aufbau !== "zwei";
 
-  // Nummern: Fassaden im Uhrzeigersinn ab Norden, danach das Dach
+  // Nummern: Fassaden im Uhrzeigersinn ab Norden, danach das Dach, dann die Untersichten
   const nummer = new Map();
   const fassaden = flaechen.map((f, i) => i).filter((i) => flaechen[i].wofuer === "fassade");
   const daecher = flaechen.map((f, i) => i).filter((i) => flaechen[i].wofuer === "dach");
+  const decken = flaechen.map((f, i) => i).filter((i) => flaechen[i].wofuer === "decke");
   const nachRichtung = (a, b) => himmelsrichtung(flaechen[a].n).grad - himmelsrichtung(flaechen[b].n).grad;
   fassaden.sort(nachRichtung).forEach((i, z) => nummer.set(i, z + 1));
   daecher.sort(nachRichtung).forEach((i, z) => nummer.set(i, z + 1));
+  decken.forEach((i, z) => nummer.set(i, z + 1));
   const drei = (z) => String(z).padStart(3, "0");
+  // Wie tief eine Fassade aus Pappe ist (mm): beide Schichten bzw. eine
+  const fassadenTiefe = eineSchicht ? ti : ta + ti;
 
   const teile = [];
-  for (const index of [...fassaden, ...daecher]) {
+  for (const index of [...fassaden, ...daecher, ...decken]) {
     const f = flaechen[index];
     const r = himmelsrichtung(f.n);
     const meineEcken = ecken.filter((c) => c.i === index || c.j === index);
+    // Rücksprünge: zurückgesetzte Außenwände hinter dieser Fassade (als Umrisse in ihrer Ansicht)
+    const rueckwaende = f.wofuer === "fassade" ? rueckwaendeHinter(flaechen, f) : [];
+    const hatRueckwand = (zug) => rueckwaende.some((rw) => ueberdeckt(zug, rw));
+    // Kanten, mit denen diese Fläche gegen eine davorliegende Fassade stößt
+    const stoesse = f.wofuer === "fassade" || f.wofuer === "decke" ? stoesseAnFassaden(flaechen, index, meineEcken) : [];
 
     // Schichten: tiefe = wie weit die Vorderseite hinter der echten Außenfläche liegt.
     // eKlein/eGross = bis zu welcher Tiefe der Nachbarfläche die Platte reicht
     // ritzen = Fenster und Türen nicht ausschneiden, sondern anritzen
     let schichten;
-    if (f.wofuer !== "fassade") {
+    if (f.wofuer === "decke") {
+      schichten = [{ schicht: "", wort: "Untersicht", tiefe: 0, dicke: td, mitLoechern: true, eKlein: 0, eGross: td }];
+    } else if (f.wofuer !== "fassade") {
       schichten = [{ schicht: "", wort: "Dachplatte", tiefe: 0, dicke: td, mitLoechern: true, eKlein: 0, eGross: td }];
     } else if (eineSchicht) {
       const wort = aufbau === "eine-geritzt" ? "Wand, eine Schicht, Öffnungen geritzt" : "Wand, eine Schicht, ohne Öffnungen";
@@ -286,14 +305,18 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
       // Geschlossene Wand (Innenschicht oder eine Schicht): auch Aussparungen am
       // unteren Rand (Türen bis zum Boden) füllen. Die Umrisse dieser Türen
       // merken wir uns, falls sie angeritzt werden sollen.
+      // Liegt hinter der Aussparung eine zurückgesetzte Außenwand (Rücksprung),
+      // bleibt sie offen – dahinter ist ja kein Raum, sondern draußen.
       const tuerAussparungen = [];
-      if (f.wofuer === "fassade" && !s.mitLoechern) umriss = unterkanteSchliessen(umriss, tuerAussparungen);
+      if (f.wofuer === "fassade" && !s.mitLoechern) umriss = unterkanteSchliessen(umriss, tuerAussparungen, hatRueckwand);
+      // Löcher dieser Schicht: alle (Außenschicht) bzw. nur die mit Rückwand (geschlossene Schicht)
+      const loecher = s.mitLoechern ? f.loecher : f.loecher.filter(hatRueckwand);
       // Ritzlinien (in Meter): Fenster/Türen als geschlossene Linien,
       // Türen bis zum Boden als offener Linienzug (unten ist ja die Schnittkante –
       // dort darf nicht noch einmal geritzt werden, sonst brennt die Pappe)
       const ritzlinien = s.ritzen
         ? [
-            ...f.loecher.map((l) => ({ punkte: l, geschlossen: true })),
+            ...f.loecher.filter((l) => !hatRueckwand(l)).map((l) => ({ punkte: l, geschlossen: true })),
             ...tuerAussparungen.map((t) => ({ punkte: t, geschlossen: false })),
           ]
         : [];
@@ -307,26 +330,104 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
         umriss = kanteVerschieben(umriss, c.kanten2d[index], x / k);
         eckInfo.push({ laeuftDurch, schraeg: Math.abs(Math.cos(c.phi)) > 0.02, gemischt: !!c.gemischt });
       }
-      // Nummern: A-001 = Außenschicht, I-001 = Innenschicht derselben Fassade, D-001 = Dachfläche
+      // Rücksprung: Kanten, die gegen eine davorliegende Fassade stoßen, um deren
+      // Pappdicke(n) kürzen (Seitenwände und Untersicht hören hinter der Fassade auf)
+      for (const kante of stoesse) umriss = kanteVerschieben(umriss, kante, fassadenTiefe / k);
+      // Nummern: A-001 = Außenschicht, I-001 = Innenschicht derselben Fassade,
+      // D-001 = Dachfläche, U-001 = Untersicht
       const zahl = drei(nummer.get(index));
-      const name = vorsatz + (f.wofuer === "fassade" ? `${s.schicht}-${zahl}` : `D-${zahl}`);
+      const name = vorsatz + (f.wofuer === "fassade" ? `${s.schicht}-${zahl}` : f.wofuer === "decke" ? `U-${zahl}` : `D-${zahl}`);
       teile.push({
         name,
         nummer: vorsatz + zahl,
         flaecheIndex: index,
         wofuer: f.wofuer,
         schicht: s.schicht,
-        beschreibung: f.wofuer === "fassade" ? `Fassade ${r.wort}, ${s.wort}` : `Dachfläche ${r.wort}`,
+        beschreibung:
+          f.wofuer === "fassade"
+            ? `Fassade ${r.wort}${f.nurSeitlich ? " (Rücksprung)" : ""}, ${s.wort}`
+            : f.wofuer === "decke"
+              ? "Untersicht (Decke, von unten sichtbar)"
+              : `Dachfläche ${r.wort}`,
         dicke: s.dicke,
         tiefe: s.tiefe, // mm: wie weit die Vorderseite hinter der Außenfläche liegt (für die Modell-Vorschau)
         aussen: umriss.map((p) => [p[0] * k, p[1] * k]),
-        loecher: s.mitLoechern ? f.loecher.map((l) => l.map((p) => [p[0] * k, p[1] * k])) : [],
+        loecher: loecher.map((l) => l.map((p) => [p[0] * k, p[1] * k])),
         ritzlinien: ritzlinien.map((r) => ({ punkte: r.punkte.map((p) => [p[0] * k, p[1] * k]), geschlossen: r.geschlossen })),
         ecken: eckInfo,
       });
     }
   }
   return teile;
+}
+
+// ---------------------------------------------------------
+// Rücksprünge (seit 19.11.)
+// ---------------------------------------------------------
+
+// Zurückgesetzte Außenwände hinter einer Fassade (gleiche Richtung, 5 cm bis
+// 5 m dahinter, derselbe Baukörper) – als Umrisse in der Ansicht der Fassade.
+// Beispiel: die Rückwand einer Arkade im Erdgeschoss hinter der Straßenfassade.
+function rueckwaendeHinter(flaechen, f) {
+  const ebeneF = dot(f.n, f.ursprung);
+  const liste = [];
+  for (const g of flaechen) {
+    if (g === f || g.wofuer !== "fassade" || g.koerper !== f.koerper) continue;
+    if (dot(g.n, f.n) < 0.99) continue;
+    const tiefe = ebeneF - dot(f.n, zu3d(g, g.aussen[0]));
+    if (tiefe < 0.05 || tiefe > 5) continue;
+    liste.push(g.aussen.map((p) => zu2dVon(f, zu3d(g, p))));
+  }
+  return liste;
+}
+
+// Deckt der Umriss rw mindestens die Hälfte der Öffnung zug ab? (umgebende Rechtecke)
+function ueberdeckt(zug, rw) {
+  const kiste = (pts) => [
+    Math.min(...pts.map((p) => p[0])),
+    Math.min(...pts.map((p) => p[1])),
+    Math.max(...pts.map((p) => p[0])),
+    Math.max(...pts.map((p) => p[1])),
+  ];
+  const [a0, b0, a1, b1] = kiste(zug), [c0, d0, c1, d1] = kiste(rw);
+  const breite = Math.min(a1, c1) - Math.max(a0, c0), hoehe = Math.min(b1, d1) - Math.max(b0, d0);
+  const eigen = (a1 - a0) * (b1 - b0);
+  if (breite <= 0 || hoehe <= 0 || eigen <= 0) return false;
+  return (breite * hoehe) / eigen >= 0.5;
+}
+
+// Kanten einer Fläche (Fassade oder Untersicht), die genau in der Ebene einer
+// davorliegenden Fassade liegen – z. B. die Vorderkante der Seitenwand oder der
+// Decke eines Rücksprungs. Dort stößt die Fläche von hinten gegen die Fassade.
+// Echte Ecken (aus eckenFinden) zählen nicht, die haben ihren eigenen Ausgleich.
+function stoesseAnFassaden(flaechen, index, meineEcken) {
+  const f = flaechen[index];
+  const partner = new Set(meineEcken.map((c) => (c.i === index ? c.j : c.i)));
+  let s = [0, 0];
+  for (const p of f.aussen) s = [s[0] + p[0], s[1] + p[1]];
+  const mitte = zu3d(f, [s[0] / f.aussen.length, s[1] / f.aussen.length]);
+  const kanten = [];
+  for (let k = 0; k < f.aussen.length; k++) {
+    const A = f.aussen[k], B = f.aussen[(k + 1) % f.aussen.length];
+    if (Math.hypot(B[0] - A[0], B[1] - A[1]) < 0.05) continue;
+    const A3 = zu3d(f, A), B3 = zu3d(f, B);
+    for (let j = 0; j < flaechen.length; j++) {
+      const g = flaechen[j];
+      if (j === index || g.wofuer !== "fassade" || g.koerper !== f.koerper || partner.has(j)) continue;
+      if (Math.abs(dot(g.n, f.n)) > 0.9) continue; // parallel
+      const ebene = dot(g.n, g.ursprung);
+      if (Math.abs(dot(g.n, A3) - ebene) > 0.01 || Math.abs(dot(g.n, B3) - ebene) > 0.01) continue;
+      if (dot(g.n, mitte) - ebene > -0.05) continue; // f liegt nicht hinter g
+      // Die Kante muss auch innerhalb der Fassade g liegen (umgebendes Rechteck, 5 cm Spiel)
+      const m2 = zu2dVon(g, mul(add(A3, B3), 0.5));
+      const us = g.aussen.map((p) => p[0]), vs = g.aussen.map((p) => p[1]);
+      if (m2[0] < Math.min(...us) - 0.05 || m2[0] > Math.max(...us) + 0.05) continue;
+      if (m2[1] < Math.min(...vs) - 0.05 || m2[1] > Math.max(...vs) + 0.05) continue;
+      kanten.push([A, B]);
+      break;
+    }
+  }
+  return kanten;
 }
 
 // ---------------------------------------------------------
@@ -384,7 +485,9 @@ function schnittpunkt(a, b, c, d) {
 // ---------------------------------------------------------
 // aussparungen (wahlweise): Liste, in die jede geschlossene Aussparung als
 // offener Linienzug gelegt wird (von der Unterkante hoch, rüber, wieder runter).
-function unterkanteSchliessen(umriss, aussparungen = null) {
+// offenLassen (wahlweise): Prüfung je Aussparung – true = nicht schließen
+// (z. B. ein Rücksprung, hinter dem eine zurückgesetzte Außenwand steht).
+function unterkanteSchliessen(umriss, aussparungen = null, offenLassen = null) {
   const n = umriss.length;
   const vmin = Math.min(...umriss.map((p) => p[1]));
   const unten = (p) => Math.abs(p[1] - vmin) < 1e-3;
@@ -413,13 +516,13 @@ function unterkanteSchliessen(umriss, aussparungen = null) {
           innerhalb = z[0] >= p[0] - 1e-6 && z[0] <= q[0] + 1e-6;
         }
         if (innerhalb) {
-          if (aussparungen) {
-            const zug = [];
-            for (let m = 0; m <= k; m++) zug.push(umriss[(idx + m) % n]);
-            aussparungen.push(zug);
+          const zug = [];
+          for (let m = 0; m <= k; m++) zug.push(umriss[(idx + m) % n]);
+          if (!(offenLassen && offenLassen(zug))) {
+            if (aussparungen) aussparungen.push(zug);
+            i += k; // Umweg überspringen, weiter bei q
+            continue;
           }
-          i += k; // Umweg überspringen, weiter bei q
-          continue;
         }
       }
     }

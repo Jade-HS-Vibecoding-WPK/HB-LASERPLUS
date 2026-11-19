@@ -111,7 +111,7 @@ function grundriss(flaechen, nummerVon, ecken = []) {
         merke(q[0], q[2]);
         return [q[0], q[2]];
       });
-      linien.push({ punkte, art: "dach" });
+      linien.push({ punkte, art: f.wofuer === "decke" ? "decke" : "dach" });
       const mx = punkte.reduce((s, p) => s + p[0], 0) / punkte.length;
       const mz = punkte.reduce((s, p) => s + p[1], 0) / punkte.length;
       texte.push({ x: mx, z: mz, text: nr, dach: true });
@@ -146,14 +146,16 @@ function grundriss(flaechen, nummerVon, ecken = []) {
     role: "img",
     "aria-label": "Grundriss mit Teilenummern",
   });
+  // Fassaden dick, Dachflächen gestrichelt, Untersichten (seit 19.11.) gepunktet
   for (const l of linien) {
+    const flaechig = l.art === "dach" || l.art === "decke";
     svg.append(
-      svgElement(l.art === "dach" ? "polygon" : "polyline", {
+      svgElement(flaechig ? "polygon" : "polyline", {
         points: l.punkte.map((p) => p.join(",")).join(" "),
         fill: "none",
-        stroke: l.art === "dach" ? "#888" : "#000",
-        "stroke-width": l.art === "dach" ? 1 : 2.5,
-        "stroke-dasharray": l.art === "dach" ? "4 3" : "none",
+        stroke: flaechig ? "#888" : "#000",
+        "stroke-width": flaechig ? 1 : 2.5,
+        "stroke-dasharray": l.art === "dach" ? "4 3" : l.art === "decke" ? "1 2" : "none",
         "vector-effect": "non-scaling-stroke",
       })
     );
@@ -312,6 +314,17 @@ export function uebersichtBauen(daten) {
       element("li", "", "Die Nummern sind blau neben das Teil auf die Restpappe geritzt, nicht auf das Teil selbst.")
     );
   }
+  const mitUntersicht = teile.some((t) => t.wofuer === "decke");
+  if (mitUntersicht) {
+    legende.append(
+      element(
+        "li",
+        "",
+        "U-001, U-002 … = Untersicht: eine Decke, die man von unten sieht (z. B. über einem Rücksprung im Erdgeschoss). " +
+          "Im Grundriss gepunktet."
+      )
+    );
+  }
   if (mehrere) {
     legende.append(
       element(
@@ -452,15 +465,28 @@ export function uebersichtBauen(daten) {
     if (mehrere) blatt.append(element("h3", "gebaeude-titel", `Gebäude ${b.nummer} · ${b.name}`));
     const schritte = element("ol");
     const dachSchritt = element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Zuerst die gekürzten Dachflächen, dann die durchlaufenden – sie überlappen am First.`);
+    // Untersichten (seit 19.11.): vor dem Dach, solange man noch gut hinkommt
+    const untersichtSchritt = eigene.some((t) => t.wofuer === "decke")
+      ? [
+          element(
+            "li",
+            "",
+            `Untersichten von unten einkleben: ${namen((t) => t.wofuer === "decke")}. ` +
+              "Sie liegen zwischen den Wänden des Rücksprungs, bündig mit deren Oberkante, und stoßen vorne von hinten gegen die Fassade."
+          ),
+        ]
+      : [];
     if (eineSchicht) {
       schritte.append(
         element("li", "", `Wände zu einem Kasten kleben: ${namen((t) => t.schicht === "A")}. An jeder Ecke läuft eine Wand durch, die andere stößt dagegen.`),
+        ...untersichtSchritt,
         dachSchritt
       );
     } else {
       schritte.append(
         element("li", "", `Innenschichten zu einem Kasten kleben: ${namen((t) => t.schicht === "I")}. Die Innenschichten sind geschlossen und tragen das Modell.`),
         element("li", "", `Außenschichten (mit Fenstern und Türen) auf die passenden Innenschichten kleben: ${namen((t) => t.schicht === "A")}. Gleiche Zahl = gleiche Fassade${beispiel}.`),
+        ...untersichtSchritt,
         dachSchritt
       );
     }

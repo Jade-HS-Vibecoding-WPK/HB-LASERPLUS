@@ -266,9 +266,10 @@ function lesen(g) {
       if (!gilt()) return;
       g.info = info;
       // Nicht klassifizierte Bauteile: Gibt es sonst keine Wände und kein Dach,
-      // ist der Morph wohl das ganze Gebäude
+      // ist der Morph wohl das ganze Gebäude. Morphs (seit 19.11.) nimmt die App
+      // immer als Wand und Dach, z. B. ein Nebengebäude neben dem Haus.
       const sonstLeer = info.waende.aussen + info.waende.ohneAngabe === 0 && info.daecher === 0;
-      for (const p of info.ohneKlasse) g.proxyWahl.set(p.id, sonstLeer ? "koerper" : "ignorieren");
+      for (const p of info.ohneKlasse) g.proxyWahl.set(p.id, sonstLeer || p.morph ? "koerper" : "ignorieren");
       karteFuellen(g, "✓ gelesen");
       bauteileZeigen(g);
     } catch (fehler) {
@@ -376,7 +377,7 @@ function bauteileZeigen(g) {
   zeile("Dächer", String(e.daecher), e.dachplatten ? "aus " + e.dachplatten + " Dachplatten" : "");
   zeile("Fenster", String(e.fenster), "");
   zeile("Türen", String(e.tueren), "");
-  if (e.decken) zeile("Decken / Böden", String(e.decken), "werden nicht verwendet");
+  if (e.decken) zeile("Decken / Böden", String(e.decken), "von unten sichtbar → Untersicht (U)");
   zeile("Ohne Klassifizierung", String(e.ohneKlasse.length), "");
 
   const hinweise = element("ul", "mt-3 space-y-2");
@@ -516,6 +517,7 @@ function modellZeigen() {
     [[216, 205, 189], aufbau === "zwei" ? "Außenschicht (A)" : "Wand (A)"],
     ...(aufbau === "zwei" ? [[[169, 157, 138], "Innenschicht (I)"]] : []),
     [[205, 97, 72], "Dach (D)"],
+    ...(teile.some((t) => t.wofuer === "decke") ? [[[140, 150, 160], "Untersicht (U)"]] : []),
   ];
   modellLegende.replaceChildren(
     ...eintraege.map(([farbe, text]) => {
@@ -582,6 +584,7 @@ function zeigeErgebnis() {
   // Zusammenfassung
   const fassaden = new Set(teile.filter((t) => t.wofuer === "fassade").map((t) => t.gebaeude + ":" + t.flaecheIndex)).size;
   const dach = teile.filter((t) => t.wofuer === "dach").length;
+  const untersichten = teile.filter((t) => t.wofuer === "decke").length;
   plattenFeld.append(
     element(
       "p",
@@ -589,7 +592,8 @@ function zeigeErgebnis() {
       (mehrere ? `${liste.length} Gebäude: ` : "") +
         `${fassaden} Fassaden (${
           (e.wandaufbau || "zwei") === "zwei" ? "je Außen- und Innenschicht" : e.wandaufbau === "eine-geritzt" ? "je eine Schicht, Öffnungen geritzt" : "je eine Schicht, ohne Öffnungen"
-        }) und ${dach} Dachflächen` +
+        }), ${dach} Dachflächen` +
+        (untersichten ? `, ${untersichten} ${untersichten === 1 ? "Untersicht" : "Untersichten"}` : "") +
         (e.menschen ? `, ${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"}` : "") +
         (e.baeume ? `, ${e.baeume} ${e.baeume === 1 ? "Baum" : "Bäume"} (je 2 Teile)` : "") +
         ` = ${teile.length} Teile ` +
