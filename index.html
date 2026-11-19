@@ -504,6 +504,12 @@
               <input type="checkbox" id="d3-dach-getrennt" class="haken">
               Dach als eigene Datei (abnehmbar)
             </label>
+            <!-- seit 19.11.: Raum hinter den Außenwänden massiv füllen (js/druck3d.js) -->
+            <label class="flex items-center gap-3 text-sm mt-4">
+              <input type="checkbox" id="d3-fuellen" class="haken" checked>
+              Gebäude innen füllen (massiv)
+            </label>
+            <p class="text-xs text-leise mt-1 ml-8">Fenster und Türen bleiben als Nischen sichtbar, so tief wie die Wand – wie bei zwei Pappschichten. Ohne Häkchen ist das Gebäude innen hohl.</p>
           </fieldset>
         </form>
 
@@ -535,7 +541,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
             </button>
           </div>
-          <button type="button" class="knopf text-sm ml-auto" id="d3-ansicht">Ansicht zurücksetzen</button>
+          <button type="button" class="knopf knopf-umriss text-sm ml-auto" id="d3-ansicht">Ansicht zurücksetzen</button>
         </div>
 
         <!-- 3D-Betrachter: drehen durch Ziehen, zoomen mit Mausrad oder zwei Fingern -->

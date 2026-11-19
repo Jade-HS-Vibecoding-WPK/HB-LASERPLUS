@@ -8,8 +8,9 @@
 //
 // Das Modell besteht aus den Dreiecken der Gebäudehülle aus der IFC
 // (Außenwände samt Schichten, Dach, gewählte Morphs), im Maßstab,
-// z nach oben, auf den Boden gestellt. Auf Wunsch mit Sockelplatte
-// und mit dem Dach als eigener Datei (abnehmbar).
+// z nach oben, auf den Boden gestellt. Auf Wunsch mit Sockelplatte,
+// mit dem Dach als eigener Datei (abnehmbar) und innen massiv gefüllt
+// (seit 19.11., siehe fuellungBauen).
 //
 // Ehrlich: Die IFC-Bauteile sind einzelne Körper, die sich berühren
 // oder überlappen. Die meisten Slicer kommen damit zurecht – ob es
@@ -37,6 +38,7 @@ const STARTWERTE = {
   sockelDicke: 2,      // mm
   sockelRand: 3,       // mm rund ums Gebäude
   dachGetrennt: false,
+  fuellen: true,       // Gebäude innen massiv füllen (seit 19.11.)
 };
 const FELDER = {
   massstab: "d3-massstab",
@@ -46,7 +48,7 @@ const FELDER = {
   sockelDicke: "d3-sockel-dicke",
   sockelRand: "d3-sockel-rand",
 };
-const HAKEN = { sockel: "d3-sockel", dachGetrennt: "d3-dach-getrennt" };
+const HAKEN = { sockel: "d3-sockel", dachGetrennt: "d3-dach-getrennt", fuellen: "d3-fuellen" };
 
 function einstellungenLaden() {
   try {
@@ -369,7 +371,7 @@ function modellBauen(g) {
     for (let i = 0; i < d.length; i += 3) {
       zahlen[i] = d[i] * k; zahlen[i + 1] = -d[i + 2] * k; zahlen[i + 2] = d[i + 1] * k;
     }
-    if (zahlen.length) stuecke.push({ dach: art === "dach", zahlen, r: rahmen(zahlen) });
+    if (zahlen.length) stuecke.push({ dach: art === "dach", art, zahlen, r: rahmen(zahlen) });
   }
   if (!stuecke.length) return null;
 
@@ -397,6 +399,14 @@ function modellBauen(g) {
     const r = rahmen(verbinden(liste.map((s) => s.zahlen)));
     return { liste, r, dx: 0, dy: 0 };
   });
+
+  // Gebäude innen füllen (seit 19.11.): Raum hinter den Außenwänden massiv machen
+  if (e.fuellen) {
+    for (const kp of koerperListe) {
+      const f = fuellungBauen(kp.liste.filter((s) => s.art === "wand"), k);
+      if (f) kp.liste.push({ dach: false, art: "fuellung", zahlen: f, r: rahmen(f) });
+    }
+  }
 
   // 3. Ohne Sockel: Baukörper dicht nebeneinander, in Reihen übers Druckbett
   if (!e.sockel && koerperListe.length > 1) {
@@ -479,6 +489,164 @@ function modellBauen(g) {
     dachMasse: dachStl ? masse(dachStl) : null,
     koerperAnzahl: koerperListe.length,
   };
+}
+
+// ---------------------------------------------------------
+// Füllung für „Gebäude innen füllen“ (seit 19.11.)
+//
+// Die IFC liefert nur die Außenwände – das Modell ist innen hohl, durch ein
+// Fenster sieht man ins Leere. Die Füllung macht den Raum dahinter massiv,
+// so wirken Fenster und Türen als Nischen (so tief wie die Wand), wie bei
+// zwei Pappschichten.
+//
+// So geht es, je Geschoss (Wände mit derselben Unterkante):
+//   1. Das Geschoss wird auf drei Höhen waagerecht geschnitten (knapp über dem
+//      Boden, in der Mitte, knapp unter der Decke) – wie Grundrisse. Zusammen
+//      sind die Wände dann überall geschlossen (Fenster und Türen haben in
+//      mindestens einer Höhe eine Brüstung bzw. einen Sturz).
+//   2. Die Schnittlinien kommen in ein feines Raster (5 cm in echt).
+//   3. Freie Bereiche, die nicht nach außen offen sind und breiter als 90 cm,
+//      sind Räume (schmale Bereiche sind Wandschichten – die bleiben, damit
+//      die Fensteröffnungen offen bleiben). Ein Rücksprung ist nach außen
+//      offen und wird darum nicht gefüllt.
+//   4. Jeder Raum wird als Kästen vom Geschossboden bis unter die niedrigste
+//      Wandoberkante gefüllt, eine Rasterzelle in die Wand hinein (damit der
+//      Slicer Füllung und Wand als ein Stück sieht).
+// Ergebnis: Dreiecke (Float32Array) oder null
+// ---------------------------------------------------------
+function fuellungBauen(waende, k) {
+  if (!waende.length) return null;
+  const r = rahmen(verbinden(waende.map((s) => s.zahlen)));
+  const c = Math.max(0.05 * k, Math.max(r.x1 - r.x0, r.y1 - r.y0) / 600); // Rastergröße in mm
+  const rand = 2;
+  const nx = Math.ceil((r.x1 - r.x0) / c) + 2 * rand, ny = Math.ceil((r.y1 - r.y0) / c) + 2 * rand;
+  const gx0 = r.x0 - rand * c, gy0 = r.y0 - rand * c;
+  const nachbarn = (zz) => {
+    const ix = zz % nx, iy = (zz - ix) / nx, liste = [];
+    if (ix > 0) liste.push(zz - 1);
+    if (ix < nx - 1) liste.push(zz + 1);
+    if (iy > 0) liste.push(zz - nx);
+    if (iy < ny - 1) liste.push(zz + nx);
+    return liste;
+  };
+
+  // Geschosse: verschiedene Unterkanten der Wände (5 cm Spiel)
+  const spiel = 0.05 * k;
+  const unterkanten = [];
+  for (const s of waende) if (!unterkanten.some((u) => Math.abs(u - s.r.z0) < spiel)) unterkanten.push(s.r.z0);
+  unterkanten.sort((a, b) => a - b);
+
+  const kaesten = [];
+  unterkanten.forEach((b, i) => {
+    const imGeschoss = waende.filter((s) => Math.abs(s.r.z0 - b) < spiel);
+    let t = Math.min(...imGeschoss.map((s) => s.r.z1));
+    if (i + 1 < unterkanten.length) t = Math.min(t, unterkanten[i + 1]);
+    if (t - b < 0.5 * k) return; // niedriger als 50 cm: kein Geschoss
+
+    // 1. + 2. Schnitte auf drei Höhen ins Raster
+    const hoehen = [b + 0.15 * k, (b + t) / 2, t - 0.25 * k].filter((h) => h > b && h < t);
+    const wand = new Uint8Array(nx * ny);
+    const markiere = (x, y) => {
+      const ix = Math.floor((x - gx0) / c), iy = Math.floor((y - gy0) / c);
+      if (ix >= 0 && iy >= 0 && ix < nx && iy < ny) wand[iy * nx + ix] = 1;
+    };
+    for (const h of hoehen) {
+      for (const s of waende) {
+        if (s.r.z0 > h || s.r.z1 < h) continue;
+        const z = s.zahlen;
+        for (let o = 0; o + 8 < z.length; o += 9) {
+          const punkte = [];
+          for (let ecke = 0; ecke < 3; ecke++) {
+            const a = o + ecke * 3, q = o + ((ecke + 1) % 3) * 3;
+            const da = z[a + 2] - h, dq = z[q + 2] - h;
+            if ((da < 0) !== (dq < 0)) {
+              const f = da / (da - dq);
+              punkte.push([z[a] + (z[q] - z[a]) * f, z[a + 1] + (z[q + 1] - z[a + 1]) * f]);
+            }
+          }
+          if (punkte.length < 2) continue;
+          const [A, B] = punkte;
+          const n = Math.max(1, Math.ceil(Math.hypot(B[0] - A[0], B[1] - A[1]) / (c / 2)));
+          for (let m = 0; m <= n; m++) markiere(A[0] + ((B[0] - A[0]) * m) / n, A[1] + ((B[1] - A[1]) * m) / n);
+        }
+      }
+    }
+
+    // 3. Freie Bereiche finden; Räume = nicht offen nach außen und breit genug
+    const bereich = new Int32Array(nx * ny).fill(-1);
+    const kern = new Uint8Array(nx * ny);
+    const minBreite = (0.45 * k) / c; // halbe Mindestbreite (90 cm) in Rasterzellen
+    let nr = 0;
+    for (let start = 0; start < nx * ny; start++) {
+      if (wand[start] || bereich[start] >= 0) continue;
+      const zellen = [start];
+      bereich[start] = nr;
+      let offen = false;
+      for (let q = 0; q < zellen.length; q++) {
+        const zz = zellen[q], ix = zz % nx, iy = (zz - ix) / nx;
+        if (ix === 0 || iy === 0 || ix === nx - 1 || iy === ny - 1) offen = true;
+        for (const nb of nachbarn(zz)) {
+          if (!wand[nb] && bereich[nb] < 0) {
+            bereich[nb] = nr;
+            zellen.push(nb);
+          }
+        }
+      }
+      if (!offen) {
+        // Breite prüfen: Abstand vom Rand des Bereichs nach innen (Breitensuche)
+        const abstand = new Map();
+        const schlange = [];
+        for (const zz of zellen) {
+          if (nachbarn(zz).some((nb) => bereich[nb] !== nr)) {
+            abstand.set(zz, 1);
+            schlange.push(zz);
+          }
+        }
+        let groesster = 1;
+        for (let q = 0; q < schlange.length; q++) {
+          const zz = schlange[q], d = abstand.get(zz);
+          groesster = Math.max(groesster, d);
+          for (const nb of nachbarn(zz)) {
+            if (bereich[nb] === nr && !abstand.has(nb)) {
+              abstand.set(nb, d + 1);
+              schlange.push(nb);
+            }
+          }
+        }
+        if (groesster >= minBreite) for (const zz of zellen) kern[zz] = 1;
+      }
+      nr++;
+    }
+
+    // 4. Eine Zelle in die Wand hinein wachsen, dann als Kästen (Reihen zusammengefasst)
+    const voll = kern.slice();
+    for (let zz = 0; zz < nx * ny; zz++) if (kern[zz]) for (const nb of nachbarn(zz)) if (wand[nb]) voll[nb] = 1;
+    let offeneKaesten = new Map(); // „von-bis“ einer Reihe → Kasten, der nach oben weiterwächst
+    const abschliessen = (kst) => kaesten.push(kasten(gx0 + kst.i0 * c, gy0 + kst.j0 * c, b, gx0 + (kst.i1 + 1) * c, gy0 + (kst.j1 + 1) * c, t));
+    for (let iy = 0; iy < ny; iy++) {
+      const jetzt = new Map();
+      let ix = 0;
+      while (ix < nx) {
+        if (!voll[iy * nx + ix]) { ix++; continue; }
+        let ende = ix;
+        while (ende + 1 < nx && voll[iy * nx + ende + 1]) ende++;
+        const schluessel = ix + "-" + ende;
+        const vorher = offeneKaesten.get(schluessel);
+        if (vorher) {
+          vorher.j1 = iy;
+          jetzt.set(schluessel, vorher);
+          offeneKaesten.delete(schluessel);
+        } else {
+          jetzt.set(schluessel, { i0: ix, i1: ende, j0: iy, j1: iy });
+        }
+        ix = ende + 1;
+      }
+      for (const kst of offeneKaesten.values()) abschliessen(kst);
+      offeneKaesten = jetzt;
+    }
+    for (const kst of offeneKaesten.values()) abschliessen(kst);
+  });
+  return kaesten.length ? verbinden(kaesten) : null;
 }
 
 // Geschlossener Kasten aus 12 Dreiecken (Normalen nach außen)

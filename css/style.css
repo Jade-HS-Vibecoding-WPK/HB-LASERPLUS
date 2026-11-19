@@ -757,7 +757,10 @@ html.start-offen {
      auch wenn die Einstellungen höher sind als das Fenster */
   .erstellen-leiste {
     position: sticky;
-    bottom: 0;
+    /* −1,75rem statt 0 (seit 19.11.): „unten“ zählt beim Stehenbleiben ab dem
+       Innenabstand der Karte. Mit 0 rutschte die Leiste um diesen Abstand nach
+       oben und ihr Strich schnitt die letzte Einstellung an. */
+    bottom: -1.75rem;
     background: var(--flaeche);
     padding-bottom: 1.75rem;   /* = Innenabstand der Karte (p-7) */
     margin-bottom: -1.75rem;
