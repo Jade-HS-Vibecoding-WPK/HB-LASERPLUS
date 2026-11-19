@@ -22,6 +22,9 @@ import { textLinien } from "./linienschrift.js";
 const ABSTAND = 3;          // mm zwischen zwei Teilen
 const SCHRIFT = 3;          // mm Höhe der Nummer
 const SCHRIFT_ABSTAND = 1.5; // mm zwischen Nummer und Teil
+// Plattenbeschriftung (seit 19.11.): oben links auf jeder Platte geritzt,
+// z. B. „PLATTE 2 - PAPPE 1,5 MM“. Dafür bleibt oben ein Streifen frei.
+const BESCHRIFTUNG_STREIFEN = SCHRIFT + ABSTAND; // mm
 
 // Umgebendes Rechteck eines Umrisses
 function rahmenVon(punkte) {
@@ -60,13 +63,24 @@ export function verteilen(teile, e) {
     for (const p of ergebnis.platten) platten.push({ ...p, dicke });
     zuGross.push(...ergebnis.zuGross.map((z) => ({ ...z, dicke })));
   }
+  // Jede Platte bekommt oben links ihre Nummer und Pappdicke (geritzt),
+  // damit man die Pappe nach dem Lasern noch zuordnen kann
+  platten.forEach((p, i) => {
+    p.beschriftung = `PLATTE ${i + 1} - PAPPE ${String(p.dicke).replace(".", ",")} MM`;
+    const text = textLinien(p.beschriftung, SCHRIFT);
+    const x0 = RAND_ABSTAND, y0 = p.hoehe - RAND_ABSTAND - SCHRIFT;
+    for (const strich of text.linien) {
+      p.linien.push({ ebene: "RITZEN", punkte: strich.map(([x, y]) => [x + x0, y + y0]), geschlossen: false });
+    }
+  });
   return { platten, zuGross };
 }
 
 // Alle Teile einer Pappdicke auf Platten legen
 function verteilenEineDicke(teile, e) {
   const W = e.platteBreite, H = e.platteHoehe;
-  const nutzB = W - 2 * RAND_ABSTAND, nutzH = H - 2 * RAND_ABSTAND;
+  // oben bleibt der Streifen für die Plattenbeschriftung frei
+  const nutzB = W - 2 * RAND_ABSTAND, nutzH = H - 2 * RAND_ABSTAND - BESCHRIFTUNG_STREIFEN;
 
   const kaesten = [];
   const zuGross = [];
@@ -111,7 +125,7 @@ function verteilenEineDicke(teile, e) {
       y += reihe + ABSTAND;
       reihe = 0;
     }
-    if (y + k.h > H - RAND_ABSTAND + 1e-6) neuePlatte();
+    if (y + k.h > H - RAND_ABSTAND - BESCHRIFTUNG_STREIFEN + 1e-6) neuePlatte();
 
     // Teil oben im Kasten, Nummer darunter
     const dx = x - k.r.x0;

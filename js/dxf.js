@@ -299,6 +299,96 @@ export function platteAlsDxf(platte, farben) {
 }
 
 // ---------------------------------------------------------
+// ZIP-Datei mit mehreren DXF (seit 19.11.)
+// Viele Browser nehmen nur den ersten von mehreren Downloads an. Darum
+// kommen bei „Alle DXF herunterladen“ alle Platten in EINE ZIP-Datei –
+// darin für jede Platte eine eigene DXF. Ohne Bibliothek: die Dateien
+// werden unkomprimiert hineingelegt („stored“), das kann jedes Programm öffnen.
+// dateien: [{ name: "…_Platte-01-von-02_Pappe-1-5mm.dxf", text: "…" }]
+// Ergebnis: Blob (die ZIP-Datei)
+// ---------------------------------------------------------
+const CRC_TABELLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+
+// Prüfsumme, die jede ZIP-Datei je Inhalt braucht
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABELLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+
+export function zipErstellen(dateien) {
+  const kodierer = new TextEncoder();
+  const jetzt = new Date();
+  const zeit = (jetzt.getHours() << 11) | (jetzt.getMinutes() << 5) | (jetzt.getSeconds() >> 1);
+  const datum = ((jetzt.getFullYear() - 1980) << 9) | ((jetzt.getMonth() + 1) << 5) | jetzt.getDate();
+  const stuecke = [], verzeichnis = [];
+  let versatz = 0;
+  for (const d of dateien) {
+    const name = kodierer.encode(d.name);
+    const daten = kodierer.encode(d.text);
+    const pruef = crc32(daten);
+    // Kopf vor jeder Datei
+    const kopf = new DataView(new ArrayBuffer(30));
+    kopf.setUint32(0, 0x04034b50, true);
+    kopf.setUint16(4, 20, true);
+    kopf.setUint16(6, 0x0800, true); // Dateinamen in UTF-8 (Umlaute)
+    kopf.setUint16(8, 0, true);      // 0 = nicht komprimiert
+    kopf.setUint16(10, zeit, true);
+    kopf.setUint16(12, datum, true);
+    kopf.setUint32(14, pruef, true);
+    kopf.setUint32(18, daten.length, true);
+    kopf.setUint32(22, daten.length, true);
+    kopf.setUint16(26, name.length, true);
+    kopf.setUint16(28, 0, true);
+    stuecke.push(new Uint8Array(kopf.buffer), name, daten);
+    // Eintrag im Inhaltsverzeichnis am Ende
+    const eintrag = new DataView(new ArrayBuffer(46));
+    eintrag.setUint32(0, 0x02014b50, true);
+    eintrag.setUint16(4, 20, true);
+    eintrag.setUint16(6, 20, true);
+    eintrag.setUint16(8, 0x0800, true);
+    eintrag.setUint16(10, 0, true);
+    eintrag.setUint16(12, zeit, true);
+    eintrag.setUint16(14, datum, true);
+    eintrag.setUint32(16, pruef, true);
+    eintrag.setUint32(20, daten.length, true);
+    eintrag.setUint32(24, daten.length, true);
+    eintrag.setUint16(28, name.length, true);
+    eintrag.setUint32(42, versatz, true); // wo die Datei in der ZIP beginnt
+    verzeichnis.push(new Uint8Array(eintrag.buffer), name);
+    versatz += 30 + name.length + daten.length;
+  }
+  const groesseVerzeichnis = verzeichnis.reduce((s, t) => s + t.length, 0);
+  const ende = new DataView(new ArrayBuffer(22));
+  ende.setUint32(0, 0x06054b50, true);
+  ende.setUint16(8, dateien.length, true);
+  ende.setUint16(10, dateien.length, true);
+  ende.setUint32(12, groesseVerzeichnis, true);
+  ende.setUint32(16, versatz, true);
+  return new Blob([...stuecke, ...verzeichnis, new Uint8Array(ende.buffer)], { type: "application/zip" });
+}
+
+// Beliebige Datei (Blob) im Browser herunterladen (bleibt auf dem Rechner)
+export function blobHerunterladen(blob, dateiname) {
+  const adresse = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = adresse;
+  link.download = dateiname;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(adresse), 1000);
+}
+
+// ---------------------------------------------------------
 // Datei im Browser herunterladen (bleibt auf dem Rechner)
 // ---------------------------------------------------------
 export function dxfHerunterladen(text, dateiname) {

@@ -12,8 +12,30 @@
 // Alle Texte werden als reiner Text eingesetzt, nie als HTML.
 // =========================================================
 
-import { zu3d } from "./abwickeln.js";
+import { zu3d, imPolygon } from "./abwickeln.js";
 import { himmelsrichtung } from "./schichten.js";
+
+// Flächeninhalt eines Vielecks (mit Vorzeichen) und sein Schwerpunkt
+function flaechenInhalt(pts) {
+  let s = 0;
+  for (let k = 0; k < pts.length; k++) {
+    const p = pts[k], q = pts[(k + 1) % pts.length];
+    s += p[0] * q[1] - q[0] * p[1];
+  }
+  return s / 2;
+}
+function schwerpunkt(pts) {
+  const a = flaechenInhalt(pts);
+  if (Math.abs(a) < 1e-9) return [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
+  let cx = 0, cz = 0;
+  for (let k = 0; k < pts.length; k++) {
+    const p = pts[k], q = pts[(k + 1) % pts.length];
+    const f = p[0] * q[1] - q[0] * p[1];
+    cx += (p[0] + q[0]) * f;
+    cz += (p[1] + q[1]) * f;
+  }
+  return [cx / (6 * a), cz / (6 * a)];
+}
 
 function element(tag, klasse, text) {
   const neu = document.createElement(tag);
@@ -47,51 +69,72 @@ function eckPunkt(flaechen, c) {
 }
 
 // ---------------------------------------------------------
-// Grundriss: Fassaden als Linien, Dachflächen gestrichelt, Nummern
-// Blick von oben, Norden oben (Norden = −z, Osten = +x)
-// An jeder Wandecke: Die durchlaufende Fassade geht bis in die Ecke,
-// die gekürzte hört kurz davor auf (wie im echten Modell). Dazu ein
-// Kreis mit der Ecken-Nummer (E1, E2 …) außen an der Ecke.
+// Grundriss eines Baukörpers (seit 19.11. je Baukörper getrennt und größer).
+// Blick von oben, Norden oben (Norden = −z, Osten = +x).
+//   modus "waende": Fassaden als dicke Linien mit ihrer Zahl und Ecken-Kreise
+//                   E1, E2 … An jeder Wandecke geht die durchlaufende Fassade
+//                   bis in die Ecke, die gekürzte hört kurz davor auf (wie im
+//                   echten Modell).
+//   modus "dach":   Dachflächen gestrichelt mit D-Nummer, Untersichten
+//                   gepunktet mit U-Nummer, die Fassaden nur dünn zur Orientierung.
+// Würden sich Nummern oder Kreise überlappen, rückt die App sie an den
+// nächsten freien Platz (bei größerem Abstand mit einer dünnen Hinweislinie).
+// indices = die Flächen dieses Baukörpers
 // ---------------------------------------------------------
-function grundriss(flaechen, nummerVon, ecken = []) {
-  const linien = [];
-  const texte = [];
-  let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
-  const merke = (x, z) => {
-    x0 = Math.min(x0, x); x1 = Math.max(x1, x);
-    z0 = Math.min(z0, z); z1 = Math.max(z1, z);
-  };
-
-  // Welche Fassaden-Enden an einer Ecke gekürzt sind (dort Lücke zeichnen)
-  const gekuerzt = []; // { index, punkt }
-  const wandEcken = eckenListe(flaechen, ecken).filter((x) => x.wand);
-  for (const { c } of wandEcken) {
-    const kurz = c.durch === c.i ? c.j : c.i;
-    gekuerzt.push({ index: kurz, punkt: eckPunkt(flaechen, c) });
-  }
-
-  // Größe des Grundrisses vorab grob bestimmen (für Lücke und Schrift)
+function grundriss(flaechen, nummerVon, ecken, indices, modus) {
+  const meine = new Set(indices);
+  // Größe des Baukörpers – Schrift, Lücken und Abstände richten sich danach
   let gx0 = Infinity, gx1 = -Infinity, gz0 = Infinity, gz1 = -Infinity;
-  for (const f of flaechen) {
-    for (const p of f.aussen) {
-      const q = zu3d(f, p);
+  for (const i of meine) {
+    for (const p of flaechen[i].aussen) {
+      const q = zu3d(flaechen[i], p);
       gx0 = Math.min(gx0, q[0]); gx1 = Math.max(gx1, q[0]);
       gz0 = Math.min(gz0, q[2]); gz1 = Math.max(gz1, q[2]);
     }
   }
   const groesse = Math.max(gx1 - gx0, gz1 - gz0, 1);
+  const schrift = groesse / 42;
   const luecke = groesse / 45;
+  let x0 = gx0, z0 = gz0, x1 = gx1, z1 = gz1;
+  const merke = (x, z) => {
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x);
+    z0 = Math.min(z0, z); z1 = Math.max(z1, z);
+  };
 
-  flaechen.forEach((f, i) => {
-    const nr = nummerVon.get(i);
-    if (!nr) return;
-    if (f.wofuer === "fassade") {
-      const us = f.aussen.map((p) => p[0]);
-      const a = zu3d(f, [Math.min(...us), 0]), b = zu3d(f, [Math.max(...us), 0]);
-      let pa = [a[0], a[2]], pb = [b[0], b[2]];
-      // gekürzte Enden ein Stück zurücknehmen, damit man sieht, wer durchläuft
-      const len = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) || 1;
-      const dir = [(pb[0] - pa[0]) / len, (pb[1] - pa[1]) / len];
+  // Belegte Rechtecke (Nummern, Kreise), damit nichts übereinanderliegt
+  const belegt = [];
+  const kiste = (x, z, b, h) => ({ x0: x - b / 2, x1: x + b / 2, z0: z - h / 2, z1: z + h / 2 });
+  const frei = (k) => belegt.every((o) => k.x1 <= o.x0 || k.x0 >= o.x1 || k.z1 <= o.z0 || k.z0 >= o.z1);
+  // Den ersten freien Platz aus der Liste nehmen (wenn keiner frei ist, den ersten)
+  const platzieren = (kandidaten, b, h) => {
+    for (const [x, z] of kandidaten) {
+      const k = kiste(x, z, b, h);
+      if (frei(k)) {
+        belegt.push(k);
+        return [x, z];
+      }
+    }
+    const [x, z] = kandidaten[0];
+    belegt.push(kiste(x, z, b, h));
+    return [x, z];
+  };
+  const textBreite = (t, gr) => gr * (0.62 * String(t).length + 0.4);
+
+  const linien = [], texte = [], kreise = [], hinweislinien = [];
+
+  // Fassaden-Linien (an gekürzten Ecken ein Stück zurückgenommen)
+  const wandEcken = eckenListe(flaechen, ecken).filter((x) => x.wand && meine.has(x.c.i));
+  const gekuerzt = wandEcken.map(({ c }) => ({ index: c.durch === c.i ? c.j : c.i, punkt: eckPunkt(flaechen, c) }));
+  const fassaden = [];
+  for (const i of meine) {
+    const f = flaechen[i];
+    if (f.wofuer !== "fassade") continue;
+    const us = f.aussen.map((p) => p[0]);
+    const a = zu3d(f, [Math.min(...us), 0]), b = zu3d(f, [Math.max(...us), 0]);
+    let pa = [a[0], a[2]], pb = [b[0], b[2]];
+    const len = Math.hypot(pb[0] - pa[0], pb[1] - pa[1]) || 1;
+    const dir = [(pb[0] - pa[0]) / len, (pb[1] - pa[1]) / len];
+    if (modus === "waende") {
       for (const g of gekuerzt) {
         if (g.index !== i) continue;
         const nahA = Math.hypot(g.punkt[0] - pa[0], g.punkt[1] - pa[1]);
@@ -99,81 +142,149 @@ function grundriss(flaechen, nummerVon, ecken = []) {
         if (nahA <= nahB) pa = [pa[0] + dir[0] * luecke, pa[1] + dir[1] * luecke];
         else pb = [pb[0] - dir[0] * luecke, pb[1] - dir[1] * luecke];
       }
-      linien.push({ punkte: [pa, pb], art: "fassade" });
-      merke(a[0], a[2]);
-      merke(b[0], b[2]);
-      const mx = (a[0] + b[0]) / 2 + f.n[0] * 0.9, mz = (a[2] + b[2]) / 2 + f.n[2] * 0.9;
-      texte.push({ x: mx, z: mz, text: nr });
-      merke(mx, mz);
-    } else {
-      const punkte = f.aussen.map((p) => {
-        const q = zu3d(f, p);
-        merke(q[0], q[2]);
-        return [q[0], q[2]];
-      });
-      linien.push({ punkte, art: f.wofuer === "decke" ? "decke" : "dach" });
-      const mx = punkte.reduce((s, p) => s + p[0], 0) / punkte.length;
-      const mz = punkte.reduce((s, p) => s + p[1], 0) / punkte.length;
-      texte.push({ x: mx, z: mz, text: nr, dach: true });
     }
-  });
-
-  // Ecken-Nummern außen an den Wandecken
-  const kreise = [];
-  for (const { nr, c } of wandEcken) {
-    const p = eckPunkt(flaechen, c);
-    const ni = flaechen[c.i].n, nj = flaechen[c.j].n;
-    let rx = ni[0] + nj[0], rz = ni[2] + nj[2];
-    const rl = Math.hypot(rx, rz) || 1;
-    // Außenecke: nach außen; Innenecke: Normalen zeigen von der Ecke weg ins Freie, auch gut
-    const weite = luecke * 3.2;
-    const kx = p[0] + (rx / rl) * weite, kz = p[1] + (rz / rl) * weite;
-    kreise.push({ x: kx, z: kz, text: nr });
-    merke(kx, kz);
+    linien.push({ punkte: [pa, pb], art: modus === "waende" ? "fassade" : "umriss" });
+    const nl = Math.hypot(f.n[0], f.n[2]) || 1;
+    fassaden.push({ i, a: [a[0], a[2]], b: [b[0], b[2]], dir, len, n: [f.n[0] / nl, f.n[2] / nl] });
   }
 
-  const rand = 1.5;
-  const grundBreite = x1 - x0 + 2 * rand, hoehe = z1 - z0 + 2 * rand;
-  const schrift = Math.max(grundBreite, hoehe) / 40;
-  // Links neben dem Grundriss ein freier Streifen für den Nordpfeil,
-  // damit er nicht auf einer Ecken-Nummer (E1 …) sitzt
+  if (modus === "waende") {
+    // Nummern nicht direkt auf die Fassaden-Linien setzen
+    for (const fa of fassaden) {
+      const schritte = Math.max(1, Math.ceil(fa.len / schrift));
+      for (let s = 0; s <= schritte; s++) {
+        const t = s / schritte;
+        belegt.push(kiste(fa.a[0] + (fa.b[0] - fa.a[0]) * t, fa.a[1] + (fa.b[1] - fa.a[1]) * t, schrift * 0.5, schrift * 0.5));
+      }
+    }
+    // 1. Ecken-Kreise außen an den Wandecken (bei Platzmangel weiter weg oder schräg daneben)
+    const r = schrift * 0.95;
+    for (const { nr, c } of wandEcken) {
+      const p = eckPunkt(flaechen, c);
+      const ni = flaechen[c.i].n, nj = flaechen[c.j].n;
+      const rl = Math.hypot(ni[0] + nj[0], ni[2] + nj[2]) || 1;
+      const rx = (ni[0] + nj[0]) / rl, rz = (ni[2] + nj[2]) / rl;
+      const weite = schrift * 2.6;
+      const kandidaten = [];
+      for (const w of [1, 1.5, 2, 2.6, 3.3]) {
+        for (const grad of [0, 30, -30, 60, -60, 90, -90]) {
+          const wk = (grad * Math.PI) / 180;
+          const dx = rx * Math.cos(wk) - rz * Math.sin(wk), dz = rx * Math.sin(wk) + rz * Math.cos(wk);
+          kandidaten.push([p[0] + dx * weite * w, p[1] + dz * weite * w]);
+        }
+      }
+      const [kx, kz] = platzieren(kandidaten, 2.2 * r, 2.2 * r);
+      kreise.push({ x: kx, z: kz, r, text: nr });
+      if (Math.hypot(kx - p[0], kz - p[1]) > weite * 1.2) hinweislinien.push([p, [kx, kz]]);
+      merke(kx - r, kz - r);
+      merke(kx + r, kz + r);
+    }
+    // 2. Fassaden-Nummern vor der Fassade (bei Platzmangel entlang der Fassade oder weiter weg)
+    for (const fa of fassaden) {
+      const nr = nummerVon.get(fa.i);
+      if (!nr) continue;
+      const mitte = [(fa.a[0] + fa.b[0]) / 2, (fa.a[1] + fa.b[1]) / 2];
+      // erst vor der Fassade (außen), bei Platzmangel auch auf der Innenseite
+      const kandidaten = [];
+      for (const seite of [1, -1]) {
+        for (const ab of [1.3, 2, 2.8, 3.8, 5, 6.5, 8]) {
+          for (const s of [0, 0.22, -0.22, 0.38, -0.38, 0.6, -0.6]) {
+            kandidaten.push([
+              mitte[0] + seite * fa.n[0] * schrift * ab + fa.dir[0] * fa.len * s,
+              mitte[1] + seite * fa.n[1] * schrift * ab + fa.dir[1] * fa.len * s,
+            ]);
+          }
+        }
+      }
+      const b = textBreite(nr, schrift), h = schrift * 1.15;
+      const [tx, tz] = platzieren(kandidaten, b, h);
+      texte.push({ x: tx, z: tz, text: nr, farbe: "#000", groesse: schrift });
+      if (Math.hypot(tx - mitte[0], tz - mitte[1]) > schrift * 3) hinweislinien.push([mitte, [tx, tz]]);
+      merke(tx - b / 2, tz - h / 2);
+      merke(tx + b / 2, tz + h / 2);
+    }
+  } else {
+    // Dachflächen und Untersichten. Kleine Flächen zuerst – die haben am wenigsten Platz.
+    const flaechig = [...meine].filter((i) => flaechen[i].wofuer === "dach" || flaechen[i].wofuer === "decke");
+    const umriss = new Map(
+      flaechig.map((i) => [
+        i,
+        flaechen[i].aussen.map((p) => {
+          const q = zu3d(flaechen[i], p);
+          return [q[0], q[2]];
+        }),
+      ])
+    );
+    for (const i of flaechig) linien.push({ punkte: umriss.get(i), art: flaechen[i].wofuer === "decke" ? "decke" : "dach" });
+    const inhalt = (pts) => Math.abs(flaechenInhalt(pts));
+    for (const i of flaechig.sort((a, b) => inhalt(umriss.get(a)) - inhalt(umriss.get(b)))) {
+      const nr = nummerVon.get(i);
+      if (!nr) continue;
+      const pts = umriss.get(i);
+      // Schwerpunkt, dann Rasterpunkte in der Fläche – nahe am Schwerpunkt zuerst
+      const sp = schwerpunkt(pts);
+      const xs = pts.map((p) => p[0]), zs = pts.map((p) => p[1]);
+      const raster = [];
+      const schritt = schrift * 0.6;
+      for (let x = Math.min(...xs); x <= Math.max(...xs); x += schritt) {
+        for (let z = Math.min(...zs); z <= Math.max(...zs); z += schritt) if (imPolygon([x, z], pts)) raster.push([x, z]);
+      }
+      raster.sort((p, q) => Math.hypot(p[0] - sp[0], p[1] - sp[1]) - Math.hypot(q[0] - sp[0], q[1] - sp[1]));
+      const kandidaten = imPolygon(sp, pts) ? [sp, ...raster] : raster.length ? raster : [sp];
+      const gr = schrift * 0.9;
+      const [tx, tz] = platzieren(kandidaten, textBreite(nr, gr), gr * 1.15);
+      texte.push({ x: tx, z: tz, text: nr, farbe: "#555", groesse: gr });
+    }
+  }
+
+  const rand = schrift * 2.5;
+  // Links neben dem Grundriss ein freier Streifen für den Nordpfeil
   const links = schrift * 5;
-  const breite = grundBreite + links;
+  const breite = x1 - x0 + 2 * rand + links, hoehe = z1 - z0 + 2 * rand;
   const svg = svgElement("svg", {
     viewBox: `${x0 - rand - links} ${z0 - rand} ${breite} ${hoehe}`,
     width: "100%",
     style: "max-height: 11cm",
     role: "img",
-    "aria-label": "Grundriss mit Teilenummern",
+    "aria-label": modus === "waende" ? "Grundriss: Wände und Ecken mit Teilenummern" : "Grundriss: Dach und Untersicht mit Teilenummern",
   });
-  // Fassaden dick, Dachflächen gestrichelt, Untersichten (seit 19.11.) gepunktet
+  // Fassaden dick (im Dachplan dünn und hell), Dachflächen gestrichelt, Untersichten gepunktet
+  const stile = {
+    fassade: { stroke: "#000", breite: 2.5, strich: "none" },
+    umriss: { stroke: "#bbb", breite: 1, strich: "none" },
+    dach: { stroke: "#888", breite: 1, strich: "4 3" },
+    decke: { stroke: "#888", breite: 1, strich: "1 2" },
+  };
   for (const l of linien) {
-    const flaechig = l.art === "dach" || l.art === "decke";
+    const s = stile[l.art];
     svg.append(
-      svgElement(flaechig ? "polygon" : "polyline", {
+      svgElement(l.art === "dach" || l.art === "decke" ? "polygon" : "polyline", {
         points: l.punkte.map((p) => p.join(",")).join(" "),
         fill: "none",
-        stroke: flaechig ? "#888" : "#000",
-        "stroke-width": flaechig ? 1 : 2.5,
-        "stroke-dasharray": l.art === "dach" ? "4 3" : l.art === "decke" ? "1 2" : "none",
+        stroke: s.stroke,
+        "stroke-width": s.breite,
+        "stroke-dasharray": s.strich,
         "vector-effect": "non-scaling-stroke",
       })
     );
+  }
+  for (const [a, b] of hinweislinien) {
+    svg.append(svgElement("line", { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: "#999", "stroke-width": 0.6, "vector-effect": "non-scaling-stroke" }));
   }
   for (const t of texte) {
     const text = svgElement("text", {
       x: t.x,
       y: t.z,
-      "font-size": schrift,
+      "font-size": t.groesse,
       "text-anchor": "middle",
       "dominant-baseline": "middle",
-      fill: t.dach ? "#555" : "#000",
+      fill: t.farbe,
     });
     text.textContent = t.text;
     svg.append(text);
   }
   for (const k of kreise) {
-    svg.append(svgElement("circle", { cx: k.x, cy: k.z, r: schrift * 0.95, fill: "#fff", stroke: "#000", "stroke-width": 1, "vector-effect": "non-scaling-stroke" }));
+    svg.append(svgElement("circle", { cx: k.x, cy: k.z, r: k.r, fill: "#fff", stroke: "#000", "stroke-width": 1, "vector-effect": "non-scaling-stroke" }));
     const text = svgElement("text", {
       x: k.x,
       y: k.z,
@@ -346,17 +457,42 @@ export function uebersichtBauen(daten) {
       nummerVon.set(t.flaecheIndex, t.wofuer === "fassade" ? t.nummer : t.name);
     }
     if (mehrere) blatt.append(element("h3", "gebaeude-titel", `Gebäude ${b.nummer} · ${b.name}`));
-    if (nummerVon.size) blatt.append(grundriss(b.flaechen, nummerVon, b.ecken));
-    else blatt.append(element("p", "klein", "Keine Außenflächen gefunden."));
+    if (!nummerVon.size) {
+      blatt.append(element("p", "klein", "Keine Außenflächen gefunden."));
+      continue;
+    }
+    // Je Baukörper (z. B. Haus und Nebengebäude) eigene, möglichst große
+    // Zeichnungen: „Wände und Ecken“ und „Dach und Untersicht“ (seit 19.11.)
+    const koerper = new Map();
+    b.flaechen.forEach((f, i) => {
+      if (!nummerVon.has(i)) return;
+      const k = f.koerper ?? 0;
+      if (!koerper.has(k)) koerper.set(k, []);
+      koerper.get(k).push(i);
+    });
+    const summe = (liste) => liste.reduce((s, i) => s + (b.flaechen[i].flaeche || 0), 0);
+    const gruppen = [...koerper.values()].sort((x, y) => summe(y) - summe(x));
+    gruppen.forEach((indices, z) => {
+      if (gruppen.length > 1) blatt.append(element("p", "gebaeude-titel", `Baukörper ${z + 1} von ${gruppen.length}`));
+      blatt.append(element("p", "klein", "Wände und Ecken"));
+      blatt.append(grundriss(b.flaechen, nummerVon, b.ecken, indices, "waende"));
+      if (indices.some((i) => b.flaechen[i].wofuer !== "fassade")) {
+        blatt.append(element("p", "klein", "Dach und Untersicht"));
+        blatt.append(grundriss(b.flaechen, nummerVon, b.ecken, indices, "dach"));
+      }
+    });
   }
   blatt.append(
     element(
       "p",
       "klein",
-      (eineSchicht
-        ? "Fassaden als dicke Linien mit ihrer Zahl (das A-Teil mit derselben Zahl), Dachflächen gestrichelt mit D-Nummer. Blick von oben, Norden oben."
-        : "Fassaden als dicke Linien mit ihrer Zahl (dazu gehören A- und I-Teil mit derselben Zahl), Dachflächen gestrichelt mit D-Nummer. Blick von oben, Norden oben.") +
-        " Kreise E1, E2 … = Ecken. An jeder Ecke geht die durchlaufende Fassade bis in die Ecke, die gekürzte hört kurz davor auf." +
+      "Je Baukörper zwei Zeichnungen, Blick von oben, Norden oben. " +
+        (eineSchicht
+          ? "„Wände und Ecken“: Fassaden als dicke Linien mit ihrer Zahl (das A-Teil mit derselben Zahl)"
+          : "„Wände und Ecken“: Fassaden als dicke Linien mit ihrer Zahl (dazu gehören A- und I-Teil mit derselben Zahl)") +
+        ", Kreise E1, E2 … = Ecken. An jeder Ecke geht die durchlaufende Fassade bis in die Ecke, die gekürzte hört kurz davor auf. " +
+        "„Dach und Untersicht“: Dachflächen gestrichelt mit D-Nummer, Untersichten gepunktet mit U-Nummer, die Wände dünn zur Orientierung. " +
+        "Wo es eng ist, steht eine Nummer etwas abseits mit einer dünnen Hinweislinie." +
         (mehrere ? " Jedes Gebäude ist für sich gezeichnet, nicht in seiner Lage zu den anderen." : "")
     )
   );

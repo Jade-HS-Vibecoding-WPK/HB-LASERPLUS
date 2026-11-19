@@ -24,7 +24,7 @@
 // =========================================================
 
 import { einstellungenStarten, beiAenderung, holeEinstellungen } from "./einstellungen.js";
-import { platteAlsDxf, dxfHerunterladen, rahmenLinie, EBENEN } from "./dxf.js";
+import { platteAlsDxf, dxfHerunterladen, rahmenLinie, EBENEN, zipErstellen, blobHerunterladen } from "./dxf.js";
 import { flaechenFinden } from "./abwickeln.js";
 import { eckenFinden, teileBauen } from "./schichten.js";
 import { verteilen } from "./verteilen.js";
@@ -642,18 +642,31 @@ function zeigeErgebnis() {
 // ---------------------------------------------------------
 function dateiBasis() {
   if (!ergebnis || ergebnis.gebaeude.length !== 1) return "Mehrere-Gebaeude";
-  const basis = ergebnis.gebaeude[0].name.replace(/\.ifc\s*$/i, "").trim().replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, "-");
+  const basis = ergebnis.gebaeude[0].name
+    .replace(/\.ifc\s*$/i, "")
+    .trim()
+    .replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, "-")
+    .replace(/-{2,}/g, "-") // „Lasern - Vorstellung“ → „Lasern-Vorstellung“
+    .replace(/^-|-$/g, "");
   return basis || "Modell";
+}
+
+// Dateiname und Inhalt der DXF einer Platte,
+// z. B. „…_Platte-02-von-03_Pappe-1-5mm.dxf“ (Nummer und Pappdicke im Namen)
+function platteAlsDatei(i) {
+  const { platten, einstellungen: e } = ergebnis;
+  const zwei = (z) => String(z).padStart(2, "0");
+  const dicke = String(platten[i].dicke).replace(".", "-") + "mm";
+  return {
+    name: `${dateiBasis()}_Platte-${zwei(i + 1)}-von-${zwei(platten.length)}_Pappe-${dicke}.dxf`,
+    text: platteAlsDxf(platten[i], e.farben),
+  };
 }
 
 function platteHerunterladen(i) {
   if (!ergebnis) return;
-  const { platten, einstellungen: e } = ergebnis;
-  const zwei = (z) => String(z).padStart(2, "0");
-  const text = platteAlsDxf(platten[i], e.farben);
-  // Pappdicke im Dateinamen, z. B. „…_Platte-02-von-03_Pappe-1-5mm.dxf“
-  const dicke = String(platten[i].dicke).replace(".", "-") + "mm";
-  dxfHerunterladen(text, `${dateiBasis()}_Platte-${zwei(i + 1)}-von-${zwei(platten.length)}_Pappe-${dicke}.dxf`);
+  const { name, text } = platteAlsDatei(i);
+  dxfHerunterladen(text, name);
 }
 
 // 1.5 → „1,5 mm“
@@ -661,10 +674,17 @@ function mmText(z) {
   return String(z).replace(".", ",") + " mm";
 }
 
+// Alle Platten auf einmal: EINE ZIP-Datei, darin je Platte eine eigene DXF
+// (seit 19.11.; vorher mehrere Downloads nacheinander – viele Browser nehmen
+// davon nur den ersten an). Eine einzelne Platte kommt direkt als DXF.
 alleDxfKnopf.addEventListener("click", () => {
-  if (!ergebnis) return;
-  // nacheinander, damit der Browser jede Datei annimmt
-  ergebnis.platten.forEach((p, i) => setTimeout(() => platteHerunterladen(i), i * 500));
+  if (!ergebnis || !ergebnis.platten.length) return;
+  if (ergebnis.platten.length === 1) {
+    platteHerunterladen(0);
+    return;
+  }
+  const dateien = ergebnis.platten.map((p, i) => platteAlsDatei(i));
+  blobHerunterladen(zipErstellen(dateien), `${dateiBasis()}_Laserplatten-${ergebnis.platten.length}-DXF.zip`);
 });
 
 druckKnopf.addEventListener("click", () => {
