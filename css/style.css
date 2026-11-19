@@ -307,6 +307,22 @@ body {
   opacity: 0.45;
   cursor: not-allowed;
 }
+/* ZUSATZ 3D: Knopf ohne Füllfarbe, nur mit Rand; beim Darüberfahren
+   füllt er sich im Akzent-Orange (STL-Knöpfe, seit 19.11.) */
+.knopf.knopf-umriss {
+  background: transparent;
+  color: var(--text);
+  font-weight: 400;
+}
+.knopf.knopf-umriss:hover:not(:disabled),
+.knopf.knopf-umriss:focus-visible {
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--akzent-text);
+}
+.knopf.knopf-umriss[hidden] {
+  display: none;
+}
 .knopf:focus-visible {
   outline: 2px solid var(--akzent);
   outline-offset: 2px;

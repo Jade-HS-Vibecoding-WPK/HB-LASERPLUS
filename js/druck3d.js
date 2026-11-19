@@ -20,6 +20,7 @@
 
 import { stlBinaer, stlHerunterladen } from "./stl.js";
 import { Betrachter } from "./betrachter.js";
+import { blobHerunterladen } from "./dxf.js"; // ZIP herunterladen (seit 19.11.)
 
 const $ = (id) => document.getElementById(id);
 
@@ -317,44 +318,126 @@ function ablegenAnschliessen(ziel, beiAblegen) {
 
 // ---------------------------------------------------------
 // Modell bauen: Dreiecke in mm, z nach oben, auf den Boden gestellt
+//
+// Seit 19.11.:
+//   - Jeder Baukörper (z. B. Haus und Nebengebäude) wird einzeln nach unten
+//     geschoben, bis er auf der Platte steht – sonst „schwebt“ ein Körper, der
+//     in der IFC höher steht, und der Slicer will Stützen ergänzen.
+//   - Mit Sockel sinkt jeder Körper EINSENKEN mm in die Platte ein, damit
+//     Platte und Gebäude für den Slicer fest zusammenhängen.
+//   - Ohne Sockel rücken getrennte Baukörper dicht zusammen (ABSTAND_KOERPER),
+//     das spart Platz auf dem Druckbett. Mit Sockel bleibt ihre echte Lage.
 // ---------------------------------------------------------
+const EINSENKEN = 0.2;       // mm in die Sockelplatte
+const ABSTAND_KOERPER = 5;   // mm zwischen Baukörpern ohne Sockel
+const FARBE_WAND = [207, 198, 184], FARBE_DACH = [214, 120, 92], FARBE_SOCKEL = [160, 152, 142];
+
+// Umgebende Kiste einer Zahlenliste (x, y, z, x, y, z, …)
+function rahmen(zahlen) {
+  const r = { x0: Infinity, y0: Infinity, z0: Infinity, x1: -Infinity, y1: -Infinity, z1: -Infinity };
+  for (let i = 0; i < zahlen.length; i += 3) {
+    r.x0 = Math.min(r.x0, zahlen[i]); r.x1 = Math.max(r.x1, zahlen[i]);
+    r.y0 = Math.min(r.y0, zahlen[i + 1]); r.y1 = Math.max(r.y1, zahlen[i + 1]);
+    r.z0 = Math.min(r.z0, zahlen[i + 2]); r.z1 = Math.max(r.z1, zahlen[i + 2]);
+  }
+  return r;
+}
+
+// Zahlenliste verschieben (neue Liste)
+function verschoben(zahlen, dx, dy, dz) {
+  const f = new Float32Array(zahlen.length);
+  for (let i = 0; i < zahlen.length; i += 3) {
+    f[i] = zahlen[i] + dx; f[i + 1] = zahlen[i + 1] + dy; f[i + 2] = zahlen[i + 2] + dz;
+  }
+  return f;
+}
+
 function modellBauen(g) {
   const k = 1000 / e.massstab; // Meter → mm im Modell
-  const koerper = [], dach = [];
+
+  // 1. Jedes Bauteil in Druck-Koordinaten, mit umgebender Kiste
+  const stuecke = [];
   for (const teil of g.info.huelle) {
     // Fenster und Türen (seit 19.11. in der Hülle, nur für die Laser-Seite)
     // werden nicht gedruckt – die Öffnungen bleiben offen wie bisher
     if (teil.art === "oeffnung") continue;
     const art = teil.art === "proxy" ? g.proxyWahl.get(teil.bauteil) || "ignorieren" : teil.art;
     if (art === "ignorieren") continue;
-    const ziel = art === "dach" ? dach : koerper;
     const d = teil.dreiecke;
+    const zahlen = new Float32Array(d.length);
     // web-ifc: y nach oben, Norden = −z  →  3D-Druck: z nach oben, Norden = +y
-    for (let i = 0; i < d.length; i += 3) ziel.push(d[i] * k, -d[i + 2] * k, d[i + 1] * k);
+    for (let i = 0; i < d.length; i += 3) {
+      zahlen[i] = d[i] * k; zahlen[i + 1] = -d[i + 2] * k; zahlen[i + 2] = d[i + 1] * k;
+    }
+    if (zahlen.length) stuecke.push({ dach: art === "dach", zahlen, r: rahmen(zahlen) });
+  }
+  if (!stuecke.length) return null;
+
+  // 2. Baukörper: Bauteile, die sich berühren (5 cm Spiel in echt), gehören zusammen
+  const spiel = 0.05 * k;
+  const eltern = stuecke.map((s, i) => i);
+  const wurzel = (i) => (eltern[i] === i ? i : (eltern[i] = wurzel(eltern[i])));
+  for (let i = 0; i < stuecke.length; i++) {
+    for (let j = i + 1; j < stuecke.length; j++) {
+      const a = stuecke[i].r, b = stuecke[j].r;
+      const beruehren =
+        a.x1 + spiel >= b.x0 && b.x1 + spiel >= a.x0 &&
+        a.y1 + spiel >= b.y0 && b.y1 + spiel >= a.y0 &&
+        a.z1 + spiel >= b.z0 && b.z1 + spiel >= a.z0;
+      if (beruehren) eltern[wurzel(i)] = wurzel(j);
+    }
+  }
+  const gruppen = new Map();
+  stuecke.forEach((s, i) => {
+    const w = wurzel(i);
+    if (!gruppen.has(w)) gruppen.set(w, []);
+    gruppen.get(w).push(s);
+  });
+  const koerperListe = [...gruppen.values()].map((liste) => {
+    const r = rahmen(verbinden(liste.map((s) => s.zahlen)));
+    return { liste, r, dx: 0, dy: 0 };
+  });
+
+  // 3. Ohne Sockel: Baukörper dicht nebeneinander, in Reihen übers Druckbett
+  if (!e.sockel && koerperListe.length > 1) {
+    koerperListe.sort((a, b) => a.r.x0 - b.r.x0);
+    let x = 0, y = 0, reihenTiefe = 0;
+    for (const kp of koerperListe) {
+      const breite = kp.r.x1 - kp.r.x0, tiefe = kp.r.y1 - kp.r.y0;
+      if (x > 0 && x + breite > e.bettBreite) {
+        x = 0;
+        y += reihenTiefe + ABSTAND_KOERPER;
+        reihenTiefe = 0;
+      }
+      kp.dx = x - kp.r.x0;
+      kp.dy = y - kp.r.y0;
+      x += breite + ABSTAND_KOERPER;
+      reihenTiefe = Math.max(reihenTiefe, tiefe);
+    }
   }
 
-  // Lage: Grundriss in der Mitte (0, 0), tiefster Punkt auf z = 0 (bzw. auf dem Sockel)
-  const rahmen = (zahlen) => {
-    const r = { x0: Infinity, y0: Infinity, z0: Infinity, x1: -Infinity, y1: -Infinity, z1: -Infinity };
-    for (let i = 0; i < zahlen.length; i += 3) {
-      r.x0 = Math.min(r.x0, zahlen[i]); r.x1 = Math.max(r.x1, zahlen[i]);
-      r.y0 = Math.min(r.y0, zahlen[i + 1]); r.y1 = Math.max(r.y1, zahlen[i + 1]);
-      r.z0 = Math.min(r.z0, zahlen[i + 2]); r.z1 = Math.max(r.z1, zahlen[i + 2]);
-    }
-    return r;
-  };
-  const alle = rahmen(koerper.concat(dach));
-  if (!Number.isFinite(alle.x0)) return null;
+  // 4. Jeden Baukörper auf die Platte stellen (mit Sockel leicht eingesenkt)
   const sockelDicke = e.sockel ? e.sockelDicke : 0;
-  const dx = -(alle.x0 + alle.x1) / 2, dy = -(alle.y0 + alle.y1) / 2, dz = -alle.z0 + sockelDicke;
-  const schieben = (zahlen) => {
-    const f = new Float32Array(zahlen.length);
-    for (let i = 0; i < zahlen.length; i += 3) {
-      f[i] = zahlen[i] + dx; f[i + 1] = zahlen[i + 1] + dy; f[i + 2] = zahlen[i + 2] + dz;
+  const unten = e.sockel ? sockelDicke - EINSENKEN : 0;
+  const waende = [], daecher = [], daecherEinzeln = [];
+  for (const kp of koerperListe) {
+    const dz = unten - kp.r.z0;
+    const dachTeile = [];
+    for (const s of kp.liste) {
+      const f = verschoben(s.zahlen, kp.dx, kp.dy, dz);
+      (s.dach ? dachTeile : waende).push(f);
     }
-    return f;
-  };
-  const koerperF = schieben(koerper), dachF = schieben(dach);
+    if (dachTeile.length) {
+      daecher.push(...dachTeile);
+      daecherEinzeln.push(verbinden(dachTeile));
+    }
+  }
+
+  // 5. Grundriss in die Mitte (0, 0)
+  const alle = rahmen(verbinden([...waende, ...daecher]));
+  const mx = -(alle.x0 + alle.x1) / 2, my = -(alle.y0 + alle.y1) / 2;
+  const koerperF = verschoben(verbinden(waende), mx, my, 0);
+  const dachF = verschoben(verbinden(daecher), mx, my, 0);
 
   // Sockelplatte: Kasten unter dem Grundriss der Wände (plus Rand)
   let sockelF = new Float32Array(0);
@@ -368,27 +451,33 @@ function modellBauen(g) {
   const gebaeudeStl = verbinden(gebaeudeTeile);
   let dachStl = null;
   if (e.dachGetrennt && dachF.length) {
-    // Dach für den Druck auf den Boden stellen
-    const r = rahmen(dachF);
-    dachStl = new Float32Array(dachF.length);
-    for (let i = 0; i < dachF.length; i += 3) {
-      dachStl[i] = dachF[i]; dachStl[i + 1] = dachF[i + 1]; dachStl[i + 2] = dachF[i + 2] - r.z0;
-    }
+    // Jedes Dach einzeln auf den Boden stellen (bei mehreren Baukörpern liegen
+    // sie nebeneinander wie ihre Gebäude)
+    dachStl = verbinden(daecherEinzeln.map((d) => verschoben(d, mx, my, -rahmen(d).z0)));
   }
   const masse = (zahlen) => {
     const r = rahmen(zahlen);
     return { b: r.x1 - r.x0, t: r.y1 - r.y0, h: r.z1 - r.z0 };
   };
+  // Dateien, die gedruckt werden – je eine Seite in der Vorschau (Pfeile ‹ ›)
+  const dateien = [
+    {
+      art: "gebaeude",
+      stl: gebaeudeStl,
+      vorschau: e.dachGetrennt
+        ? [{ dreiecke: koerperF, farbe: FARBE_WAND }, { dreiecke: sockelF, farbe: FARBE_SOCKEL }]
+        : [{ dreiecke: koerperF, farbe: FARBE_WAND }, { dreiecke: dachF, farbe: FARBE_DACH }, { dreiecke: sockelF, farbe: FARBE_SOCKEL }],
+      masse: masse(gebaeudeStl),
+    },
+  ];
+  if (dachStl) dateien.push({ art: "dach", stl: dachStl, vorschau: [{ dreiecke: dachStl, farbe: FARBE_DACH }], masse: masse(dachStl) });
   return {
-    vorschau: [
-      { dreiecke: koerperF, farbe: [207, 198, 184] },   // Wände: Graupappe-Ton
-      { dreiecke: dachF, farbe: [214, 120, 92] },       // Dach: Coral-Ton
-      { dreiecke: sockelF, farbe: [160, 152, 142] },    // Sockel: dunkler
-    ],
+    dateien,
     gebaeudeStl,
     dachStl,
     masse: masse(gebaeudeStl),
     dachMasse: dachStl ? masse(dachStl) : null,
+    koerperAnzahl: koerperListe.length,
   };
 }
 
@@ -445,7 +534,38 @@ function berechnen() {
 }
 
 function dateiBasis(name) {
-  return name.replace(/\.ifc\s*$/i, "").trim().replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, "-") || "Modell";
+  return (
+    name
+      .replace(/\.ifc\s*$/i, "")
+      .trim()
+      .replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, "-")
+      .replace(/-{2,}/g, "-")
+      .replace(/^-|-$/g, "") || "Modell"
+  );
+}
+
+// Alle Druck-Dateien aller Gebäude, in der Reihenfolge der Vorschau-Seiten
+// (je Gebäude: Gebäude, dann ggf. das abnehmbare Dach)
+let dateiListe = [];
+let aktuelleDatei = 0; // welche Datei die Vorschau gerade zeigt
+
+function dateienSammeln() {
+  const mehrere = modelle.length > 1;
+  const liste = [];
+  for (const m of modelle) {
+    if (!m.modell) continue;
+    const basis = dateiBasis(m.name);
+    for (const d of m.modell.dateien) {
+      const dach = d.art === "dach";
+      liste.push({
+        ...d,
+        titel: (dach ? "Dach (abnehmbar)" : "Gebäude") + (mehrere ? ` ${m.nummer} · ${m.name}` : ""),
+        knopf: (dach ? "STL Dach" : "STL Gebäude") + (mehrere ? ` ${m.nummer}` : "") + " herunterladen",
+        dateiname: `${basis}_3D${dach ? "-Dach" : ""}_1-${e.massstab}.stl`,
+      });
+    }
+  }
+  return liste;
 }
 
 function ergebnisZeigen() {
@@ -455,26 +575,15 @@ function ergebnisZeigen() {
   $("d3-downloads").replaceChildren();
   $("d3-warnungen").replaceChildren();
   $("d3-warnungen").hidden = true;
-  $("d3-auswahl-zeile").hidden = true;
+  $("d3-blaettern").hidden = true;
   $("d3-alle").hidden = true;
+  dateiListe = [];
   if (leer) {
     if (betrachter) betrachter.setzen([], null);
     return;
   }
 
-  // Auswahl, welches Gebäude in der Vorschau zu sehen ist
-  const auswahl = $("d3-auswahl");
-  const vorher = auswahl.value;
-  auswahl.replaceChildren(...modelle.map((m) => {
-    const o = element("option", "", `Gebäude ${m.nummer} · ${m.name}`);
-    o.value = String(m.nummer);
-    return o;
-  }));
-  if (modelle.some((m) => String(m.nummer) === vorher)) auswahl.value = vorher;
-  $("d3-auswahl-zeile").hidden = modelle.length < 2;
-  vorschauZeigen();
-
-  // Warnungen und STL-Knöpfe je Gebäude
+  // Warnungen je Gebäude
   const warnungen = [];
   const mehrere = modelle.length > 1;
   for (const m of modelle) {
@@ -492,43 +601,134 @@ function ergebnisZeigen() {
         );
       }
     }
-    const basis = dateiBasis(m.name);
-    const knopf = element("button", "knopf haupt-knopf text-sm", mehrere ? `STL Gebäude ${m.nummer}` : "STL herunterladen");
-    knopf.type = "button";
-    knopf.addEventListener("click", () => stlHerunterladen(stlBinaer(m.modell.gebaeudeStl), `${basis}_3D_1-${e.massstab}.stl`));
-    $("d3-downloads").append(knopf);
-    if (m.modell.dachStl) {
-      const dachKnopf = element("button", "knopf text-sm", mehrere ? `STL Dach ${m.nummer}` : "STL Dach");
-      dachKnopf.type = "button";
-      dachKnopf.addEventListener("click", () => stlHerunterladen(stlBinaer(m.modell.dachStl), `${basis}_3D-Dach_1-${e.massstab}.stl`));
-      $("d3-downloads").append(dachKnopf);
-    }
   }
-  $("d3-alle").hidden = $("d3-downloads").children.length < 2;
   for (const text of warnungen) {
     const punkt = element("li", "flex gap-2");
     punkt.append(element("span", "text-akzent font-bold", "!"), element("span", "", text));
     $("d3-warnungen").append(punkt);
   }
   $("d3-warnungen").hidden = warnungen.length === 0;
+
+  // Je Druck-Datei ein Knopf (ohne Füllfarbe, beim Darüberfahren orange).
+  // Ein Klick lädt die Datei und zeigt sie auch in der Vorschau.
+  dateiListe = dateienSammeln();
+  dateiListe.forEach((d, i) => {
+    const knopf = element("button", "knopf knopf-umriss text-sm", d.knopf);
+    knopf.type = "button";
+    knopf.addEventListener("click", () => {
+      stlHerunterladen(stlBinaer(d.stl), d.dateiname);
+      aktuelleDatei = i;
+      vorschauZeigen();
+    });
+    $("d3-downloads").append(knopf);
+  });
+  $("d3-alle").hidden = dateiListe.length < 2;
+  if (aktuelleDatei >= dateiListe.length) aktuelleDatei = 0;
+  vorschauZeigen();
 }
 
-// Gewähltes Gebäude im Betrachter zeigen, mit Maßen
+// Die gewählte Druck-Datei im Betrachter zeigen, mit Maßen und Pfeilen ‹ ›
 function vorschauZeigen() {
-  if (!modelle || !modelle.length) return;
-  const nummer = Number($("d3-auswahl").value) || modelle[0].nummer;
-  const m = modelle.find((x) => x.nummer === nummer) || modelle[0];
-  if (!m.modell) {
-    betrachter.setzen([], null);
+  if (!dateiListe.length) {
+    if (betrachter) betrachter.setzen([], null);
     $("d3-masse").textContent = "";
+    $("d3-blaettern").hidden = true;
     return;
   }
-  betrachter.setzen(m.modell.vorschau.filter((t) => t.dreiecke.length), { b: e.bettBreite, t: e.bettTiefe });
-  const ms = m.modell.masse;
-  let text = `Größe ${mm(ms.b)} × ${mm(ms.t)} × ${mm(ms.h)} mm (Breite × Tiefe × Höhe) bei 1:${e.massstab}`;
-  if (m.modell.dachMasse) text += ` · Dach ${mm(m.modell.dachMasse.b)} × ${mm(m.modell.dachMasse.t)} × ${mm(m.modell.dachMasse.h)} mm`;
-  text += passt(ms) && (!m.modell.dachMasse || passt(m.modell.dachMasse)) ? " · ✓ passt aufs Druckbett" : " · passt nicht aufs Druckbett";
-  $("d3-masse").textContent = text;
+  const d = dateiListe[aktuelleDatei];
+  $("d3-blaettern").hidden = dateiListe.length < 2;
+  $("d3-datei-titel").textContent = `Datei ${aktuelleDatei + 1} von ${dateiListe.length} · ${d.titel}`;
+  $("d3-zurueck").disabled = aktuelleDatei === 0;
+  $("d3-weiter").disabled = aktuelleDatei === dateiListe.length - 1;
+  betrachter.setzen(d.vorschau.filter((t) => t.dreiecke.length), { b: e.bettBreite, t: e.bettTiefe });
+  const ms = d.masse;
+  $("d3-masse").textContent =
+    `${d.art === "dach" ? "Dach" : "Größe"} ${mm(ms.b)} × ${mm(ms.t)} × ${mm(ms.h)} mm (Breite × Tiefe × Höhe) bei 1:${e.massstab}` +
+    (passt(ms) ? " · ✓ passt aufs Druckbett" : " · passt nicht aufs Druckbett");
+}
+
+// ---------------------------------------------------------
+// Alle STL auf einmal (seit 19.11.): EINE ZIP-Datei mit einer STL je
+// Druck-Datei. Viele Browser nehmen nur den ersten von mehreren Downloads an.
+// Unkomprimiert („stored“), ohne Bibliothek.
+// ---------------------------------------------------------
+const CRC_TABELLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let j = 0; j < 8; j++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(bytes) {
+  let c = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) c = CRC_TABELLE[(c ^ bytes[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+// Inhalt (ArrayBuffer, Uint8Array/Float32Array oder Blob) → Bytes
+async function alsBytes(inhalt) {
+  if (inhalt instanceof Blob) return new Uint8Array(await inhalt.arrayBuffer());
+  if (inhalt instanceof ArrayBuffer) return new Uint8Array(inhalt);
+  if (ArrayBuffer.isView(inhalt)) return new Uint8Array(inhalt.buffer, inhalt.byteOffset, inhalt.byteLength);
+  return new TextEncoder().encode(String(inhalt));
+}
+async function zipAusDateien(dateien) {
+  const kodierer = new TextEncoder();
+  const jetzt = new Date();
+  const zeit = (jetzt.getHours() << 11) | (jetzt.getMinutes() << 5) | (jetzt.getSeconds() >> 1);
+  const datum = ((jetzt.getFullYear() - 1980) << 9) | ((jetzt.getMonth() + 1) << 5) | jetzt.getDate();
+  const stuecke = [], verzeichnis = [];
+  let versatz = 0;
+  for (const d of dateien) {
+    const name = kodierer.encode(d.name);
+    const daten = await alsBytes(d.inhalt);
+    const pruef = crc32(daten);
+    const kopf = new DataView(new ArrayBuffer(30));
+    kopf.setUint32(0, 0x04034b50, true);
+    kopf.setUint16(4, 20, true);
+    kopf.setUint16(6, 0x0800, true);
+    kopf.setUint16(10, zeit, true);
+    kopf.setUint16(12, datum, true);
+    kopf.setUint32(14, pruef, true);
+    kopf.setUint32(18, daten.length, true);
+    kopf.setUint32(22, daten.length, true);
+    kopf.setUint16(26, name.length, true);
+    stuecke.push(new Uint8Array(kopf.buffer), name, daten);
+    const eintrag = new DataView(new ArrayBuffer(46));
+    eintrag.setUint32(0, 0x02014b50, true);
+    eintrag.setUint16(4, 20, true);
+    eintrag.setUint16(6, 20, true);
+    eintrag.setUint16(8, 0x0800, true);
+    eintrag.setUint16(12, zeit, true);
+    eintrag.setUint16(14, datum, true);
+    eintrag.setUint32(16, pruef, true);
+    eintrag.setUint32(20, daten.length, true);
+    eintrag.setUint32(24, daten.length, true);
+    eintrag.setUint16(28, name.length, true);
+    eintrag.setUint32(42, versatz, true);
+    verzeichnis.push(new Uint8Array(eintrag.buffer), name);
+    versatz += 30 + name.length + daten.length;
+  }
+  const groesse = verzeichnis.reduce((s, t) => s + t.length, 0);
+  const ende = new DataView(new ArrayBuffer(22));
+  ende.setUint32(0, 0x06054b50, true);
+  ende.setUint16(8, dateien.length, true);
+  ende.setUint16(10, dateien.length, true);
+  ende.setUint32(12, groesse, true);
+  ende.setUint32(16, versatz, true);
+  return new Blob([...stuecke, ...verzeichnis, new Uint8Array(ende.buffer)], { type: "application/zip" });
+}
+
+async function alleStlHerunterladen() {
+  if (!dateiListe.length) return;
+  if (dateiListe.length === 1) {
+    stlHerunterladen(stlBinaer(dateiListe[0].stl), dateiListe[0].dateiname);
+    return;
+  }
+  const zip = await zipAusDateien(dateiListe.map((d) => ({ name: d.dateiname, inhalt: stlBinaer(d.stl) })));
+  const basis = modelle.length === 1 ? dateiBasis(modelle[0].name) : "Mehrere-Gebaeude";
+  blobHerunterladen(zip, `${basis}_3D-Druck_1-${e.massstab}_${dateiListe.length}-STL.zip`);
 }
 
 // ---------------------------------------------------------
@@ -569,11 +769,18 @@ export function druck3dStarten() {
     }, 30);
   });
 
-  $("d3-auswahl").addEventListener("change", vorschauZeigen);
+  // Pfeile ‹ › über der Vorschau: zwischen den Druck-Dateien blättern
+  $("d3-zurueck").addEventListener("click", () => {
+    if (aktuelleDatei > 0) aktuelleDatei--;
+    vorschauZeigen();
+  });
+  $("d3-weiter").addEventListener("click", () => {
+    if (aktuelleDatei < dateiListe.length - 1) aktuelleDatei++;
+    vorschauZeigen();
+  });
   $("d3-ansicht").addEventListener("click", () => betrachter.zuruecksetzen());
   $("d3-alle").addEventListener("click", () => {
-    // nacheinander, damit der Browser jede Datei annimmt
-    [...$("d3-downloads").children].forEach((knopf, i) => setTimeout(() => knopf.click(), i * 500));
+    alleStlHerunterladen().catch((fehler) => console.error(fehler));
   });
   ergebnisZeigen();
 }

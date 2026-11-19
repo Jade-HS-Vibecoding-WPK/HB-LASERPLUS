@@ -523,11 +523,18 @@
 
         <ul id="d3-warnungen" class="space-y-2 text-sm mb-5" hidden></ul>
 
+        <!-- Oben über der Vorschau: blättern zwischen den Druck-Dateien (seit 19.11.),
+             z. B. „‹ Datei 2 von 2 · Dach (abnehmbar) ›“ -->
         <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <label id="d3-auswahl-zeile" class="flex items-center gap-2 text-sm" hidden>
-            Vorschau:
-            <select id="d3-auswahl" class="feld w-auto max-w-full"></select>
-          </label>
+          <div id="d3-blaettern" class="flex items-center gap-2 text-sm" hidden>
+            <button type="button" class="icon-knopf" id="d3-zurueck" title="Vorherige Datei" aria-label="Vorherige Datei">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+            </button>
+            <span id="d3-datei-titel" class="font-bold" aria-live="polite"></span>
+            <button type="button" class="icon-knopf" id="d3-weiter" title="Nächste Datei" aria-label="Nächste Datei">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
           <button type="button" class="knopf text-sm ml-auto" id="d3-ansicht">Ansicht zurücksetzen</button>
         </div>
 
@@ -539,8 +546,12 @@
         <p class="text-xs text-leise mt-2">Ziehen = drehen · Mausrad oder zwei Finger = zoomen · Doppelklick = Ansicht zurücksetzen. Gestrichelt: das Druckbett.</p>
         <p id="d3-masse" class="text-sm mt-3"></p>
 
-        <div id="d3-downloads" class="flex flex-wrap gap-3 mt-4"></div>
-        <button type="button" class="knopf text-sm mt-3" id="d3-alle" hidden>Alle STL herunterladen</button>
+        <!-- STL-Knöpfe ohne Füllfarbe, beim Darüberfahren orange (seit 19.11.).
+             „Alle STL herunterladen“ liefert eine ZIP-Datei mit allen STL. -->
+        <div class="flex flex-wrap gap-3 mt-4">
+          <div id="d3-downloads" class="contents"></div>
+          <button type="button" class="knopf knopf-umriss text-sm" id="d3-alle" hidden>Alle STL herunterladen</button>
+        </div>
 
         <p class="mt-4 text-sm flex gap-2">
           <span class="text-akzent font-bold">!</span>
