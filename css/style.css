@@ -584,6 +584,10 @@ summary {
 .platzhalter img[hidden] {
   display: none;
 }
+/* Laser-Bild: Ausschnitt ganz oben, damit das Haus hinten ganz zu sehen ist (Wunsch Alison, 19.11.) */
+.platzhalter img.start-bild-laser {
+  object-position: 50% 0%;
+}
 
 /* Kleiner Textknopf „← Startseite“ */
 .zurueck-link {
