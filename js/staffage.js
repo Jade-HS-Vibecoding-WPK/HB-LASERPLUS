@@ -190,7 +190,7 @@ function detailBaum(hoehe, schlitz) {
 }
 
 // ---------------------------------------------------------
-// Teile bauen. e = Einstellungen (massstab, menschen, baeume, baumHoehe,
+// Teile bauen. e = Einstellungen (massstab, figur1/figur2, baeume6/10/15, baumForm,
 // dickeAussen/dickeInnen, wandaufbau). Ergebnis im selben Aufbau wie
 // die Teile aus schichten.js, damit verteilen.js sie mitnehmen kann.
 // ---------------------------------------------------------
@@ -229,31 +229,39 @@ export function staffageTeile(e) {
     });
   }
 
-  const hoehe = (e.baumHoehe || 10) * k;
+  // Bäume: Anzahl je Höhe (seit 19.11. mehrere Höhen gleichzeitig),
+  // durchnummeriert erst alle 6-m-, dann 10-m-, dann 15-m-Bäume.
   // Baumform: detailliert (Svenjas Baum) oder einfach (runde Krone).
   // Ist der detaillierte Baum im Maßstab zu klein für den Schlitz,
   // kommt automatisch der einfache – das steht dann in der Teileliste.
-  const detail = (e.baeume || 0) > 0 && e.baumForm !== "einfach" ? detailBaum(hoehe, dicke) : null;
-  let formText = "einfach";
-  if (detail) formText = detail.breiter ? "detailliert, Stamm verbreitert" : "detailliert";
-  else if (e.baumForm !== "einfach") formText = "einfach, zu klein für detailliert";
-  const umrissVonBaum = (art) =>
-    detail ? (art === "oben" ? detail.oben : detail.unten).map(([x, y]) => [x, y]) : baumUmriss(hoehe, dicke, art);
-  for (let i = 1; i <= (e.baeume || 0); i++) {
-    // Nummern: B-01A und B-01B gehören zum selben Baum (A = Schlitz oben, B = Schlitz unten)
-    for (const [buchstabe, art, text] of [["A", "oben", "Schlitz von oben"], ["B", "unten", "Schlitz von unten"]]) {
-      teile.push({
-        name: `B-${zwei(i)}${buchstabe}`,
-        wofuer: "staffage",
-        schicht: "",
-        beschreibung: `Baum ${String(e.baumHoehe || 10).replace(".", ",")} m (${formText}), Teil ${buchstabe} (${text})`,
-        ohneNummer: true, // Wunsch 19.11.: keine geritzte Nummer unter den Bäumen
-        dicke,
-        aussen: umrissVonBaum(art),
-        loecher: [],
-        ritzlinien: [],
-        gebaeude: 0,
-      });
+  let nr = 0;
+  for (const meter of [6, 10, 15]) {
+    const anzahl = e[`baeume${meter}`] || 0;
+    if (anzahl <= 0) continue;
+    const hoehe = meter * k;
+    const detail = e.baumForm !== "einfach" ? detailBaum(hoehe, dicke) : null;
+    let formText = "einfach";
+    if (detail) formText = detail.breiter ? "detailliert, Stamm verbreitert" : "detailliert";
+    else if (e.baumForm !== "einfach") formText = "einfach, zu klein für detailliert";
+    const umrissVonBaum = (art) =>
+      detail ? (art === "oben" ? detail.oben : detail.unten).map(([x, y]) => [x, y]) : baumUmriss(hoehe, dicke, art);
+    for (let i = 1; i <= anzahl; i++) {
+      nr++;
+      // Nummern: B-01A und B-01B gehören zum selben Baum (A = Schlitz oben, B = Schlitz unten)
+      for (const [buchstabe, art, text] of [["A", "oben", "Schlitz von oben"], ["B", "unten", "Schlitz von unten"]]) {
+        teile.push({
+          name: `B-${zwei(nr)}${buchstabe}`,
+          wofuer: "staffage",
+          schicht: "",
+          beschreibung: `Baum ${meter} m (${formText}), Teil ${buchstabe} (${text})`,
+          ohneNummer: true, // Wunsch 19.11.: keine geritzte Nummer unter den Bäumen
+          dicke,
+          aussen: umrissVonBaum(art),
+          loecher: [],
+          ritzlinien: [],
+          gebaeude: 0,
+        });
+      }
     }
   }
   return teile;

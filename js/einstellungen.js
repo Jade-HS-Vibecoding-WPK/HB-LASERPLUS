@@ -34,8 +34,13 @@ export const STARTWERTE = {
   wandaufbau: "zwei",
   // Staffage (Menschen und Bäume), seit 18.11.
   menschen: 0,
+  // Bäume (seit 19.11.): Anzahl je Höhe 6 / 10 / 15 m; „baeume“ ist die Summe.
+  // („baumHoehe“ gab es vorher für alle Bäume zusammen, wird nur noch
+  //  beim Einlesen alter Speicherstände gebraucht.)
   baeume: 0,
-  baumHoehe: 10, // m
+  baeume6: 0,
+  baeume10: 0,
+  baeume15: 0,
   // Baumform (seit 19.11.): "detailliert" = Svenjas Baum (js/staffage-baum.js),
   // "einfach" = runde Krone
   baumForm: "detailliert",
@@ -51,10 +56,34 @@ const FIGUREN_DETAIL = ["auto", "fein", "einfach"];
 
 // Anzahl-Felder (0 ist erlaubt) mit Höchstwert
 // (seit 19.11. je 200, vorher 50 Menschen und 30 Bäume)
-const ANZAHLFELDER = { figur1: ["figur1-anzahl", 200], figur2: ["figur2-anzahl", 200], baeume: ["baeume", 200] };
+const ANZAHLFELDER = {
+  figur1: ["figur1-anzahl", 200],
+  figur2: ["figur2-anzahl", 200],
+  baeume6: ["baeume-6", 200],
+  baeume10: ["baeume-10", 200],
+  baeume15: ["baeume-15", 200],
+};
 // Ab mehr als 50 Menschen bzw. Bäumen erscheint eine Warnung (hält nichts auf)
 const WARNUNG_AB = 50;
 const BAUMHOEHEN = [6, 10, 15];
+
+// Ältere Speicherstände und Vorlagen hatten eine Anzahl „baeume“ und eine
+// gemeinsame „baumHoehe“. Dann kommen diese Bäume in das Feld ihrer Höhe.
+function baeumeUmrechnen(werte) {
+  const neu = BAUMHOEHEN.some((h) => werte[`baeume${h}`] !== undefined);
+  if (!neu) {
+    const alt = parseInt(werte.baeume, 10);
+    const h = BAUMHOEHEN.includes(parseFloat(werte.baumHoehe)) ? parseFloat(werte.baumHoehe) : 10;
+    for (const hh of BAUMHOEHEN) werte[`baeume${hh}`] = 0;
+    if (Number.isFinite(alt) && alt > 0) werte[`baeume${h}`] = alt;
+  }
+  delete werte.baumHoehe;
+  return werte;
+}
+// Summe aller Bäume (für Warnung und Zusammenfassung)
+function baeumeSumme(werte) {
+  return BAUMHOEHEN.reduce((s, h) => s + (Number.isFinite(werte[`baeume${h}`]) ? werte[`baeume${h}`] : 0), 0);
+}
 const BAUMFORMEN = ["detailliert", "einfach"];
 
 // Erlaubte Werte für den Wandaufbau
@@ -101,6 +130,14 @@ function laden() {
     werte.figur1 = Number.isFinite(werte.figur1) ? werte.figur1 : 0;
     werte.figur2 = Number.isFinite(werte.figur2) ? werte.figur2 : 0;
     werte.menschen = werte.figur1 + werte.figur2;
+    // Bäume je Höhe (ältere Speicherstände: eine Anzahl und eine Höhe)
+    const umgerechnet = baeumeUmrechnen({ ...gespeichert });
+    for (const h of BAUMHOEHEN) {
+      const z = umgerechnet[`baeume${h}`];
+      werte[`baeume${h}`] = Number.isFinite(z) && z >= 0 ? Math.min(z, 200) : 0;
+    }
+    werte.baeume = baeumeSumme(werte);
+    delete werte.baumHoehe;
     return werte;
   } catch {
     // Notizzettel nicht lesbar (z. B. privates Fenster): Startwerte nehmen
@@ -134,10 +171,12 @@ function felderFuellen() {
   for (const [name, [id]] of Object.entries(ANZAHLFELDER)) {
     document.getElementById(id).value = String(aktuell[name]);
   }
-  document.getElementById("baum-hoehe").value = String(aktuell.baumHoehe);
   document.getElementById("baum-form").value = aktuell.baumForm;
   document.getElementById("staffage-dicke").value = String(aktuell.staffageDicke);
-  document.getElementById("figuren-detail").value = aktuell.figurenDetail;
+  // „auto“ (noch nicht selbst gewählt) zeigt die zum Maßstab passende Form an:
+  // bis 1:75 detailliert, darüber einfach – genau wie js/staffage-figuren.js rechnet
+  document.getElementById("figuren-detail").value =
+    aktuell.figurenDetail === "auto" ? (aktuell.massstab <= 75 ? "fein" : "einfach") : aktuell.figurenDetail;
   dickenfelderAnpassen();
   staffageWarnungZeigen();
 }
@@ -270,15 +309,15 @@ function felderLesen() {
     const z = parseInt(document.getElementById(id).value, 10);
     if (Number.isFinite(z) && z >= 0) aktuell[name] = Math.min(z, max);
   }
-  const hoehe = parseFloat(document.getElementById("baum-hoehe").value);
-  if (BAUMHOEHEN.includes(hoehe)) aktuell.baumHoehe = hoehe;
+  aktuell.baeume = baeumeSumme(aktuell); // Summe aller Höhen
   const form = document.getElementById("baum-form").value;
   if (BAUMFORMEN.includes(form)) aktuell.baumForm = form;
   const sDicke = parseFloat(document.getElementById("staffage-dicke").value);
   if (DICKEN.includes(sDicke)) aktuell.staffageDicke = sDicke;
   aktuell.menschen = aktuell.figur1 + aktuell.figur2; // Summe für Warnung und Zusammenfassung
-  const detail = document.getElementById("figuren-detail").value;
-  if (FIGUREN_DETAIL.includes(detail)) aktuell.figurenDetail = detail;
+  // Form der Menschen wird hier NICHT gelesen, sondern nur, wenn man sie selbst
+  // umstellt (siehe einstellungenStarten). So bleibt „passend zum Maßstab“
+  // erhalten, solange man nichts anderes wählt.
   dickenfelderAnpassen();
   staffageWarnungZeigen();
 }
@@ -323,6 +362,12 @@ export function einstellungenStarten() {
       felderFuellen();
     });
   }
+
+  // Form der Menschen: nur übernehmen, wenn man sie selbst umstellt
+  // (läuft vor dem allgemeinen „input“ am Formular, das danach neu rechnet)
+  document.getElementById("figuren-detail").addEventListener("input", (ereignis) => {
+    if (FIGUREN_DETAIL.includes(ereignis.target.value)) aktuell.figurenDetail = ereignis.target.value;
+  });
 
   // Zurück auf die Werkstatt-Werte geht über die Vorlage „Jade HS Standard“
   // (der frühere Knopf „Auf Hochschul-Werte zurücksetzen“ wurde am 18.11. entfernt).
@@ -391,6 +436,8 @@ function werteAufraeumen(werte) {
   };
   const farbe = (wert, ersatz) => (typeof wert === "string" && /^#[0-9a-f]{6}$/i.test(wert) ? wert.toLowerCase() : ersatz);
   const f = werte.farben || {};
+  const b = baeumeUmrechnen({ ...werte }); // alte Vorlagen: eine Anzahl + eine Höhe
+  const baeume6 = anzahl(b.baeume6, 200), baeume10 = anzahl(b.baeume10, 200), baeume15 = anzahl(b.baeume15, 200);
   return {
     massstab: zahl(werte.massstab, STARTWERTE.massstab),
     dickeInnen: dicke(werte.dickeInnen, STARTWERTE.dickeInnen),
@@ -401,8 +448,10 @@ function werteAufraeumen(werte) {
     figur1: anzahl(werte.figur1, ANZAHLFELDER.figur1[1]),
     figur2: anzahl(werte.figur2, ANZAHLFELDER.figur2[1]),
     menschen: anzahl(werte.figur1, 200) + anzahl(werte.figur2, 200),
-    baeume: anzahl(werte.baeume, ANZAHLFELDER.baeume[1]),
-    baumHoehe: BAUMHOEHEN.includes(parseFloat(werte.baumHoehe)) ? parseFloat(werte.baumHoehe) : STARTWERTE.baumHoehe,
+    baeume: baeume6 + baeume10 + baeume15,
+    baeume6,
+    baeume10,
+    baeume15,
     baumForm: BAUMFORMEN.includes(werte.baumForm) ? werte.baumForm : STARTWERTE.baumForm,
     staffageDicke: dicke(werte.staffageDicke, STARTWERTE.staffageDicke),
     figurenDetail: FIGUREN_DETAIL.includes(werte.figurenDetail) ? werte.figurenDetail : STARTWERTE.figurenDetail,
