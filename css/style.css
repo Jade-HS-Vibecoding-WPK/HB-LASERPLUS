@@ -672,8 +672,9 @@ html.start-offen {
 }
 
 /* ---------- Arbeitsseite: Raster ---------- */
-/* Schmal: untereinander 1 → 2 → 3.
-   Breit: links Datei (oben) und Vorschau (unten), rechts die Einstellungen. */
+/* Schmal: untereinander 1 → 2 → 3 → 4.
+   Breit: links Datei (1), Menschen und Bäume (3) und Vorschau (4),
+   rechts die Einstellungen (2). */
 .raster {
   display: grid;
   gap: 1.5rem;
@@ -681,17 +682,23 @@ html.start-offen {
   grid-template-areas:
     "datei"
     "einstellungen"
+    "staffage"
     "vorschau";
 }
 .feld-datei { grid-area: datei; }
 .feld-einstellungen { grid-area: einstellungen; }
+.feld-staffage { grid-area: staffage; }
 .feld-vorschau { grid-area: vorschau; }
 
 @media (min-width: 1024px) {
   .raster {
     grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    /* übriger Platz geht an die Vorschau-Zeile, damit links
+       zwischen 1 und 3 keine Lücke entsteht */
+    grid-template-rows: auto auto 1fr;
     grid-template-areas:
       "datei    einstellungen"
+      "staffage einstellungen"
       "vorschau einstellungen";
     align-items: start;
   }

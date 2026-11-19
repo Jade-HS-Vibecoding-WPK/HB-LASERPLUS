@@ -1,7 +1,8 @@
 // =========================================================
 // Einstellungen und Laserfarben
 //
-// Hier steht alles, was man in Bereich 2 einstellt.
+// Hier steht alles, was man in Bereich 2 (Einstellungen) und
+// Bereich 3 (Menschen und Bäume) einstellt.
 // Die Seite merkt sich die Werte im Browser auf diesem Rechner
 // („localStorage“, eine Art Notizzettel im Browser).
 // Nichts davon geht an einen Server.
@@ -40,7 +41,10 @@ export const STARTWERTE = {
 };
 
 // Anzahl-Felder (0 ist erlaubt) mit Höchstwert
-const ANZAHLFELDER = { menschen: ["menschen", 50], baeume: ["baeume", 30] };
+// (seit 19.11. je 200, vorher 50 Menschen und 30 Bäume)
+const ANZAHLFELDER = { menschen: ["menschen", 200], baeume: ["baeume", 200] };
+// Ab mehr als 50 Menschen bzw. Bäumen erscheint eine Warnung (hält nichts auf)
+const WARNUNG_AB = 50;
 const BAUMHOEHEN = [6, 10, 15];
 
 // Erlaubte Werte für den Wandaufbau
@@ -119,6 +123,14 @@ function felderFuellen() {
   document.getElementById("baum-hoehe").value = String(aktuell.baumHoehe);
   document.getElementById("staffage-dicke").value = String(aktuell.staffageDicke);
   dickenfelderAnpassen();
+  staffageWarnungZeigen();
+}
+
+// Warnung unter den Feldern in Bereich 3, wenn sehr viele Menschen
+// oder Bäume eingestellt sind (mehr als 50). Man kann trotzdem weitermachen.
+function staffageWarnungZeigen() {
+  document.getElementById("warnung-menschen").hidden = !(aktuell.menschen > WARNUNG_AB);
+  document.getElementById("warnung-baeume").hidden = !(aktuell.baeume > WARNUNG_AB);
 }
 
 // Bei einer Schicht gibt es nur eine Pappdicke für die Wand:
@@ -206,7 +218,7 @@ function wandbildZeichnen() {
     `</svg>` +
     // 3D-Skizze einer Hausecke zum Drehen (js/wand3d.js)
     `<div class="wand3d">` +
-    `<p class="wand3d-titel">3D-Ecke · ziehen = drehen, Mausrad = zoomen, Doppelklick = zurück</p>` +
+    `<p class="wand3d-titel">3D-Ecke · ziehen = drehen, Doppelklick = zurück</p>` +
     `<svg id="wand3d-svg" tabindex="0" role="img" aria-label="3D-Skizze einer Hausecke zum Drehen"></svg>` +
     `</div>` +
     `<figcaption>${beschreibung} <span class="leise-klein">Skizze, Pappdicken vergrößert. In 3D: Die Nordwand läuft an der Ecke durch, die Westwand ist gekürzt.</span></figcaption>`;
@@ -247,6 +259,7 @@ function felderLesen() {
   const sDicke = parseFloat(document.getElementById("staffage-dicke").value);
   if (DICKEN.includes(sDicke)) aktuell.staffageDicke = sDicke;
   dickenfelderAnpassen();
+  staffageWarnungZeigen();
 }
 
 // ---------------------------------------------------------
@@ -271,20 +284,24 @@ function geaendert() {
 export function einstellungenStarten() {
   felderFuellen();
 
-  const formular = document.getElementById("einstellungen");
+  // Zwei Formulare auf der Seite: Bereich 2 (Einstellungen) und
+  // Bereich 3 (Menschen und Bäume). Beide werden gleich behandelt.
+  const formulare = [document.getElementById("einstellungen"), document.getElementById("staffage-formular")];
   // Die Vorlagen-Felder haben eigene Knöpfe und zählen hier nicht mit
   const istVorlagenFeld = (ziel) => ziel.id.startsWith("vorlage-");
-  // „input“ reagiert sofort beim Tippen oder Farbe-Ziehen
-  formular.addEventListener("input", (ereignis) => {
-    if (istVorlagenFeld(ereignis.target)) return;
-    felderLesen();
-    geaendert();
-  });
-  // Beim Verlassen eines Feldes ungültige Eingaben wieder zurücksetzen
-  formular.addEventListener("change", (ereignis) => {
-    if (istVorlagenFeld(ereignis.target)) return;
-    felderFuellen();
-  });
+  for (const formular of formulare) {
+    // „input“ reagiert sofort beim Tippen oder Farbe-Ziehen
+    formular.addEventListener("input", (ereignis) => {
+      if (istVorlagenFeld(ereignis.target)) return;
+      felderLesen();
+      geaendert();
+    });
+    // Beim Verlassen eines Feldes ungültige Eingaben wieder zurücksetzen
+    formular.addEventListener("change", (ereignis) => {
+      if (istVorlagenFeld(ereignis.target)) return;
+      felderFuellen();
+    });
+  }
 
   // Zurück auf die Werkstatt-Werte geht über die Vorlage „Jade HS Standard“
   // (der frühere Knopf „Auf Hochschul-Werte zurücksetzen“ wurde am 18.11. entfernt).
@@ -360,8 +377,8 @@ function werteAufraeumen(werte) {
     platteBreite: zahl(werte.platteBreite, STARTWERTE.platteBreite),
     platteHoehe: zahl(werte.platteHoehe, STARTWERTE.platteHoehe),
     wandaufbau: WANDAUFBAU.includes(werte.wandaufbau) ? werte.wandaufbau : STARTWERTE.wandaufbau,
-    menschen: anzahl(werte.menschen, 50),
-    baeume: anzahl(werte.baeume, 30),
+    menschen: anzahl(werte.menschen, ANZAHLFELDER.menschen[1]),
+    baeume: anzahl(werte.baeume, ANZAHLFELDER.baeume[1]),
     baumHoehe: BAUMHOEHEN.includes(parseFloat(werte.baumHoehe)) ? parseFloat(werte.baumHoehe) : STARTWERTE.baumHoehe,
     staffageDicke: dicke(werte.staffageDicke, STARTWERTE.staffageDicke),
     farben: {

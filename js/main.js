@@ -9,8 +9,9 @@
 //      Jede Datei wird gelesen (js/ifc-lesen.js) und bekommt eine Karte
 //      mit ✕ (entfernen), „Andere Datei wählen“ (austauschen) und ihrer
 //      Bauteil-Liste.
-//   2. Einstellungen (js/einstellungen.js), gelten für alle Gebäude.
-//   3. „Laserplatten erstellen“:
+//   2. Einstellungen (Bereich 2) und Menschen und Bäume (Bereich 3),
+//      beide in js/einstellungen.js, gelten für alle Gebäude.
+//   3. „Laserplatten erstellen“, Ergebnis in Bereich 4:
 //        je Gebäude Flächen flach legen (js/abwickeln.js)
 //        → Ecken und Schichten (js/schichten.js)
 //        → alle Teile gemeinsam auf Platten verteilen (js/verteilen.js)
@@ -396,7 +397,7 @@ function bauteileZeigen(g) {
   if (w.ohneAngabe) zeile("Wände ohne Angabe", String(w.ohneAngabe), "weder „Außen“ noch „Innen“");
   if (w.innen) zeile("Innenwände", String(w.innen), "werden nicht verwendet");
   if (e.vorhangfassaden) zeile("Vorhangfassaden", String(e.vorhangfassaden), "noch nicht unterstützt");
-  // Die Zahl der Dachflächen (Ebenen) steht nach „Laserplatten erstellen“ in Bereich 3
+  // Die Zahl der Dachflächen (Ebenen) steht nach „Laserplatten erstellen“ in Bereich 4
   zeile("Dächer", String(e.daecher), e.dachplatten ? "aus " + e.dachplatten + " Dachplatten" : "");
   zeile("Fenster", String(e.fenster), "");
   zeile("Türen", String(e.tueren), "");
@@ -452,7 +453,7 @@ function bauteileZeigen(g) {
 }
 
 // ---------------------------------------------------------
-// Laserplatten berechnen (Bereich 3)
+// Laserplatten berechnen (Bereich 4)
 // ---------------------------------------------------------
 function berechnen() {
   const fertig = gebaeude.filter((g) => g.info);
@@ -503,7 +504,7 @@ erstellenKnopf.addEventListener("click", () => {
 });
 
 // ---------------------------------------------------------
-// Modell-Vorschau (Bereich 3): alle Pappteile in 3D zusammengesetzt,
+// Modell-Vorschau (Bereich 4): alle Pappteile in 3D zusammengesetzt,
 // so wie das Modell nach dem Kleben aussieht. Ändert sich eine
 // Einstellung (z. B. Wandaufbau), wird neu gerechnet und neu gezeigt.
 // Mehrere Gebäude stehen nebeneinander (nicht in ihrer echten Lage).

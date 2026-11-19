@@ -9,12 +9,14 @@
 //
 // Ohne Bibliothek: Jede Pappe ist ein Quader. Die Flächen werden gedreht,
 // nach Entfernung sortiert (hinten zuerst) und als SVG gezeichnet.
-// Bedienung: ziehen = drehen, Mausrad = zoomen, Doppelklick = zurücksetzen.
+// Bedienung: ziehen = drehen, Doppelklick = zurücksetzen.
+// Zoomen gibt es bewusst nicht (seit 19.11.): Das Mausrad scrollt über
+// dem Bild ganz normal die Seite weiter.
 // Nur eine Skizze mit vergrößerten Pappdicken – nicht dein Gebäude.
 // =========================================================
 
 // Blickwinkel bleibt erhalten, wenn die Skizze neu gezeichnet wird
-const START = { dreh: -0.62, kipp: -0.45, zoom: 1 }; // schräg von außen und oben
+const START = { dreh: -0.62, kipp: -0.45 }; // schräg von außen und oben
 let blick = { ...START };
 
 const L = 60;  // Länge der gezeichneten Wandstücke
@@ -186,7 +188,7 @@ export function wand3dZeichnen(svg, { aufbau, dickeAussen, dickeInnen, farben })
     }
     // (Reihenfolge kommt schon aus reihenfolge(): Pappe für Pappe, hinten zuerst)
 
-    const s = 2.1 * blick.zoom;
+    const s = 2.1; // feste Größe (kein Zoom)
     const xy = (p) => `${(p[0] * s).toFixed(1)},${(-p[1] * s).toFixed(1)}`;
     let inhalt = "";
     for (const f of flaechen) {
@@ -214,11 +216,7 @@ export function wand3dZeichnen(svg, { aufbau, dickeAussen, dickeInnen, farben })
     malen();
   };
   svg.onpointerup = svg.onpointercancel = () => { ziehen = null; };
-  svg.onwheel = (e) => {
-    e.preventDefault();
-    blick.zoom = Math.max(0.5, Math.min(2.5, blick.zoom * (e.deltaY < 0 ? 1.1 : 1 / 1.1)));
-    malen();
-  };
+  // (kein Mausrad-Zoom mehr – das Mausrad scrollt die Seite)
   svg.ondblclick = () => {
     blick = { ...START };
     malen();
