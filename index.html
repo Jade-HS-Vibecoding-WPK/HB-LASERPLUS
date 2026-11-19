@@ -50,26 +50,30 @@
        ===================================================== -->
   <section id="startseite" class="startseite" aria-labelledby="start-titel">
     <!-- Knopf hell/dunkel (Mond = dunkel einschalten, Sonne = hell einschalten) -->
-    <button type="button" class="farbmodus-knopf" aria-label="Hell oder dunkel">
+    <button type="button" class="farbmodus-knopf auftritt" style="--schritt: 3" aria-label="Hell oder dunkel">
       <svg class="mond" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
       <svg class="sonne" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v2.5M12 20v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M1.5 12H4M20 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>
     </button>
+    <!-- Auftritt beim Öffnen (seit 19.11.): zuerst blendet das Logo ein, danach
+         erscheinen die anderen Teile nacheinander. Die Reihenfolge steht in
+         --schritt (1 = gleich nach dem Logo), siehe .auftritt in css/style.css. -->
     <div class="startseite-inhalt">
       <!-- Logo: Datei Bilder/logo.svg (DIN-A4-Seite), hier auf das Logo zugeschnitten -->
-      <svg class="logo-gross" viewBox="290 358 1899 2562" role="img" aria-label="Logo HB Laser">
+      <svg class="logo-gross auftritt" viewBox="290 358 1899 2562" role="img" aria-label="Logo HB Laser">
         <image href="Bilder/logo.svg" width="2481" height="3508"></image>
       </svg>
 
-      <h1 id="start-titel" class="titel text-3xl sm:text-4xl font-bold mt-8">IFC → Laser</h1>
-      <p class="mt-3 text-leise max-w-md mx-auto">Aus deinem Gebäudemodell wird ein Pappmodell: Datei ablegen, einstellen und fertige Laserdateien herunterladen.</p>
+      <!-- Name der App: seit 19.11. nicht mehr sichtbar, nur für Vorlese-Programme -->
+      <h1 id="start-titel" class="sr-only">IFC → Laser</h1>
+      <p class="mt-8 text-leise max-w-md mx-auto auftritt" style="--schritt: 1">Aus deinem Gebäudemodell wird ein Pappmodell: Datei ablegen, einstellen und fertige Laserdateien herunterladen.</p>
 
       <!-- Beispielbild: erscheint erst, wenn die Datei Bilder/beispiel.jpg existiert -->
-      <img src="Bilder/beispiel.jpg" alt="Beispiel: ein gelasertes Pappmodell" class="beispielbild" hidden onload="this.hidden = false">
+      <img src="Bilder/beispiel.jpg" alt="Beispiel: ein gelasertes Pappmodell" class="beispielbild auftritt" style="--schritt: 2" hidden onload="this.hidden = false">
 
-      <button type="button" class="knopf haupt-knopf start-knopf mt-8" id="start-knopf">
+      <button type="button" class="knopf haupt-knopf start-knopf mt-8 auftritt" style="--schritt: 2" id="start-knopf">
         Erstelle deine Laserdatei
       </button>
-      <p class="mt-4 text-xs text-leise">Deine Datei bleibt auf deinem Rechner. Nichts wird hochgeladen.</p>
+      <p class="mt-4 text-xs text-leise auftritt" style="--schritt: 3">Deine Datei bleibt auf deinem Rechner. Nichts wird hochgeladen.</p>
     </div>
   </section>
 

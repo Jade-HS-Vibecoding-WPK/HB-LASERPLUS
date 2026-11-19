@@ -509,6 +509,34 @@ html.start-offen {
   overflow: hidden;
 }
 
+/* Auftritt der Startseite beim Öffnen (seit 19.11.)
+   1. Das Logo blendet aus der Unschärfe ein und wird dabei leicht kleiner.
+   2. Danach erscheinen die anderen Teile nacheinander und steigen ein
+      Stück nach oben. --schritt im HTML legt die Reihenfolge fest,
+      jeder Schritt kommt eine halbe Sekunde später.
+   Klicken geht schon während des Auftritts. */
+.startseite .auftritt {
+  animation: auftritt 1.2s ease-out both;
+  animation-delay: calc(0.5s + var(--schritt, 1) * 0.5s);
+}
+.startseite .logo-gross.auftritt {
+  animation-name: logo-auftritt;
+  animation-duration: 1.6s;
+  animation-delay: 0.1s;
+}
+@keyframes auftritt {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes logo-auftritt {
+  from { opacity: 0; transform: scale(1.08); filter: blur(10px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+/* „Weniger Bewegung“ im System: alles sofort da, ohne Auftritt */
+@media (prefers-reduced-motion: reduce) {
+  .startseite .auftritt { animation: none; }
+}
+
 /* Logo: groß auf der Startseite, klein in der Kopfzeile */
 .logo-gross {
   display: block;
