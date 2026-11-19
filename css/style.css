@@ -588,6 +588,10 @@ summary {
 .platzhalter img.start-bild-laser {
   object-position: 50% 0%;
 }
+/* 3D-Druck-Bild: Ausschnitt etwas weiter oben, das Haus rückt nach unten (Wunsch Alison, 19.11.) */
+.platzhalter img.start-bild-3d {
+  object-position: 50% 25%;
+}
 
 /* Kleiner Textknopf „← Startseite“ */
 .zurueck-link {
