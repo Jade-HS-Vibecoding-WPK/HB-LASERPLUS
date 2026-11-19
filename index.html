@@ -323,6 +323,15 @@
                 <option value="15">15 m (groß)</option>
               </select>
             </label>
+            <!-- Baumform (seit 19.11.): detailliert = Svenjas Baum aus
+                 staffage-dxf/Baum.dxf (js/staffage-baum.js), einfach = runde Krone -->
+            <label class="flex flex-col gap-1 text-sm">
+              Baumform
+              <select class="feld" id="baum-form">
+                <option value="detailliert" selected>detailliert</option>
+                <option value="einfach">einfach</option>
+              </select>
+            </label>
             <label class="flex flex-col gap-1 text-sm">
               Pappdicke
               <select class="feld" id="staffage-dicke">
@@ -347,7 +356,7 @@
             <p id="warnung-menschen" hidden><span class="text-akzent font-bold">!</span> Bist du dir sicher, dass du so viele Menschen lasern möchtest?</p>
             <p id="warnung-baeume" hidden><span class="text-akzent font-bold">!</span> Bist du dir sicher, dass du so viele Bäume lasern möchtest?</p>
           </div>
-          <p class="text-xs text-leise mt-3">Selbst gezeichnete Formen, frei nutzbar. Menschen als eigene Figuren in echter Größe (ca. 1,70–1,83 m), Bäume als Steckbaum aus zwei Teilen (A und B über Kreuz stecken), im eingestellten Maßstab. Ist die Pappdicke anders als bei den Wänden, kommen sie auf eine eigene Platte.</p>
+          <p class="text-xs text-leise mt-3">Selbst gezeichnete Formen, frei nutzbar. Menschen als eigene Figuren in echter Größe (ca. 1,70–1,83 m), Bäume als Steckbaum aus zwei Teilen (A und B über Kreuz stecken), im eingestellten Maßstab; der Schlitz ist so breit wie die Pappe. Beim detaillierten Baum wird der Stamm in kleinen Maßstäben etwas breiter, damit der Schlitz passt. Ist der Baum dafür zu klein, kommt der einfache. Ist die Pappdicke anders als bei den Wänden, kommen sie auf eine eigene Platte.</p>
         </form>
       </section>
 

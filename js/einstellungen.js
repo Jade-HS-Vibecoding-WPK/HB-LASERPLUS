@@ -36,6 +36,9 @@ export const STARTWERTE = {
   menschen: 0,
   baeume: 0,
   baumHoehe: 10, // m
+  // Baumform (seit 19.11.): "detailliert" = Svenjas Baum (js/staffage-baum.js),
+  // "einfach" = runde Krone
+  baumForm: "detailliert",
   staffageDicke: 1, // mm, Pappe für Menschen und Bäume
   // Eigene Figuren (seit 19.11.): Anzahl je Figur; „menschen“ ist die Summe.
   // Detail: "auto" (nach Maßstab) | "fein" | "einfach"
@@ -52,6 +55,7 @@ const ANZAHLFELDER = { figur1: ["figur1-anzahl", 200], figur2: ["figur2-anzahl",
 // Ab mehr als 50 Menschen bzw. Bäumen erscheint eine Warnung (hält nichts auf)
 const WARNUNG_AB = 50;
 const BAUMHOEHEN = [6, 10, 15];
+const BAUMFORMEN = ["detailliert", "einfach"];
 
 // Erlaubte Werte für den Wandaufbau
 export const WANDAUFBAU = ["zwei", "eine-geritzt", "eine-ohne"];
@@ -131,6 +135,7 @@ function felderFuellen() {
     document.getElementById(id).value = String(aktuell[name]);
   }
   document.getElementById("baum-hoehe").value = String(aktuell.baumHoehe);
+  document.getElementById("baum-form").value = aktuell.baumForm;
   document.getElementById("staffage-dicke").value = String(aktuell.staffageDicke);
   document.getElementById("figuren-detail").value = aktuell.figurenDetail;
   dickenfelderAnpassen();
@@ -267,6 +272,8 @@ function felderLesen() {
   }
   const hoehe = parseFloat(document.getElementById("baum-hoehe").value);
   if (BAUMHOEHEN.includes(hoehe)) aktuell.baumHoehe = hoehe;
+  const form = document.getElementById("baum-form").value;
+  if (BAUMFORMEN.includes(form)) aktuell.baumForm = form;
   const sDicke = parseFloat(document.getElementById("staffage-dicke").value);
   if (DICKEN.includes(sDicke)) aktuell.staffageDicke = sDicke;
   aktuell.menschen = aktuell.figur1 + aktuell.figur2; // Summe für Warnung und Zusammenfassung
@@ -396,6 +403,7 @@ function werteAufraeumen(werte) {
     menschen: anzahl(werte.figur1, 200) + anzahl(werte.figur2, 200),
     baeume: anzahl(werte.baeume, ANZAHLFELDER.baeume[1]),
     baumHoehe: BAUMHOEHEN.includes(parseFloat(werte.baumHoehe)) ? parseFloat(werte.baumHoehe) : STARTWERTE.baumHoehe,
+    baumForm: BAUMFORMEN.includes(werte.baumForm) ? werte.baumForm : STARTWERTE.baumForm,
     staffageDicke: dicke(werte.staffageDicke, STARTWERTE.staffageDicke),
     figurenDetail: FIGUREN_DETAIL.includes(werte.figurenDetail) ? werte.figurenDetail : STARTWERTE.figurenDetail,
     farben: {
