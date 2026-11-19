@@ -18,6 +18,7 @@ const FARBEN = {
   A: [216, 205, 189],   // Außenschicht / eine Schicht: Graupappe hell
   I: [169, 157, 138],   // Innenschicht: Graupappe dunkler
   dach: [205, 97, 72],  // Dach: Logo-Orange, damit man es gut unterscheidet
+  decke: [140, 150, 160], // Untersicht (U): kühles Grau, damit man sie von unten erkennt
 };
 
 // ---------------------------------------------------------
@@ -114,7 +115,7 @@ export function modellTeile(flaechen, teile, k, ritzFarbe, versatz = [0, 0]) {
   for (const t of teile) {
     const f = flaechen[t.flaecheIndex];
     if (!f) continue;
-    const farbe = t.wofuer === "dach" ? FARBEN.dach : t.schicht === "I" ? FARBEN.I : FARBEN.A;
+    const farbe = t.wofuer === "dach" ? FARBEN.dach : t.wofuer === "decke" ? FARBEN.decke : t.schicht === "I" ? FARBEN.I : FARBEN.A;
     // 2D-Punkt des Teils (mm) + Tiefe (mm, nach innen) → 3D-Punkt im Betrachter (mm, z oben)
     const punkt = (p, tief) => {
       const w = zu3d(f, [p[0] / k, p[1] / k]); // Meter, web-ifc: y oben, Norden = −z

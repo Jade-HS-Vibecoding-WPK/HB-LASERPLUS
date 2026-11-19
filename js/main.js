@@ -24,7 +24,7 @@
 // =========================================================
 
 import { einstellungenStarten, beiAenderung, holeEinstellungen } from "./einstellungen.js";
-import { platteAlsDxf, dxfHerunterladen, rahmenLinie, EBENEN } from "./dxf.js";
+import { platteAlsDxf, dxfHerunterladen, rahmenLinie, EBENEN, zipErstellen, blobHerunterladen } from "./dxf.js";
 import { flaechenFinden } from "./abwickeln.js";
 import { eckenFinden, teileBauen } from "./schichten.js";
 import { verteilen } from "./verteilen.js";
@@ -291,9 +291,10 @@ function lesen(g) {
       if (!gilt()) return;
       g.info = info;
       // Nicht klassifizierte Bauteile: Gibt es sonst keine Wände und kein Dach,
-      // ist der Morph wohl das ganze Gebäude
+      // ist der Morph wohl das ganze Gebäude. Morphs (seit 19.11.) nimmt die App
+      // immer als Wand und Dach, z. B. ein Nebengebäude neben dem Haus.
       const sonstLeer = info.waende.aussen + info.waende.ohneAngabe === 0 && info.daecher === 0;
-      for (const p of info.ohneKlasse) g.proxyWahl.set(p.id, sonstLeer ? "koerper" : "ignorieren");
+      for (const p of info.ohneKlasse) g.proxyWahl.set(p.id, sonstLeer || p.morph ? "koerper" : "ignorieren");
       karteFuellen(g, "✓ gelesen");
       bauteileZeigen(g);
     } catch (fehler) {
@@ -401,7 +402,7 @@ function bauteileZeigen(g) {
   zeile("Dächer", String(e.daecher), e.dachplatten ? "aus " + e.dachplatten + " Dachplatten" : "");
   zeile("Fenster", String(e.fenster), "");
   zeile("Türen", String(e.tueren), "");
-  if (e.decken) zeile("Decken / Böden", String(e.decken), "werden nicht verwendet");
+  if (e.decken) zeile("Decken / Böden", String(e.decken), "von unten sichtbar → Untersicht (U)");
   zeile("Ohne Klassifizierung", String(e.ohneKlasse.length), "");
 
   const hinweise = element("ul", "mt-3 space-y-2");
@@ -541,6 +542,7 @@ function modellZeigen() {
     [[216, 205, 189], aufbau === "zwei" ? "Außenschicht (A)" : "Wand (A)"],
     ...(aufbau === "zwei" ? [[[169, 157, 138], "Innenschicht (I)"]] : []),
     [[205, 97, 72], "Dach (D)"],
+    ...(teile.some((t) => t.wofuer === "decke") ? [[[140, 150, 160], "Untersicht (U)"]] : []),
   ];
   modellLegende.replaceChildren(
     ...eintraege.map(([farbe, text]) => {
@@ -607,6 +609,7 @@ function zeigeErgebnis() {
   // Zusammenfassung
   const fassaden = new Set(teile.filter((t) => t.wofuer === "fassade").map((t) => t.gebaeude + ":" + t.flaecheIndex)).size;
   const dach = teile.filter((t) => t.wofuer === "dach").length;
+  const untersichten = teile.filter((t) => t.wofuer === "decke").length;
   plattenFeld.append(
     element(
       "p",
@@ -614,8 +617,11 @@ function zeigeErgebnis() {
       (mehrere ? `${liste.length} Gebäude: ` : "") +
         `${fassaden} Fassaden (${
           (e.wandaufbau || "zwei") === "zwei" ? "je Außen- und Innenschicht" : e.wandaufbau === "eine-geritzt" ? "je eine Schicht, Öffnungen geritzt" : "je eine Schicht, ohne Öffnungen"
-        }) und ${dach} Dachflächen` +
-        (e.menschen ? `, ${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"}` : "") +
+        }), ${dach} Dachflächen` +
+        (untersichten ? `, ${untersichten} ${untersichten === 1 ? "Untersicht" : "Untersichten"}` : "") +
+        (e.menschen
+          ? `, ${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"} (${e.figur1 || 0} × Figur 1, ${e.figur2 || 0} × Figur 2)`
+          : "") +
         (e.baeume ? `, ${e.baeume} ${e.baeume === 1 ? "Baum" : "Bäume"} (je 2 Teile)` : "") +
         ` = ${teile.length} Teile ` +
         `auf ${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} (Maßstab 1:${e.massstab}).`
@@ -663,18 +669,31 @@ function zeigeErgebnis() {
 // ---------------------------------------------------------
 function dateiBasis() {
   if (!ergebnis || ergebnis.gebaeude.length !== 1) return "Mehrere-Gebaeude";
-  const basis = ergebnis.gebaeude[0].name.replace(/\.ifc\s*$/i, "").trim().replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, "-");
+  const basis = ergebnis.gebaeude[0].name
+    .replace(/\.ifc\s*$/i, "")
+    .trim()
+    .replace(/[^A-Za-z0-9ÄÖÜäöüß_-]+/g, "-")
+    .replace(/-{2,}/g, "-") // „Lasern - Vorstellung“ → „Lasern-Vorstellung“
+    .replace(/^-|-$/g, "");
   return basis || "Modell";
+}
+
+// Dateiname und Inhalt der DXF einer Platte,
+// z. B. „…_Platte-02-von-03_Pappe-1-5mm.dxf“ (Nummer und Pappdicke im Namen)
+function platteAlsDatei(i) {
+  const { platten, einstellungen: e } = ergebnis;
+  const zwei = (z) => String(z).padStart(2, "0");
+  const dicke = String(platten[i].dicke).replace(".", "-") + "mm";
+  return {
+    name: `${dateiBasis()}_Platte-${zwei(i + 1)}-von-${zwei(platten.length)}_Pappe-${dicke}.dxf`,
+    text: platteAlsDxf(platten[i], e.farben),
+  };
 }
 
 function platteHerunterladen(i) {
   if (!ergebnis) return;
-  const { platten, einstellungen: e } = ergebnis;
-  const zwei = (z) => String(z).padStart(2, "0");
-  const text = platteAlsDxf(platten[i], e.farben);
-  // Pappdicke im Dateinamen, z. B. „…_Platte-02-von-03_Pappe-1-5mm.dxf“
-  const dicke = String(platten[i].dicke).replace(".", "-") + "mm";
-  dxfHerunterladen(text, `${dateiBasis()}_Platte-${zwei(i + 1)}-von-${zwei(platten.length)}_Pappe-${dicke}.dxf`);
+  const { name, text } = platteAlsDatei(i);
+  dxfHerunterladen(text, name);
 }
 
 // 1.5 → „1,5 mm“
@@ -682,10 +701,17 @@ function mmText(z) {
   return String(z).replace(".", ",") + " mm";
 }
 
+// Alle Platten auf einmal: EINE ZIP-Datei, darin je Platte eine eigene DXF
+// (seit 19.11.; vorher mehrere Downloads nacheinander – viele Browser nehmen
+// davon nur den ersten an). Eine einzelne Platte kommt direkt als DXF.
 alleDxfKnopf.addEventListener("click", () => {
-  if (!ergebnis) return;
-  // nacheinander, damit der Browser jede Datei annimmt
-  ergebnis.platten.forEach((p, i) => setTimeout(() => platteHerunterladen(i), i * 500));
+  if (!ergebnis || !ergebnis.platten.length) return;
+  if (ergebnis.platten.length === 1) {
+    platteHerunterladen(0);
+    return;
+  }
+  const dateien = ergebnis.platten.map((p, i) => platteAlsDatei(i));
+  blobHerunterladen(zipErstellen(dateien), `${dateiBasis()}_Laserplatten-${ergebnis.platten.length}-DXF.zip`);
 });
 
 druckKnopf.addEventListener("click", () => {

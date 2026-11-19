@@ -10,8 +10,9 @@
 //   - Format (IFC2X3 / IFC4) und Längeneinheit
 //   - Wände: außen, innen, ohne Angabe (Eigenschaft IsExternal)
 //   - Dach: IfcRoof und seine Dachflächen (IfcSlab mit ROOF)
-//   - Fenster, Türen, Decken
-//   - Bauteile ohne Klassifizierung (IfcBuildingElementProxy, z. B. Morphs)
+//   - Fenster, Türen, Decken (seit 19.11. mit Geometrie: Untersichten, art „decke“)
+//   - Bauteile ohne Klassifizierung (IfcBuildingElementProxy, z. B. Morphs;
+//     Morphs werden erkannt und automatisch als Wand und Dach genommen)
 //   - „freie Form“: Geometrie als Netz gespeichert, wie bei einem Morph
 // Die Geometrie selbst (Fassaden abwickeln) kommt im nächsten Schritt.
 // =========================================================
@@ -272,6 +273,7 @@ function auswerten(modell) {
   // Platten (IfcSlab): mit ROOF gehören sie zum Dach, sonst sind es Decken/Böden
   const plattenArten = [WebIFC.IFCSLAB, WebIFC.IFCSLABSTANDARDCASE, WebIFC.IFCSLABELEMENTEDCASE];
   let decken = 0, einzelneDachplatten = 0;
+  const deckenIds = []; // Decken/Böden: ihre von unten sichtbaren Flächen werden Untersichten (U)
   const plattenIds = new Set(plattenArten.flatMap((art) => idsVon(modell, art)));
   for (const id of plattenIds) {
     if (dachflaechen.has(id)) continue;
@@ -281,6 +283,7 @@ function auswerten(modell) {
       einzelneDachplatten++;
     } else {
       decken++;
+      deckenIds.push(id);
     }
   }
   // Wie viele Dachplatten (IfcSlab) stecken in den Dächern? Schichten zählen nicht.
@@ -304,9 +307,17 @@ function auswerten(modell) {
   const vorhangfassaden = anzahl(WebIFC.IFCCURTAINWALL);
 
   // --- Bauteile ohne Klassifizierung (z. B. nicht klassifizierte Morphs) ---
+  // morph = sieht nach einem Archicad-Morph aus (Name „Modellkörper …“ / „Morph …“
+  // oder als Morph bezeichnet). Morphs nimmt die App automatisch als Wand und Dach,
+  // andere unbekannte Bauteile (z. B. Möbel-Objekte) bleiben auf „Ignorieren“.
   const ohneKlasse = idsVon(modell, WebIFC.IFCBUILDINGELEMENTPROXY).map((id) => {
     const b = zeile(modell, id);
-    return { id, name: String(wert(b && b.Name) || "ohne Namen") };
+    const name = String(wert(b && b.Name) || "ohne Namen");
+    const morph =
+      eig.morph.has(id) ||
+      /morph/i.test(String(wert(b && b.ObjectType) || "")) ||
+      /^\s*(modellk(ö|oe)rper|morph)/i.test(name);
+    return { id, name, morph };
   });
 
   // --- Geometrie der Gebäudehülle (Dreiecke) ---
@@ -329,6 +340,20 @@ function auswerten(modell) {
   }
   for (const p of ohneKlasse) {
     for (const g of mitTeilen(p.id)) if (!artVon.has(g)) artVon.set(g, { art: "proxy", bauteil: p.id });
+  }
+  // Decken/Böden (seit 19.11.): Sie verdecken beim „Blick nach außen“ (z. B. die
+  // Decke über einem Rücksprung), und ihre von unten sichtbare Fläche wird eine
+  // Untersicht. Ihre senkrechten Kanten gehören zur Fassade, wenn sie außen liegen.
+  for (const id of deckenIds) {
+    for (const g of mitTeilen(id)) if (!artVon.has(g)) artVon.set(g, { art: "decke", bauteil: id });
+  }
+  // Fenster und Türen (seit 19.11.): werden nicht gelasert, sie helfen nur beim
+  // Erkennen von Rücksprüngen (wer nur durch ein Fenster hinaussieht, ist innen)
+  const oeffnungIds = new Set(
+    [WebIFC.IFCWINDOW, WebIFC.IFCWINDOWSTANDARDCASE, WebIFC.IFCDOOR, WebIFC.IFCDOORSTANDARDCASE].flatMap((art) => idsVon(modell, art))
+  );
+  for (const id of oeffnungIds) {
+    for (const g of mitTeilen(id)) if (!artVon.has(g)) artVon.set(g, { art: "oeffnung", bauteil: id });
   }
   const huelle = dreieckeHolen(modell, artVon);
 
@@ -362,9 +387,14 @@ function auswerten(modell) {
     hinweise.push("Kein Dach gefunden. Prüfe, ob das Dach bzw. der Dach-Morph in Archicad als Dach klassifiziert ist.");
   }
   if (ohneKlasse.length > 0 && !nurOhneKlasse) {
+    const morphs = ohneKlasse.filter((p) => p.morph).length;
     hinweise.push(
       anzahlText(ohneKlasse.length, "Bauteil ist", "Bauteile sind") +
-      " nicht klassifiziert, z. B. Morphs. Lege unten fest, was sie sind, oder klassifiziere sie in Archicad als Wand bzw. Dach."
+      " nicht klassifiziert" +
+      (morphs
+        ? `, davon ${anzahlText(morphs, "Morph", "Morphs")}. Morphs nimmt die App als Wand und Dach (ganzer Gebäudekörper).`
+        : ", z. B. Morphs.") +
+      " Lege unten fest, was sie sind, oder klassifiziere sie in Archicad als Wand bzw. Dach."
     );
   }
   if (vorhangfassaden > 0) {

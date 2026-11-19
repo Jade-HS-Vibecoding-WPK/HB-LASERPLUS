@@ -327,9 +327,14 @@
         </h2>
         <form id="staffage-formular">
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <!-- Menschen: Anzahl je Figur (seit 19.11., js/staffage-figuren.js) -->
             <label class="flex flex-col gap-1 text-sm">
-              Menschen
-              <input class="feld" type="number" id="menschen" value="0" min="0" max="200" step="1">
+              Menschen Figur 1
+              <input class="feld" type="number" id="figur1-anzahl" value="0" min="0" max="200" step="1">
+            </label>
+            <label class="flex flex-col gap-1 text-sm">
+              Menschen Figur 2
+              <input class="feld" type="number" id="figur2-anzahl" value="0" min="0" max="200" step="1">
             </label>
             <label class="flex flex-col gap-1 text-sm">
               Bäume
@@ -351,6 +356,15 @@
                 <option value="2">2 mm</option>
               </select>
             </label>
+            <!-- Eigene Menschen-Figuren (js/staffage-figuren.js), seit 19.11. -->
+            <label class="flex flex-col gap-1 text-sm col-span-2">
+              Detail der Figuren
+              <select class="feld" id="figuren-detail">
+                <option value="auto" selected>passend zum Maßstab</option>
+                <option value="fein">fein (für 1:20 bis 1:50)</option>
+                <option value="einfach">einfach (für 1:100 bis 1:200)</option>
+              </select>
+            </label>
           </div>
           <!-- Warnung bei mehr als 50 Menschen bzw. Bäumen (js/einstellungen.js).
                Sie hält nichts auf, man kann trotzdem weitermachen. -->
@@ -358,7 +372,7 @@
             <p id="warnung-menschen" hidden><span class="text-akzent font-bold">!</span> Bist du dir sicher, dass du so viele Menschen lasern möchtest?</p>
             <p id="warnung-baeume" hidden><span class="text-akzent font-bold">!</span> Bist du dir sicher, dass du so viele Bäume lasern möchtest?</p>
           </div>
-          <p class="text-xs text-leise mt-3">Selbst gezeichnete Formen, frei nutzbar. Menschen 1,75 m mit Fußlasche, Bäume als Steckbaum aus zwei Teilen (A und B über Kreuz stecken), im eingestellten Maßstab. Ist die Pappdicke anders als bei den Wänden, kommen sie auf eine eigene Platte.</p>
+          <p class="text-xs text-leise mt-3">Selbst gezeichnete Formen, frei nutzbar. Menschen als eigene Figuren in echter Größe (ca. 1,70–1,83 m), Bäume als Steckbaum aus zwei Teilen (A und B über Kreuz stecken), im eingestellten Maßstab. Ist die Pappdicke anders als bei den Wänden, kommen sie auf eine eigene Platte.</p>
         </form>
       </section>
 

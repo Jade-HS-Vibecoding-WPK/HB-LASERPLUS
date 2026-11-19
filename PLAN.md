@@ -1,6 +1,6 @@
 # PLAN – Von der IFC-Datei zum Pappmodell
 
-> Stand: Dienstag, 17.11.2026, abends · WPK Vibecoding (vollständige Version läuft: IFC → Laserplatten → DXF und Übersichtsblatt, mit drei Test-IFCs geprüft · Nummern A/I/D mit Legende · Startseite mit Logo, Arbeitsseite zweigeteilt)
+> Stand: Donnerstag, 19.11.2026 · WPK Vibecoding (vollständige Version läuft: IFC → Laserplatten → DXF und Übersichtsblatt, mit fünf Test-IFCs geprüft · Nummern A/I/D/U mit Legende · Rücksprünge, Untersichten und Morphs als Nebengebäude · Startseite mit Auftritt, Arbeitsseite mit vier Bereichen)
 > Das ist unser gemeinsamer Fahrplan für die Kurswoche. Wenn sich etwas ändert, ändern wir es hier.
 
 ---
@@ -47,7 +47,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 | Zerlegung | Plattenmodell: das Dach und jede Außenwand (Fassadenseite) als eigene Pappe |
 | Wandaufbau | 2 Schichten: Innenschicht geschlossen und tragend, Außenschicht mit ausgeschnittenen Fenstern und Türen, aufgeklebt |
 | Dach | 1 Schicht |
-| Weitere Teile | Keine, also keine Bodenplatte, keine Geschossdecken und keine Innenwände |
+| Weitere Teile | Keine Bodenplatte, keine Geschossdecken im Inneren und keine Innenwände. **Seit 19.11.:** Decken, die man von außen sieht (Untersicht, z. B. über einem Rücksprung), werden ein eigenes Teil `U-001` |
 | Formen | Gerade Wände, schräge Winkel und Steildach. Runde Wände kommen erst später |
 | Ecken | Überlappend: Eine Wand läuft durch, die andere ist um die Pappdicke kürzer. Das gilt für rechte **und** schräge Winkel. Am First überlappt eine Dachplatte die andere |
 | Verbindung | Kleben ist Pflicht, ein Stecksystem kommt als Extra dazu |
@@ -89,6 +89,7 @@ Das Außenmaß des Modells bleibt genau richtig. Die App rechnet die Kürzungen 
 12. **Vorschau** der Laserplatten in der App, bevor man herunterlädt, **wie die echte Laserplatte** (eigene Gestaltungsentscheidung).
 13. **Aussehen:** Farbpalette, Century Gothic mit Google-Fonts-Ersatz, Tailwind, hell und dunkel nach Systemeinstellung.
 14. **Veröffentlicht** unter einem Link, am Donnerstag bis 12 Uhr.
+15. **Rücksprünge und Untersichten** (seit 19.11. Must, Entscheidung von Svenja: „sonst ist die App fehlerhaft“): Springt eine Wand zurück (z. B. Arkade im Erdgeschoss), bekommen Rückwand und Seitenwände eigene Teile, die Öffnung bleibt auch innen offen, und die Decke darüber wird ein eigenes Teil (`U-001`), damit man von unten nicht ins Modell hineinschaut.
 
 #### Stand der Must-Punkte (17.11. abends)
 
@@ -97,7 +98,7 @@ Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Au�
 | Must | Stand |
 |---|---|
 | 1 Webseite, Datei ablegen | ✅ |
-| 2 Außenwände, Dach, Morphs erkennen | ✅ auch Wände, die Archicad in Schichten zerlegt (IfcBuildingElementPart). Nicht klassifizierte Morphs: Auswahl per Klick „Wand und Dach / Wand / Dach / Ignorieren“ (damit ist Should 5 auch erledigt) |
+| 2 Außenwände, Dach, Morphs erkennen | ✅ auch Wände, die Archicad in Schichten zerlegt (IfcBuildingElementPart). Nicht klassifizierte Morphs: Auswahl per Klick „Wand und Dach / Wand / Dach / Ignorieren“ (damit ist Should 5 auch erledigt). Seit 19.11. ist bei Morphs „Wand und Dach“ voreingestellt (vorher „Ignorieren“, sobald es Wände gab – darum fehlte ein Morph-Nebengebäude), und ein getrennt stehender Morph verdeckt das Haus beim Strahltest nicht mehr |
 | 3 Fassaden flach als Platte | ✅ gerade und schräge Wände, Giebel, Walm- und Satteldach. Fenster werden Löcher, eine Tür bis zum Boden wird eine Aussparung in der Außenschicht (Innenschicht bleibt geschlossen) – mit Test 03 geprüft. Ränder der Fensterlaibungen werden ignoriert, kleine Stufen geglättet |
 | 4 Zwei Schichten | ✅ |
 | 5 Einstellungen | ✅ Änderungen rechnen die Platten sofort neu |
@@ -110,12 +111,15 @@ Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Au�
 | 12 Vorschau | ✅ |
 | 13 Aussehen | ✅ Seit 17.11. abends: Startseite mit Logo und Knopf „Erstelle deine Laserdatei“, Arbeitsseite zweigeteilt (links Datei und Vorschau, rechts Einstellungen). **Offen: Beispielbild** als `Bilder/beispiel.jpg` (am besten ein Foto vom gelaserten Modell) |
 | 14 Veröffentlichen | offen (Donnerstag) |
+| 15 Rücksprünge, Untersichten | ✅ seit 19.11., geprüft mit „Testdatei zum Lasern - Vorstellung“ (Rücksprung 4,26 × 1 m im Erdgeschoss mit Decke „RD-001“): Rückwand und beide Seitenwände als A/I-Teile, Öffnung in der Innenschicht offen, Seitenwände und Untersicht vorne um die Fassaden-Pappe gekürzt (bei 1:50 mit 1 + 1,5 mm: 17,5 mm statt 20 mm), Untersicht U-001 85,2 × 17,5 mm genau zwischen den Seitenwänden. **Grenzen (ehrlich):** Rücksprünge erst ab 70 cm Tiefe (flachere Nischen bekommen keine Seitenwände), Untersichten nur aus Decken und Morphs mindestens 50 cm über dem tiefsten Punkt, keine Untersicht für Dachüberstände. Noch nicht in CAD geöffnet und nicht gelasert |
 
 **Bekannte Vereinfachungen (ehrlich):**
 - Die Dachplatten haben die Pappdicke innen.
 - Norden ist der Projekt-Norden der IFC. Die echte Nordrichtung („TrueNorth“) wird noch nicht gelesen (Should 4).
 - Verteilt wird über die umgebenden Rechtecke der Teile, das lässt etwas Pappe übrig (Could 4).
 - web-ifc 0.0.78: Der Befehl `StreamMeshes` hat einen Fehler, wir nutzen stattdessen `StreamAllMeshes`.
+- Seit 19.11. dauert das Rechnen länger (zusätzlicher Seitenblick für Rücksprünge): die Testdatei mit 2,6 MB etwa 6 Sekunden statt 4.
+- Übersichtsblatt: Bei einem Rücksprung liegen im Grundriss Nummern und Ecken-Kreise eng übereinander (lesbar, aber gedrängt).
 
 ### Should
 
@@ -138,7 +142,7 @@ Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Au�
 ### Nicht diese Woche (bewusst später)
 
 - Runde Wände (dein „2. Schritt“)
-- Innenwände, Geschossdecken, Bodenplatte
+- Innenwände, Geschossdecken im Inneren, Bodenplatte (Decken, die man von außen sieht, gibt es seit 19.11. als Untersicht)
 - Umgebungsmodell: Gebäude in ihrer echten Lage zueinander (Lageplan), Gelände. (Mehrere Gebäude auf einmal gehen seit 18.11., aber jedes für sich.)
 
 ---
@@ -221,10 +225,21 @@ Wir arbeiten mit zwei Branches in GitHub (Regeln dazu: CLAUDE.md, Regel 11).
 
 - ✅ **Wandaufbau wählbar** (Wunsch von Alison, 18.11., bewusst vor dem Freeze gebaut): „Zwei Schichten“ (wie bisher), „Eine Schicht, Fenster und Türen geritzt“ oder „Eine Schicht, ohne Fenster und Türen“. Bei einer Schicht gibt es nur eine Pappdicke (Feld „Pappdicke Wand und Dach“), die Nummern bleiben `A-001`, die Ecken werden mit dieser einen Dicke ausgeglichen. Geritzte Fenster sind geschlossene blaue Linien; Türen bis zum Boden werden als offener blauer Linienzug geritzt (ohne die Unterkante, denn dort schneidet schon die rote Linie – sonst würde dieselbe Kante zweimal gelasert). Die Wand bleibt unten geschlossen. Übersichtsblatt (Legende, Teileliste, Kleben) passt sich an. Der Wandaufbau wird in Vorlagen mitgespeichert. **Ehrlich:** bisher nur mit einer ausgedachten Fassade im Browser geprüft, noch **nicht mit einer echten IFC** (die Test-IFCs liegen nicht auf Alisons Rechner) und noch nicht in CAD/Lasersoftware. Offen: Akzeptiert die Werkstatt offene Ritzlinien (Tür)?
 - ✅ **Übersichtsblatt: Ecken erklärt** (18.11.): Im Grundriss Ecken-Nummern E1, E2 … (die durchlaufende Fassade geht bis in die Ecke, die gekürzte hört kurz davor auf), Nordpfeil links daneben, eine Detailskizze einer Außenecke und eine Tabelle je Ecke: Art und Winkel, welche Platten durchlaufen (z. B. A-001 + I-001) und welche gekürzt dagegen stoßen; auch First, Grat und Kehle. Mit einem ausgedachten Haus geprüft (Maße stimmen), von Alison im Druckfenster angeschaut.
-- ✅ **Vorschaubild zum Wandaufbau** (18.11.): Unter der Auswahl „Wandaufbau“ eine kleine Skizze, die sich beim Umschalten sofort ändert: **Ansicht** (Haus mit Fenstern und Tür, Linien in den Laserfarben), **Schnitt** (Pappen mit Dicke, z. B. „1 + 2 mm“) und eine **drehbare 3D-Ecke** (ziehen = drehen, Mausrad = zoomen, Doppelklick = zurück; `js/wand3d.js`, ohne Bibliothek, eigener kleiner Zeichner – bewusst **nicht** Svenjas 3D-Betrachter aus `zusatz-3d`, damit die Branches getrennt bleiben). Nur eine Skizze mit vergrößerten Pappdicken, nicht das eigene Gebäude.
-- ✅ **Modell-Vorschau „So wird dein Modell (3D)“** (18.11., Should 1): In Bereich 3, nach „Laserplatten erstellen“. Die App setzt **genau die berechneten Pappteile** wieder in 3D zusammen – mit echten Maßen, Pappdicken, Eckenausgleich, ausgeschnittenen bzw. geritzten (blau) Öffnungen; Außenschicht hell, Innenschicht dunkler, Dach orange. Folgt jeder Einstellung (z. B. Wandaufbau) sofort. Mehrere Gebäude stehen nebeneinander, nicht in ihrer echten Lage. Drehen, Zoomen, Doppelklick = zurück. Technik: `js/modell3d.js` (Teile zurück an ihre Fläche legen, Umrisse mit Löchern in Dreiecke zerlegen, Pappdicke als Körper) und `js/betrachter.js` (WebGL-Betrachter von Svenja, **unverändert** aus `zusatz-3d` übernommen, damit es beim Zusammenführen keinen Konflikt gibt). Jedes Teil hat dafür in `teileBauen` die Angabe `tiefe`. **Ehrlich:** mit einem ausgedachten Haus geprüft, noch nicht mit einer echten IFC.
+- ✅ **Vorschaubild zum Wandaufbau** (18.11.): Unter der Auswahl „Wandaufbau“ eine kleine Skizze, die sich beim Umschalten sofort ändert: **Ansicht** (Haus mit Fenstern und Tür, Linien in den Laserfarben), **Schnitt** (Pappen mit Dicke, z. B. „1 + 2 mm“) und eine **drehbare 3D-Ecke** (ziehen = drehen, Doppelklick = zurück; Zoomen am 19.11. auf Wunsch entfernt, das Mausrad scrollt dort die Seite; `js/wand3d.js`, ohne Bibliothek, eigener kleiner Zeichner – bewusst **nicht** Svenjas 3D-Betrachter aus `zusatz-3d`, damit die Branches getrennt bleiben). Nur eine Skizze mit vergrößerten Pappdicken, nicht das eigene Gebäude.
+- ✅ **Modell-Vorschau „So wird dein Modell (3D)“** (18.11., Should 1): In Bereich 3 (seit 19.11. Bereich 4), nach „Laserplatten erstellen“. Die App setzt **genau die berechneten Pappteile** wieder in 3D zusammen – mit echten Maßen, Pappdicken, Eckenausgleich, ausgeschnittenen bzw. geritzten (blau) Öffnungen; Außenschicht hell, Innenschicht dunkler, Dach orange. Folgt jeder Einstellung (z. B. Wandaufbau) sofort. Mehrere Gebäude stehen nebeneinander, nicht in ihrer echten Lage. Drehen, Zoomen, Doppelklick = zurück. Technik: `js/modell3d.js` (Teile zurück an ihre Fläche legen, Umrisse mit Löchern in Dreiecke zerlegen, Pappdicke als Körper) und `js/betrachter.js` (WebGL-Betrachter von Svenja, **unverändert** aus `zusatz-3d` übernommen, damit es beim Zusammenführen keinen Konflikt gibt). Jedes Teil hat dafür in `teileBauen` die Angabe `tiefe`. **Ehrlich:** mit einem ausgedachten Haus geprüft, noch nicht mit einer echten IFC.
 - ✅ **Getrennte Platten nach Pappdicke** (18.11., Fehler gefunden von Alison): Eine Laserplatte ist eine Pappe mit einer Dicke. Darum verteilt `js/verteilen.js` die Teile je Pappdicke auf eigene Platten (z. B. Außenschicht 1 mm, Innenschicht und Dach 2 mm). Die Dicke steht über jeder Platte, im DXF-Dateinamen (`…_Pappe-1-5mm.dxf`) und in der Teileliste des Übersichtsblatts. Das Dach hat weiter die Pappdicke innen (bewusst so entschieden).
 - ✅ **Menschen und Bäume (Staffage)** (18.11., Idee von Alison, bewusst vor dem Freeze gebaut): In Bereich 2 „Menschen und Bäume“: Anzahl Menschen (0–50), Anzahl Bäume (0–30), Baumhöhe (6 / 10 / 15 m) und eigene Pappdicke (1 / 1,5 / 2 mm, Start 1 mm). Selbst gezeichnete, frei nutzbare Formen (`js/staffage.js`), kein Internet: **Mensch** 1,75 m mit Fußlasche (Nummer `M-01` …), **Steckbaum** aus zwei Teilen mit Schlitz in Pappdicke, Teil A von oben, Teil B von unten bis zur Mitte (Nummern `B-01A` + `B-01B`). Kommen automatisch mit auf die Platten (bei anderer Pappdicke auf eine eigene Platte), stehen in der Teileliste, Hinweise zum Aufkleben/Zusammenstecken im Übersichtsblatt. Werden in Vorlagen mitgespeichert. **Ehrlich:** mit Probe-Teilen im Browser geprüft, noch nicht mit echter IFC und noch nicht gelasert; bei kleinen Maßstäben (z. B. 1:500) werden Menschen sehr klein (ca. 3,5 mm). Die Formen sind schlicht.
+
+**Änderungen am 19.11. (vor dem Freeze):**
+
+- ✅ **Vier Bereiche:** „Menschen und Bäume“ ist jetzt ein eigener Bereich **3 „Ergänze Staffage für dein Projekt“** (breit: links zwischen Datei und Vorschau; schmal: nach den Einstellungen), „Vorschau & Download“ ist Bereich **4**. Die vier Felder stehen nebeneinander. Höchstzahl jetzt je **200** (vorher 50 Menschen / 30 Bäume), ab **51** erscheint die Warnung „Bist du dir sicher, dass du so viele Menschen/Bäume lasern möchtest?“ (hält nichts auf). Geprüft im Browser, hell und dunkel, breit und Handy-Breite.
+- ✅ **3D-Ecke beim Wandaufbau ohne Zoom** (drehen geht weiter).
+- ✅ **Startseite:** „IFC → Laser“ nicht mehr sichtbar. **Auftritt:** Logo blendet aus der Unschärfe ein, danach erscheinen Satz, Knopf, Hinweis und Sonne/Mond nacheinander (bei „weniger Bewegung“ ohne Animation). In `zusatz-3d` beim Mergen angepasst: dort erscheinen nach dem Logo Karte 1 (Laser) und Karte 2 (3D-Druck) nacheinander. **Offen:** In kleinen Fenstern springt die Startseite der Zusatzversion beim Öffnen zum Laser-Knopf, das Logo ist dann schon oben aus dem Bild.
+- ✅ **Morph, Rücksprung und Untersicht** (Fehler gefunden von Svenja mit „Testdatei zum Lasern - Vorstellung“): Morph als Nebengebäude erkannt, Seitenwände des Rücksprungs gefunden, Innenschicht dort offen, Untersicht `U-001` als neues Teil (Must 15), zwei Schrott-Teile weg (Innenseite des hinteren Anbaus, 20-cm-Streifen hinter der Decke). Gegenprobe: Test 01–04 liefern genau dieselben Flächen und Teile wie vorher. Übersichtsblatt (Legende, Grundriss gepunktet, Teileliste, Klebeschritt „Untersichten von unten einkleben“), 3D-Modell (Untersicht grau-blau) und DXF (im Browser-Speicher geprüft, kein „NaN“) passen. Technik siehe CLAUDE.md, „Strahltest im Einzelnen“.
+
+**Bewusste Ausnahme nach dem Freeze (19.11., Entscheidung von Alison):**
+
+- ✅ **Eigene Menschen-Figuren** statt der einfachen Silhouette: Alison hat vier Figuren gezeichnet (DXF in `beispiele/`, werden nicht hochgeladen): „Figur 1“ (Mann) und „Figur 2“ (Frau), je **fein** (für 1:20–1:50) und **einfach** (für 1:100–1:200). Die Umrisse stehen in `js/staffage-figuren.js` (mm, echte Größe, ca. 1,70–1,83 m) und werden durch den Maßstab geteilt. In Bereich 3 neu: **„Menschen Figur 1“** und **„Menschen Figur 2“** (Anzahl je Figur, statt einem Feld „Menschen“; Summe für Warnung ab 51 und Zusammenfassung) und **„Detail der Figuren“** (passend zum Maßstab = bis 1:75 fein, darüber einfach / fein / einfach). **Ohne Fußlasche** und **ohne geritzte Nummer** unter den Menschen (Merkmal `ohneNummer` am Teil, `js/verteilen.js` lässt dann auch den Platz dafür weg; seit 19.11. auch bei den **Bäumen** keine Nummer mehr – man erkennt Teil A/B am Schlitz; nur Gebäudeteile und die Plattenbeschriftung werden noch beschriftet). Teileliste: „Mensch, Figur 1 (fein)“. Geprüft im Browser: Größen stimmen (z. B. 1:50 fein: Figur 1 18,8 × 36,6 mm), Umrisse aufrecht und nicht gespiegelt, kein „NaN“ in der DXF. Noch nicht mit echter IFC und noch nicht gelasert.
 
 ### Zusatzversion (`zusatz-3d`)
 
@@ -250,6 +265,8 @@ Wir arbeiten mit zwei Branches in GitHub (Regeln dazu: CLAUDE.md, Regel 11).
 - [x] **Morphs testen:** Ein **nicht klassifizierter** Morph kommt als `IfcBuildingElementProxy` („Modellkörper-001“) an. Die App nimmt ihn als ganzen Gebäudekörper, das klappt. Ein als Wand oder Dach **klassifizierter** Morph ist noch nicht getestet.
 - [x] **Test-IFC mit Fenstern und Türen** (Test 03): Löcher und Tür-Aussparung stimmen.
 - [ ] **Test-IFC mit klassifiziertem Morph** (Morph als Wand bzw. als Dach klassifiziert) prüfen.
+- [x] **Test-IFC mit Rücksprung, Decke und Morph-Nebengebäude** („Testdatei zum Lasern - Vorstellung“, 19.11.): Rücksprung mit Seitenwänden und Untersicht U-001, Morph als Wand und Dach – geprüft im Browser.
+- [ ] **Zusatzversion nach dem Merge prüfen:** Die 3D-Druck-Seite (`js/druck3d.js`) nutzt dieselben eingelesenen Bauteile. Seit 19.11. kommen darin auch Decken (`decke`) und Fenster/Türen (`oeffnung`) vor – prüfen, dass die STL davon nichts Falsches bekommt.
 - [ ] **DXF in AutoCAD, Rhino oder der Lasersoftware öffnen** und Maße nachmessen (z. B. eine Wand von 10 m bei 1:100 = 100 mm).
 - [ ] **Grundriss im Übersichtsblatt mit Archicad vergleichen:** Liegen Norden und die L-Form richtig herum (nicht gespiegelt)?
 - [x] **Nummernschema (geändert am 17.11.):** Der Buchstabe zeigt die Schicht: A = Außenschicht, I = Innenschicht, D = Dachfläche. Die Zahl ist die Fassade bzw. Dachfläche; gleiche Zahl bei A und I = gleiche Fassade. Beispiel: A-001 kommt auf I-001. Die Himmelsrichtung steht in der Teileliste des Übersichtsblatts, die Legende ebenfalls.

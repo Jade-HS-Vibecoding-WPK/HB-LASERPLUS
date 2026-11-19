@@ -5,8 +5,10 @@
 // gehören euch, es gibt keine Lizenzfragen und nichts wird aus dem
 // Internet geladen.
 //
-//   Mensch (M-01 …): stehende Figur, 1,75 m groß, unten eine Fußlasche
-//                    zum Einkleben oder Einstecken.
+//   Mensch (M-01 …): seit 19.11. Alisons eigene Figuren (js/staffage-figuren.js):
+//                    „Figur 1“ und „Figur 2“, je in fein (1:20–1:50) und
+//                    einfach (1:100–1:200), in echter Größe, ohne Fußlasche.
+//                    Die frühere einfache Figur (menschUmriss) bleibt nur als Rückfall.
 //   Baum (B-01 …):   Steckbaum aus zwei gleichen Teilen (a und b).
 //                    Teil a ist von oben, Teil b von unten bis zur Mitte
 //                    geschlitzt; über Kreuz zusammengesteckt steht er allein.
@@ -16,6 +18,8 @@
 // Die Teile werden wie alle anderen rot geschnitten und mit der Nummer
 // daneben geritzt.
 // =========================================================
+
+import { FIGUREN, figurenStufe } from "./staffage-figuren.js";
 
 const MENSCH_HOEHE = 1.75; // m
 
@@ -93,15 +97,27 @@ export function staffageTeile(e) {
   const zwei = (z) => String(z).padStart(2, "0");
   const teile = [];
 
-  const mensch = menschUmriss().map(([x, y]) => [x * k, y * k]);
-  for (let i = 1; i <= (e.menschen || 0); i++) {
+  // Eigene Figuren: Detailstufe nach Maßstab (oder selbst gewählt),
+  // Figur 1 / Figur 2 / abwechselnd. Die Umrisse sind in mm in echter Größe,
+  // darum geteilt durch den Maßstab.
+  const stufe = e.figurenDetail === "fein" || e.figurenDetail === "einfach" ? e.figurenDetail : figurenStufe(e.massstab);
+  const satz = FIGUREN[stufe];
+  const umrissVon = (nr) => (satz && satz[`figur${nr}`] ? satz[`figur${nr}`].map(([x, y]) => [x / e.massstab, y / e.massstab]) : null);
+  const ersatz = menschUmriss().map(([x, y]) => [x * k, y * k]); // nur falls etwas fehlt
+  const figuren = { 1: umrissVon(1) || ersatz, 2: umrissVon(2) || ersatz };
+  const stufeText = stufe === "fein" ? "fein" : "einfach";
+  // Anzahl je Figur selbst gewählt: erst alle Figur 1, dann alle Figur 2
+  const anzahl1 = e.figur1 || 0, anzahl2 = e.figur2 || 0;
+  for (let i = 1; i <= anzahl1 + anzahl2; i++) {
+    const nr = i <= anzahl1 ? 1 : 2;
     teile.push({
       name: `M-${zwei(i)}`,
       wofuer: "staffage",
       schicht: "",
-      beschreibung: `Mensch, ${String(MENSCH_HOEHE).replace(".", ",")} m (Fußlasche unten zum Einkleben)`,
+      beschreibung: `Mensch, Figur ${nr} (${stufeText})`,
+      ohneNummer: true, // Wunsch 19.11.: keine geritzte Nummer unter den Menschen
       dicke,
-      aussen: mensch,
+      aussen: figuren[nr],
       loecher: [],
       ritzlinien: [],
       gebaeude: 0,
@@ -117,6 +133,7 @@ export function staffageTeile(e) {
         wofuer: "staffage",
         schicht: "",
         beschreibung: `Baum ${String(e.baumHoehe || 10).replace(".", ",")} m, Teil ${buchstabe} (${text})`,
+        ohneNummer: true, // Wunsch 19.11.: keine geritzte Nummer unter den Bäumen
         dicke,
         aussen: baumUmriss(hoehe, dicke, art),
         loecher: [],
