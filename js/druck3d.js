@@ -178,8 +178,10 @@ function lesen(g) {
       const info = await ifcLesen(g.datei);
       if (!gilt()) return;
       g.info = info;
+      // Morphs (seit 19.11.) wie auf der Laser-Seite immer als Wand und Dach,
+      // z. B. ein Nebengebäude neben dem Haus
       const sonstLeer = info.waende.aussen + info.waende.ohneAngabe === 0 && info.daecher === 0;
-      for (const p of info.ohneKlasse) g.proxyWahl.set(p.id, sonstLeer ? "koerper" : "ignorieren");
+      for (const p of info.ohneKlasse) g.proxyWahl.set(p.id, sonstLeer || p.morph ? "koerper" : "ignorieren");
       karteFuellen(g, "✓ gelesen");
       kurzInfoZeigen(g);
     } catch (fehler) {
@@ -320,6 +322,9 @@ function modellBauen(g) {
   const k = 1000 / e.massstab; // Meter → mm im Modell
   const koerper = [], dach = [];
   for (const teil of g.info.huelle) {
+    // Fenster und Türen (seit 19.11. in der Hülle, nur für die Laser-Seite)
+    // werden nicht gedruckt – die Öffnungen bleiben offen wie bisher
+    if (teil.art === "oeffnung") continue;
     const art = teil.art === "proxy" ? g.proxyWahl.get(teil.bauteil) || "ignorieren" : teil.art;
     if (art === "ignorieren") continue;
     const ziel = art === "dach" ? dach : koerper;
