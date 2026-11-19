@@ -182,9 +182,27 @@ function zeichneLeerePlatte(e) {
 // Einstellungen: bei jeder Änderung Vorschau bzw. Platten neu
 // ---------------------------------------------------------
 einstellungenStarten();
+
+// Wie viele Menschen und Bäume sind eingestellt? (seit 19.11.: Laserplatten gehen
+// auch ganz ohne IFC-Datei, nur mit Staffage)
+function staffageAnzahl(e = holeEinstellungen()) {
+  return (e.menschen || 0) + (e.baeume || 0);
+}
+
+// Knopf „Laserplatten erstellen“ und sein Hinweis, wenn (noch) keine IFC-Datei da ist
+function ohneDateiZustand() {
+  if (gebaeude.length) return;
+  const nurStaffage = staffageAnzahl() > 0;
+  erstellenKnopf.disabled = !nurStaffage;
+  erstellenHinweis.textContent = nurStaffage
+    ? "Ohne IFC-Datei: Es werden nur Menschen und Bäume gelasert."
+    : "Zuerst eine IFC-Datei ablegen – oder bei „Ergänze Staffage“ Menschen bzw. Bäume eintragen.";
+}
+
 beiAenderung((e) => {
   zeichneLeerePlatte(e);
   if (ergebnis) berechnen();
+  ohneDateiZustand();
 });
 
 // ---------------------------------------------------------
@@ -300,9 +318,14 @@ function listeAktualisieren() {
   const fertig = gebaeude.filter((g) => g.info).length;
   erstellenKnopf.disabled = fertig === 0;
   if (gebaeude.length === 0) {
-    erstellenHinweis.textContent = "Zuerst eine IFC-Datei ablegen.";
-    ergebnis = null;
-    zeigeErgebnis();
+    // Keine IFC-Datei: mit Menschen/Bäumen geht es trotzdem (dann neu rechnen),
+    // sonst ist das Ergebnis leer
+    if (ergebnis && staffageAnzahl() > 0) berechnen();
+    else {
+      ergebnis = null;
+      zeigeErgebnis();
+    }
+    ohneDateiZustand();
     return;
   }
   if (ergebnis) {
@@ -433,12 +456,13 @@ function bauteileZeigen(g) {
 // ---------------------------------------------------------
 function berechnen() {
   const fertig = gebaeude.filter((g) => g.info);
-  if (!fertig.length) {
+  const e = holeEinstellungen();
+  // Ohne gelesene IFC-Datei geht es nur, wenn Menschen oder Bäume eingestellt sind
+  if (!fertig.length && (gebaeude.length > 0 || staffageAnzahl(e) === 0)) {
     ergebnis = null;
     zeigeErgebnis();
     return;
   }
-  const e = holeEinstellungen();
   const mehrere = gebaeude.length > 1;
   const teile = [];
   const liste = [];
@@ -497,7 +521,8 @@ function modellZeigen() {
   const modellFeld = document.getElementById("modell3d");
   const modellLeinwand = document.getElementById("modell-canvas");
   const modellLegende = document.getElementById("modell-legende");
-  if (!ergebnis || ergebnis.teile.length === 0) {
+  // Nur Gebäudeteile kommen ins 3D-Modell – bei „nur Menschen und Bäume“ bleibt es aus
+  if (!ergebnis || !ergebnis.teile.some((t) => t.gebaeude > 0)) {
     modellFeld.hidden = true;
     return;
   }
@@ -591,19 +616,25 @@ function zeigeErgebnis() {
   const fassaden = new Set(teile.filter((t) => t.wofuer === "fassade").map((t) => t.gebaeude + ":" + t.flaecheIndex)).size;
   const dach = teile.filter((t) => t.wofuer === "dach").length;
   const untersichten = teile.filter((t) => t.wofuer === "decke").length;
+  const menschenText = e.menschen
+    ? `${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"} (${e.figur1 || 0} × Figur 1, ${e.figur2 || 0} × Figur 2)`
+    : "";
+  const baeumeText = e.baeume ? `${e.baeume} ${e.baeume === 1 ? "Baum" : "Bäume"} (je 2 Teile)` : "";
+  const gebaeudeText = liste.length
+    ? (mehrere ? `${liste.length} Gebäude: ` : "") +
+      `${fassaden} Fassaden (${
+        (e.wandaufbau || "zwei") === "zwei" ? "je Außen- und Innenschicht" : e.wandaufbau === "eine-geritzt" ? "je eine Schicht, Öffnungen geritzt" : "je eine Schicht, ohne Öffnungen"
+      }), ${dach} Dachflächen` +
+      (untersichten ? `, ${untersichten} ${untersichten === 1 ? "Untersicht" : "Untersichten"}` : "") +
+      (menschenText ? `, ${menschenText}` : "") +
+      (baeumeText ? `, ${baeumeText}` : "")
+    : // ohne IFC-Datei (seit 19.11.): nur Menschen und Bäume
+      "Nur Staffage, ohne Gebäude: " + [menschenText, baeumeText].filter(Boolean).join(", ");
   plattenFeld.append(
     element(
       "p",
       "text-sm",
-      (mehrere ? `${liste.length} Gebäude: ` : "") +
-        `${fassaden} Fassaden (${
-          (e.wandaufbau || "zwei") === "zwei" ? "je Außen- und Innenschicht" : e.wandaufbau === "eine-geritzt" ? "je eine Schicht, Öffnungen geritzt" : "je eine Schicht, ohne Öffnungen"
-        }), ${dach} Dachflächen` +
-        (untersichten ? `, ${untersichten} ${untersichten === 1 ? "Untersicht" : "Untersichten"}` : "") +
-        (e.menschen
-          ? `, ${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"} (${e.figur1 || 0} × Figur 1, ${e.figur2 || 0} × Figur 2)`
-          : "") +
-        (e.baeume ? `, ${e.baeume} ${e.baeume === 1 ? "Baum" : "Bäume"} (je 2 Teile)` : "") +
+      gebaeudeText +
         ` = ${teile.length} Teile ` +
         `auf ${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} (Maßstab 1:${e.massstab}).`
     )
@@ -649,6 +680,7 @@ function zeigeErgebnis() {
 // Herunterladen und Drucken
 // ---------------------------------------------------------
 function dateiBasis() {
+  if (ergebnis && ergebnis.gebaeude.length === 0) return "Staffage"; // nur Menschen und Bäume
   if (!ergebnis || ergebnis.gebaeude.length !== 1) return "Mehrere-Gebaeude";
   const basis = ergebnis.gebaeude[0].name
     .replace(/\.ifc\s*$/i, "")
