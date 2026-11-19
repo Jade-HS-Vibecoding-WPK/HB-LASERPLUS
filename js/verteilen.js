@@ -85,8 +85,11 @@ function verteilenEineDicke(teile, e) {
   const kaesten = [];
   const zuGross = [];
   for (const teil of teile) {
-    const text = textLinien(teil.name, SCHRIFT);
-    const mass = (r) => ({ b: Math.max(r.b, text.breite), h: r.h + SCHRIFT + SCHRIFT_ABSTAND });
+    // Teile mit „ohneNummer“ (z. B. Menschen) bekommen keine geritzte Nummer
+    // und brauchen darunter keinen Platz dafür
+    const text = teil.ohneNummer ? { linien: [], breite: 0 } : textLinien(teil.name, SCHRIFT);
+    const unten = teil.ohneNummer ? 0 : SCHRIFT + SCHRIFT_ABSTAND;
+    const mass = (r) => ({ b: Math.max(r.b, text.breite), h: r.h + unten });
     let form = { aussen: teil.aussen, loecher: teil.loecher, ritzlinien: teil.ritzlinien || [] };
     let r = rahmenVon(form.aussen);
     let m = mass(r);
@@ -102,7 +105,7 @@ function verteilenEineDicke(teile, e) {
         continue;
       }
     }
-    kaesten.push({ teil, form, r, text, b: m.b, h: m.h, gedreht });
+    kaesten.push({ teil, form, r, text, unten, b: m.b, h: m.h, gedreht });
   }
 
   // Höchste Kästen zuerst, dann breiteste
@@ -129,7 +132,7 @@ function verteilenEineDicke(teile, e) {
 
     // Teil oben im Kasten, Nummer darunter
     const dx = x - k.r.x0;
-    const dy = y + SCHRIFT + SCHRIFT_ABSTAND - k.r.y0;
+    const dy = y + k.unten - k.r.y0;
     const schieben = (p) => [p[0] + dx, p[1] + dy];
     // Zuerst ritzen (angeritzte Fenster/Türen bei einer Schicht), dann Löcher, dann Umriss
     for (const r of k.form.ritzlinien) platte.linien.push({ ebene: "RITZEN", punkte: r.punkte.map(schieben), geschlossen: r.geschlossen });

@@ -594,7 +594,9 @@ function zeigeErgebnis() {
           (e.wandaufbau || "zwei") === "zwei" ? "je Außen- und Innenschicht" : e.wandaufbau === "eine-geritzt" ? "je eine Schicht, Öffnungen geritzt" : "je eine Schicht, ohne Öffnungen"
         }), ${dach} Dachflächen` +
         (untersichten ? `, ${untersichten} ${untersichten === 1 ? "Untersicht" : "Untersichten"}` : "") +
-        (e.menschen ? `, ${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"}` : "") +
+        (e.menschen
+          ? `, ${e.menschen} ${e.menschen === 1 ? "Mensch" : "Menschen"} (${e.figur1 || 0} × Figur 1, ${e.figur2 || 0} × Figur 2)`
+          : "") +
         (e.baeume ? `, ${e.baeume} ${e.baeume === 1 ? "Baum" : "Bäume"} (je 2 Teile)` : "") +
         ` = ${teile.length} Teile ` +
         `auf ${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} (Maßstab 1:${e.massstab}).`

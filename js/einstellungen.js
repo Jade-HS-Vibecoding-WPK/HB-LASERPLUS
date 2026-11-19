@@ -37,12 +37,18 @@ export const STARTWERTE = {
   baeume: 0,
   baumHoehe: 10, // m
   staffageDicke: 1, // mm, Pappe für Menschen und Bäume
+  // Eigene Figuren (seit 19.11.): Anzahl je Figur; „menschen“ ist die Summe.
+  // Detail: "auto" (nach Maßstab) | "fein" | "einfach"
+  figur1: 0,
+  figur2: 0,
+  figurenDetail: "auto",
   farben: { ...HOCHSCHUL_FARBEN },
 };
+const FIGUREN_DETAIL = ["auto", "fein", "einfach"];
 
 // Anzahl-Felder (0 ist erlaubt) mit Höchstwert
 // (seit 19.11. je 200, vorher 50 Menschen und 30 Bäume)
-const ANZAHLFELDER = { menschen: ["menschen", 200], baeume: ["baeume", 200] };
+const ANZAHLFELDER = { figur1: ["figur1-anzahl", 200], figur2: ["figur2-anzahl", 200], baeume: ["baeume", 200] };
 // Ab mehr als 50 Menschen bzw. Bäumen erscheint eine Warnung (hält nichts auf)
 const WARNUNG_AB = 50;
 const BAUMHOEHEN = [6, 10, 15];
@@ -87,6 +93,10 @@ function laden() {
       farben: { ...HOCHSCHUL_FARBEN, ...(gespeichert.farben || {}) },
     };
     if (!WANDAUFBAU.includes(werte.wandaufbau)) werte.wandaufbau = STARTWERTE.wandaufbau;
+    // Menschen = Summe aus Figur 1 und Figur 2 (ältere Speicherstände hatten nur „menschen“)
+    werte.figur1 = Number.isFinite(werte.figur1) ? werte.figur1 : 0;
+    werte.figur2 = Number.isFinite(werte.figur2) ? werte.figur2 : 0;
+    werte.menschen = werte.figur1 + werte.figur2;
     return werte;
   } catch {
     // Notizzettel nicht lesbar (z. B. privates Fenster): Startwerte nehmen
@@ -122,6 +132,7 @@ function felderFuellen() {
   }
   document.getElementById("baum-hoehe").value = String(aktuell.baumHoehe);
   document.getElementById("staffage-dicke").value = String(aktuell.staffageDicke);
+  document.getElementById("figuren-detail").value = aktuell.figurenDetail;
   dickenfelderAnpassen();
   staffageWarnungZeigen();
 }
@@ -258,6 +269,9 @@ function felderLesen() {
   if (BAUMHOEHEN.includes(hoehe)) aktuell.baumHoehe = hoehe;
   const sDicke = parseFloat(document.getElementById("staffage-dicke").value);
   if (DICKEN.includes(sDicke)) aktuell.staffageDicke = sDicke;
+  aktuell.menschen = aktuell.figur1 + aktuell.figur2; // Summe für Warnung und Zusammenfassung
+  const detail = document.getElementById("figuren-detail").value;
+  if (FIGUREN_DETAIL.includes(detail)) aktuell.figurenDetail = detail;
   dickenfelderAnpassen();
   staffageWarnungZeigen();
 }
@@ -377,10 +391,13 @@ function werteAufraeumen(werte) {
     platteBreite: zahl(werte.platteBreite, STARTWERTE.platteBreite),
     platteHoehe: zahl(werte.platteHoehe, STARTWERTE.platteHoehe),
     wandaufbau: WANDAUFBAU.includes(werte.wandaufbau) ? werte.wandaufbau : STARTWERTE.wandaufbau,
-    menschen: anzahl(werte.menschen, ANZAHLFELDER.menschen[1]),
+    figur1: anzahl(werte.figur1, ANZAHLFELDER.figur1[1]),
+    figur2: anzahl(werte.figur2, ANZAHLFELDER.figur2[1]),
+    menschen: anzahl(werte.figur1, 200) + anzahl(werte.figur2, 200),
     baeume: anzahl(werte.baeume, ANZAHLFELDER.baeume[1]),
     baumHoehe: BAUMHOEHEN.includes(parseFloat(werte.baumHoehe)) ? parseFloat(werte.baumHoehe) : STARTWERTE.baumHoehe,
     staffageDicke: dicke(werte.staffageDicke, STARTWERTE.staffageDicke),
+    figurenDetail: FIGUREN_DETAIL.includes(werte.figurenDetail) ? werte.figurenDetail : STARTWERTE.figurenDetail,
     farben: {
       schneiden: farbe(f.schneiden, HOCHSCHUL_FARBEN.schneiden),
       ritzen: farbe(f.ritzen, HOCHSCHUL_FARBEN.ritzen),

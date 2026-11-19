@@ -158,6 +158,7 @@ js/dxf.js           – DXF schreiben
 js/wand3d.js        – drehbare 3D-Skizze einer Hausecke zum Wandaufbau (ohne Bibliothek)
 js/modell3d.js      – Modell-Vorschau: fertige Pappteile wieder in 3D zusammensetzen
 js/staffage.js      – Menschen (M-01 …) und Steckbäume (B-01A + B-01B …) als Laserteile, selbst gezeichnet
+js/staffage-figuren.js – Alisons eigene Menschen „Figur 1“/„Figur 2“, fein (1:20–1:50) und einfach (1:100–1:200), mm in echter Größe (seit 19.11.)
 js/betrachter.js    – WebGL-Betrachter (von Zusatz 3D übernommen, unverändert)
 js/farbmodus.js     – Knopf hell/dunkel (Sonne/Mond)
 js/uebersicht.js    – Übersichtsblatt zum Drucken

@@ -639,10 +639,10 @@ export function uebersichtBauen(daten) {
     hinweise.append(element("li", "", "Fenster und Türen sind nur angeritzt (blau). Die Wand bleibt geschlossen – Türen bis zum Boden auch."));
   }
   if (teile.some((t) => t.name.startsWith("M-"))) {
-    hinweise.append(element("li", "", "Menschen (M-01 …): Die Lasche unter den Füßen umknicken und aufkleben oder in einen schmalen Schlitz in der Grundplatte stecken."));
+    hinweise.append(element("li", "", "Menschen (M-01 …): Die Figuren stehen auf ihren Füßen – mit einem Tropfen Kleber an der Unterkante aufkleben."));
   }
   if (teile.some((t) => t.name.startsWith("B-"))) {
-    hinweise.append(element("li", "", "Bäume (B-01A + B-01B …): Teil A (Schlitz von oben) und Teil B (Schlitz von unten) mit derselben Zahl über Kreuz ineinanderstecken. Der Schlitz ist so breit wie die Pappe; bei Bedarf einen Tropfen Kleber."));
+    hinweise.append(element("li", "", "Bäume: Je ein Teil mit Schlitz von oben (A) und eins mit Schlitz von unten (B) über Kreuz ineinanderstecken. Auf der Pappe steht keine Nummer – alle Bäume gleicher Höhe passen zusammen, man erkennt A und B am Schlitz. Der Schlitz ist so breit wie die Pappe; bei Bedarf einen Tropfen Kleber."));
   }
   if (alleEcken.some((c) => Math.abs(Math.cos(c.phi)) > 0.02)) {
     hinweise.append(element("li", "", "Schräge Ecken, Grate und Kehlen (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));
