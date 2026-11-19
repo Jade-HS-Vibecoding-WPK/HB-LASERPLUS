@@ -1,4 +1,4 @@
-# IFC → Laser
+# HB-LASERPLUS
 
 Eine Webseite, die aus der **IFC-Datei eines Gebäudes** fertige **Laserdateien (DXF)** für ein **Pappmodell** macht – auch für **mehrere Gebäude** auf einmal (je Datei ein Gebäude).
 
