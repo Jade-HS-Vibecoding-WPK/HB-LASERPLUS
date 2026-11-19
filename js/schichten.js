@@ -26,12 +26,15 @@
 //   Rechnung über parallel versetzte Linien im Grundriss, damit die
 //   Außenmaße stimmen – auch bei schrägen Winkeln. Bei schrägen Ecken
 //   bleibt eine kleine Keilfuge, weil der Laser senkrecht schneidet.
-//   Am First (und an Graten/Kehlen) gilt dieselbe Regel für die Dachplatten.
+//   Dach (seit 19.11. geändert): First, Grate und Kehlen stoßen STUMPF
+//   aneinander, die Dachplatten sind genau so groß wie die Dachflächen.
+//   Dafür reichen die Wände oben bis unter die Dachplatte (waendeBisZumDach),
+//   das Dach liegt auf und deckt die Oberkante der Wände ab.
 //
 // Maße: Die Flächen kommen in Meter, die Teile gehen in mm im Modellmaßstab.
 // =========================================================
 
-import { zu3d, zu2dVon } from "./abwickeln.js";
+import { zu3d, zu2dVon, imPolygon } from "./abwickeln.js";
 
 // ---------- Vektor-Helfer (3D) ----------
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
@@ -81,10 +84,15 @@ function eckWinkel(fi, fj, punkt) {
 //   durch = Index der Fläche, die an dieser Ecke durchläuft
 // ---------------------------------------------------------
 export function eckenFinden(flaechen) {
-  const ecken = [...fassadenEcken(flaechen), ...dachEcken(flaechen)];
+  const wandEcken = fassadenEcken(flaechen);
+  // Dachkanten (First, Grat, Kehle) stoßen seit 19.11. STUMPF aneinander:
+  // keine Platte läuft durch, keine wird gekürzt oder verlängert –
+  // jede Dachplatte ist genau so groß wie ihre Dachfläche (Wunsch Alison/Svenja).
+  const dachKanten = dachEcken(flaechen).map((c) => ({ ...c, stumpf: true }));
+  const ecken = [...wandEcken, ...dachKanten];
 
-  // Rollen verteilen: abwechselnd durchlaufend (0) und gekürzt (1),
-  // angefangen bei der größten Fläche
+  // Rollen verteilen (nur Wandecken): abwechselnd durchlaufend (0) und
+  // gekürzt (1), angefangen bei der größten Fläche
   const farbe = new Map();
   const reihenfolge = flaechen.map((f, i) => i).sort((a, b) => flaechen[b].flaeche - flaechen[a].flaeche);
   for (const start of reihenfolge) {
@@ -93,7 +101,7 @@ export function eckenFinden(flaechen) {
     const schlange = [start];
     while (schlange.length) {
       const f = schlange.shift();
-      for (const c of ecken) {
+      for (const c of wandEcken) {
         const g = c.i === f ? c.j : c.j === f ? c.i : null;
         if (g === null || farbe.has(g)) continue;
         farbe.set(g, 1 - farbe.get(f));
@@ -101,7 +109,7 @@ export function eckenFinden(flaechen) {
       }
     }
   }
-  for (const c of ecken) {
+  for (const c of wandEcken) {
     if (farbe.get(c.i) !== farbe.get(c.j)) {
       c.durch = farbe.get(c.i) === 0 ? c.i : c.j;
     } else {
@@ -269,6 +277,8 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
   const drei = (z) => String(z).padStart(3, "0");
   // Wie tief eine Fassade aus Pappe ist (mm): beide Schichten bzw. eine
   const fassadenTiefe = eineSchicht ? ti : ta + ti;
+  // Dachflächen dieses Gebäudes (für den Wand-Dach-Anschluss)
+  const dachFlaechen = daecher.map((i) => dachEbene(flaechen[i]));
 
   const teile = [];
   for (const index of [...fassaden, ...daecher, ...decken]) {
@@ -320,8 +330,23 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
             ...tuerAussparungen.map((t) => ({ punkte: t, geschlossen: false })),
           ]
         : [];
+      // Wände oben bis an die Unterseite der Dachplatte verlängern
+      // (in der IFC enden sie unter dem echten, dickeren Dach)
+      if (f.wofuer === "fassade") umriss = waendeBisZumDach(umriss, f, dachFlaechen, s.tiefe / k, (s.tiefe + s.dicke) / k, td / k);
       const eckInfo = [];
       for (const c of meineEcken) {
+        // Dachkanten stumpf (seit 19.11., Skizze Alison): Am First und an Graten
+        // (Außenkante) würden sich zwei Platten in voller Größe unten durchdringen.
+        // Darum wird jede Platte so weit gekürzt, dass sich die beiden Platten
+        // genau mit ihren UNTERkanten berühren; oben bleibt eine kleine Kerbe.
+        // x = Pappdicke · tan(ψ/2), ψ = Knick zwischen den Dachflächen (180° − φ).
+        // An Kehlen (Innenkante) berühren sich die Oberkanten, unten ist Luft –
+        // dort bleibt die Platte, wie sie ist.
+        if (c.stumpf) {
+          if (c.konvex) umriss = kanteVerschieben(umriss, c.kanten2d[index], (s.dicke / Math.tan(c.phi / 2)) / k);
+          eckInfo.push({ stumpf: true, schraeg: Math.abs(Math.cos(c.phi)) > 0.02 });
+          continue;
+        }
         const laeuftDurch = c.durch === index;
         // Außenecke: die durchlaufende Platte reicht weiter (kleines e).
         // Innenecke: umgekehrt, dort muss die durchlaufende Platte länger werden.
@@ -333,6 +358,9 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
       // Rücksprung: Kanten, die gegen eine davorliegende Fassade stoßen, um deren
       // Pappdicke(n) kürzen (Seitenwände und Untersicht hören hinter der Fassade auf)
       for (const kante of stoesse) umriss = kanteVerschieben(umriss, kante, fassadenTiefe / k);
+      // Dachränder über den Wänden: Unterkante der Dachplatte bündig mit der Fassade
+      // (nach den Dachkanten, damit deren Kanten noch an ihrer Stelle gefunden werden)
+      if (f.wofuer === "dach") umriss = dachUeberWaende(umriss, f, flaechen, td / k);
       // Nummern: A-001 = Außenschicht, I-001 = Innenschicht derselben Fassade,
       // D-001 = Dachfläche, U-001 = Untersicht
       const zahl = drei(nummer.get(index));
@@ -359,6 +387,163 @@ export function teileBauen(flaechen, ecken, e, vorsatz = "") {
     }
   }
   return teile;
+}
+
+// ---------------------------------------------------------
+// Wand–Dach-Anschluss (seit 19.11.)
+// Das Dach liegt auf den Wänden und deckt ihre Oberkante ab. Die Dachplatte
+// ist genau die Dachfläche (Oberseite = Oberseite des echten Dachs), ihre
+// Unterseite liegt also um die Pappdicke tiefer. Bis dorthin reichen die Wände:
+// Ihre Oberkanten (Traufe waagerecht, Giebel schräg) werden auf die Unterseite
+// der Dachplatte gesetzt. In der IFC enden die Wände unter dem echten, meist
+// dickeren Dach – ohne diesen Schritt bliebe ein Spalt.
+// ---------------------------------------------------------
+
+// Eine Dachfläche als Ebene mit ihrem Grundriss (x, z)
+function dachEbene(g) {
+  return {
+    n: g.n,
+    c: dot(g.n, g.ursprung),
+    koerper: g.koerper,
+    grund: g.aussen.map((p) => {
+      const q = zu3d(g, p);
+      return [q[0], q[2]];
+    }),
+  };
+}
+
+// Liegt der Punkt im Grundriss (oder höchstens tol daneben)?
+function imGrundriss(p, poly, tol = 0.05) {
+  if (imPolygon(p, poly)) return true;
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length];
+    const d = [b[0] - a[0], b[1] - a[1]];
+    const l2 = d[0] * d[0] + d[1] * d[1];
+    const t = l2 > 0 ? Math.max(0, Math.min(1, ((p[0] - a[0]) * d[0] + (p[1] - a[1]) * d[1]) / l2)) : 0;
+    if (Math.hypot(p[0] - a[0] - d[0] * t, p[1] - a[1] - d[1] * t) <= tol) return true;
+  }
+  return false;
+}
+
+// umriss: Fassade in ihrer Ansicht (Meter), f: die Fassade,
+// daecher: aus dachEbene(), tVorne/tHinten: Tiefe der Pappe (Meter, nach innen),
+// dDach: Dicke der Dachpappe (Meter im Original)
+function waendeBisZumDach(umriss, f, daecher, tVorne, tHinten, dDach) {
+  const eigene = daecher.filter((d) => d.koerper === f.koerper && d.n[1] > 0.1);
+  if (!eigene.length || Math.abs(f.v[1]) < 0.5) return umriss;
+  const n = umriss.length;
+
+  // Oberkanten finden: direkt darüber ist draußen, direkt darunter die Wand
+  const oben = new Set();
+  for (let i = 0; i < n; i++) {
+    const a = umriss[i], b = umriss[(i + 1) % n];
+    if (Math.abs(b[0] - a[0]) < 1e-3) continue; // senkrechte Kante
+    const m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+    if (!imPolygon([m[0], m[1] + 0.01], umriss) && imPolygon([m[0], m[1] - 0.01], umriss)) {
+      oben.add(i);
+      oben.add((i + 1) % n);
+    }
+  }
+
+  // Höhe (y) von Dach-Oberseite und Unterseite der Dachplatte über einem Punkt
+  const dachHoehen = (P) => {
+    let top = Infinity, unter = Infinity;
+    for (const d of eigene) {
+      if (!imGrundriss([P[0], P[2]], d.grund)) continue;
+      const rest = d.n[0] * P[0] + d.n[2] * P[2];
+      top = Math.min(top, (d.c - rest) / d.n[1]);
+      unter = Math.min(unter, (d.c - dDach - rest) / d.n[1]);
+    }
+    return { top, unter };
+  };
+
+  return umriss.map((p, i) => {
+    if (!oben.has(i)) return p;
+    // Die Pappe hat eine Tiefe: vorne und hinten prüfen, die tiefere Dachunterseite gilt
+    const P = zu3d(f, p);
+    let top = Infinity, unter = Infinity;
+    for (const t of [tVorne, tHinten]) {
+      const h = dachHoehen(sub(P, mul(f.n, t)));
+      top = Math.min(top, h.top);
+      unter = Math.min(unter, h.unter);
+    }
+    if (!Number.isFinite(top)) return p; // kein Dach darüber
+    // Nur Wandkanten, die knapp unter dem Dach enden (bis 1 m), nicht z. B. eine Brüstung weit darunter
+    if (P[1] > top + 0.02 || P[1] < top - 1) return p;
+    return [p[0], p[1] + (unter - P[1]) / f.v[1]];
+  });
+}
+
+// ---------------------------------------------------------
+// Dach bündig mit der Fassade (seit 19.11., Wunsch Alison):
+// Jeder freie Dachrand über einer Außenwand (Traufe, Ortgang) wird so
+// gesetzt, dass die UNTERKANTE der Dachplatte genau auf der Außenkante
+// der Wand liegt – aber nur, wenn das Dach sonst zu kurz wäre. Ein
+// Dachüberstand aus der IFC (z. B. 50 cm) bleibt, wie er ist.
+// An der Traufe wird die Platte dabei etwas länger als die
+// Wandflucht, weil der Laser senkrecht zur Platte schneidet und die
+// Unterkante sonst zurückspringen würde. First, Grate, Kehlen bleiben.
+// ---------------------------------------------------------
+function dachUeberWaende(umriss, f, flaechen, dDach) {
+  const n = umriss.length;
+  if (n < 3) return umriss;
+  let sx = 0, sy = 0;
+  for (const p of umriss) { sx += p[0]; sy += p[1]; }
+  const mitte = [sx / n, sy / n];
+  const wandListe = flaechen.filter((g) => g.wofuer === "fassade" && g.koerper === f.koerper);
+  const verschiebungen = new Array(n).fill(null); // je Kante: [Richtung nach außen, Weg]
+  for (let i = 0; i < n; i++) {
+    const A = umriss[i], B = umriss[(i + 1) % n];
+    const l = Math.hypot(B[0] - A[0], B[1] - A[1]);
+    if (l < 0.05) continue;
+    // Richtung nach außen in der Dachebene (weg von der Mitte)
+    let m = [-(B[1] - A[1]) / l, (B[0] - A[0]) / l];
+    const M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2];
+    if ((M[0] - mitte[0]) * m[0] + (M[1] - mitte[1]) * m[1] < 0) m = [-m[0], -m[1]];
+    const A3 = zu3d(f, A), B3 = zu3d(f, B), M3 = zu3d(f, M);
+    const d = sub(B3, A3);
+    const dl = laenge(d);
+    const t3 = add(mul(f.u, m[0]), mul(f.v, m[1])); // nach außen, in der Dachebene
+    // Die Wand direkt unter dem Dachrand (kleinster Überstand) bestimmt den Weg
+    let noetig = null, kleinsterUeberstand = Infinity;
+    for (const g of wandListe) {
+      const w = g.n; // nach außen, waagerecht
+      if (Math.abs(dot(d, w) / dl) > 0.1) continue; // Kante nicht parallel zur Wand
+      const tw = dot(t3, w);
+      if (tw < 0.3) continue; // Dachrand zeigt nicht über diese Wand hinaus
+      const ueberstand = dot(sub(M3, g.ursprung), w); // waagerecht vor der Wand (m)
+      if (ueberstand < -0.1 || ueberstand > 2) continue; // weit innen oder keine Wand darunter
+      if (ueberstand >= kleinsterUeberstand) continue;
+      // Liegt der Dachrand über dieser Wand? (Mitte in ihrer Ansicht, 1 m Spiel nach oben;
+      // beim Giebel liegt die Mitte des Ortgangs mitten in der Wandhöhe)
+      const q = zu2dVon(g, M3);
+      const us = g.aussen.map((p) => p[0]), vs = g.aussen.map((p) => p[1]);
+      if (q[0] < Math.min(...us) - 0.1 || q[0] > Math.max(...us) + 0.1) continue;
+      if (q[1] < Math.min(...vs) + 0.5 || q[1] > Math.max(...vs) + 1) continue;
+      // Unterkante der Platte liegt um dDach·(n·w) weiter innen als die Oberkante.
+      // Ziel (Wunsch Alison): Die Unterkante liegt genau auf der Außenkante der Wand.
+      // Positiv = verlängern, negativ = Dach hat schon Überstand.
+      noetig = (dDach * Math.max(0, dot(f.n, w)) - ueberstand) / tw;
+      kleinsterUeberstand = ueberstand;
+    }
+    // Nur verlängern, nie kürzen: Ein Dachüberstand aus der IFC bleibt (Wunsch Alison)
+    if (noetig !== null && noetig > 1e-6) verschiebungen[i] = [m, noetig];
+  }
+  if (!verschiebungen.some(Boolean)) return umriss;
+  // Verschobene Kanten als Geraden; jeder Eckpunkt = Schnitt der beiden Nachbargeraden
+  const gerade = (i) => {
+    const A = umriss[i], B = umriss[(i + 1) % n];
+    const v = verschiebungen[i];
+    if (!v) return [A, B];
+    const [m, e] = v;
+    return [[A[0] + m[0] * e, A[1] + m[1] * e], [B[0] + m[0] * e, B[1] + m[1] * e]];
+  };
+  return umriss.map((p, i) => {
+    const vor = (i - 1 + n) % n;
+    if (!verschiebungen[vor] && !verschiebungen[i]) return p;
+    const [a, b] = gerade(vor), [c, d] = gerade(i);
+    return schnittpunkt(a, b, c, d) || p;
+  });
 }
 
 // ---------------------------------------------------------

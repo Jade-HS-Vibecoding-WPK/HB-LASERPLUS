@@ -383,18 +383,27 @@ export function uebersichtBauen(daten) {
   const aufbau = e.wandaufbau || "zwei";
   const eineSchicht = aufbau !== "zwei";
   const mm = (z) => String(z).replace(".", ",") + " mm";
+  // Seit 19.11.: Laserplatten gehen auch ohne IFC-Datei, nur mit Menschen und Bäumen.
+  // Dann fallen Grundriss, Ecken und Gebäude-Hinweise weg.
+  const ohneGebaeude = gebaeude.length === 0;
 
   // Kopf
   blatt.append(element("h1", "", "Erstelle deine Laserdatei · Übersichtsblatt"));
-  const dateien = mehrere ? gebaeude.map((b) => `Gebäude ${b.nummer}: ${b.name}`).join(" · ") : gebaeude[0].name;
+  const dateien = ohneGebaeude
+    ? "Nur Menschen und Bäume, ohne Gebäude"
+    : mehrere
+      ? gebaeude.map((b) => `Gebäude ${b.nummer}: ${b.name}`).join(" · ")
+      : gebaeude[0].name;
   blatt.append(
     element(
       "p",
       "klein",
       `${dateien} · Maßstab 1:${e.massstab} · ` +
-        (eineSchicht
-          ? `Wände eine Schicht (${aufbau === "eine-geritzt" ? "Fenster und Türen geritzt" : "ohne Fenster und Türen"}), Pappe ${mm(e.dickeInnen)} · Dach ${mm(e.dickeInnen)} · `
-          : `Pappe innen ${mm(e.dickeInnen)}, außen ${mm(e.dickeAussen)} · Dach ${mm(e.dickeInnen)} · `) +
+        (ohneGebaeude
+          ? `Pappe ${mm(e.staffageDicke ?? 1)} · `
+          : eineSchicht
+            ? `Wände eine Schicht (${aufbau === "eine-geritzt" ? "Fenster und Türen geritzt" : "ohne Fenster und Türen"}), Pappe ${mm(e.dickeInnen)} · Dach ${mm(e.dickeInnen)} · `
+            : `Pappe innen ${mm(e.dickeInnen)}, außen ${mm(e.dickeAussen)} · Dach ${mm(e.dickeInnen)} · `) +
         `${platten.length} ${platten.length === 1 ? "Platte" : "Platten"} ${e.platteBreite} × ${e.platteHoehe} mm · ` +
         new Date().toLocaleDateString("de-DE")
     )
@@ -403,7 +412,11 @@ export function uebersichtBauen(daten) {
   // Legende: was bedeuten die Nummern?
   blatt.append(element("h2", "", "Legende"));
   const legende = element("ul");
-  if (eineSchicht) {
+  if (ohneGebaeude) {
+    legende.append(
+      element("li", "", "Auf diesen Platten sind nur Menschen und Bäume, ohne Gebäude. In der Teileliste stehen sie mit Nummer (M-01 …, B-01A …), auf der Pappe selbst steht keine.")
+    );
+  } else if (eineSchicht) {
     legende.append(
       element(
         "li",
@@ -448,6 +461,8 @@ export function uebersichtBauen(daten) {
   }
   blatt.append(legende);
 
+  // Ohne Gebäude: Grundriss und Ecken überspringen
+  if (!ohneGebaeude) {
   // Grundriss je Gebäude: an den Fassaden die Zahl (z. B. 001), an den Dachflächen die D-Nummer
   blatt.append(element("h2", "", mehrere ? "Grundrisse" : "Grundriss"));
   for (const b of gebaeude) {
@@ -531,8 +546,25 @@ export function uebersichtBauen(daten) {
       const art = wand
         ? (c.konvex ? "Außenecke" : "Innenecke") + `, ${winkel}°`
         : (c.konvex ? "First / Grat" : "Kehle") + `, ${winkel}°`;
-      const kurz = c.durch === c.i ? c.j : c.i;
       const zeile = element("tr");
+      if (c.stumpf) {
+        // Dachkanten (seit 19.11.): stumpf, keine Platte läuft durch
+        zeile.append(
+          element("td", "teilnummer", nr),
+          element("td", "", art),
+          element("td", "teilnummer", `${namenVon(c.i)} + ${namenVon(c.j)} (Dach ${richtung(c.i)} + ${richtung(c.j)})`),
+          element(
+            "td",
+            "",
+            c.konvex
+              ? "stumpf: die Platten berühren sich mit den Unterkanten, oben bleibt eine kleine Kerbe"
+              : "stumpf: die Platten berühren sich mit den Oberkanten, darunter ist Luft"
+          )
+        );
+        tabelle.append(zeile);
+        continue;
+      }
+      const kurz = c.durch === c.i ? c.j : c.i;
       zeile.append(
         element("td", "teilnummer", nr),
         element("td", "", art + (c.gemischt ? " (Achtung: gemischte Ecke)" : "")),
@@ -552,6 +584,7 @@ export function uebersichtBauen(daten) {
         : "Bei zwei Schichten gilt die Rolle für beide Schichten derselben Fassade: Läuft A-001 durch, läuft auch I-001 durch (innen um die Außenpappe kürzer). Die gekürzte Fassade ist außen um die Außenpappe und innen um beide Pappen kürzer."
     )
   );
+  } // Ende „nicht ohne Gebäude“
 
   // Teileliste
   const platteVon = new Map();
@@ -590,7 +623,13 @@ export function uebersichtBauen(daten) {
   // Reihenfolge beim Kleben (bei mehreren Gebäuden je Gebäude)
   blatt.append(element("h2", "", "Reihenfolge beim Kleben"));
   blatt.append(
-    element("p", "", "Jedes Teil gleich nach dem Herauslösen auf der Rückseite mit Bleistift beschriften – die geritzte Nummer steht nur auf der Restpappe.")
+    element(
+      "p",
+      "",
+      ohneGebaeude
+        ? "Menschen aufkleben, Bäume zusammenstecken – wie in den Hinweisen unten beschrieben."
+        : "Jedes Teil gleich nach dem Herauslösen auf der Rückseite mit Bleistift beschriften – die geritzte Nummer steht nur auf der Restpappe."
+    )
   );
   for (const b of gebaeude) {
     const eigene = teile.filter((t) => t.gebaeude === b.nummer);
@@ -600,7 +639,7 @@ export function uebersichtBauen(daten) {
     const beispiel = beispielA ? `, also ${beispielA.name} auf ${beispielA.name.replace(/A-(\d+)$/, "I-$1")}` : "";
     if (mehrere) blatt.append(element("h3", "gebaeude-titel", `Gebäude ${b.nummer} · ${b.name}`));
     const schritte = element("ol");
-    const dachSchritt = element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Zuerst die gekürzten Dachflächen, dann die durchlaufenden – sie überlappen am First.`);
+    const dachSchritt = element("li", "", `Dach auflegen: ${namen((t) => t.wofuer === "dach")}. Die Dachplatten liegen auf den Wänden und decken deren Oberkante ab. Am First und an Graten stoßen sie stumpf aneinander und berühren sich mit den Unterkanten.`);
     // Untersichten (seit 19.11.): vor dem Dach, solange man noch gut hinkommt
     const untersichtSchritt = eigene.some((t) => t.wofuer === "decke")
       ? [
@@ -632,9 +671,11 @@ export function uebersichtBauen(daten) {
   // Hinweise
   blatt.append(element("h2", "", "Hinweise"));
   const hinweise = element("ul");
-  hinweise.append(
-    element("li", "", "An den Ecken läuft immer eine Fassade durch, die andere ist um die Pappdicke(n) kürzer. Die App hat das schon eingerechnet – die Außenmaße stimmen.")
-  );
+  if (!ohneGebaeude) {
+    hinweise.append(
+      element("li", "", "An den Ecken läuft immer eine Fassade durch, die andere ist um die Pappdicke(n) kürzer. Die App hat das schon eingerechnet – die Außenmaße stimmen.")
+    );
+  }
   if (aufbau === "eine-geritzt") {
     hinweise.append(element("li", "", "Fenster und Türen sind nur angeritzt (blau). Die Wand bleibt geschlossen – Türen bis zum Boden auch."));
   }
@@ -644,15 +685,20 @@ export function uebersichtBauen(daten) {
   if (teile.some((t) => t.name.startsWith("B-"))) {
     hinweise.append(element("li", "", "Bäume: Je ein Teil mit Schlitz von oben (A) und eins mit Schlitz von unten (B) über Kreuz ineinanderstecken. Auf der Pappe steht keine Nummer – alle Bäume gleicher Höhe passen zusammen, man erkennt A und B am Schlitz. Der Schlitz ist so breit wie die Pappe; bei Bedarf einen Tropfen Kleber."));
   }
-  if (alleEcken.some((c) => Math.abs(Math.cos(c.phi)) > 0.02)) {
-    hinweise.append(element("li", "", "Schräge Ecken, Grate und Kehlen (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));
+  if (alleEcken.some((c) => !c.stumpf && Math.abs(Math.cos(c.phi)) > 0.02)) {
+    hinweise.append(element("li", "", "Schräge Wandecken (nicht 90°): Der Laser schneidet senkrecht, darum bleibt dort eine kleine Keilfuge. Mit etwas Kleber oder Spachtel füllen."));
+  }
+  if (alleEcken.some((c) => c.stumpf)) {
+    hinweise.append(element("li", "", "First und Grate: Die beiden Dachplatten stoßen stumpf aneinander und berühren sich mit ihren Unterkanten. Weil der Laser senkrecht schneidet, bleibt oben eine kleine Kerbe – mit Kleber füllen oder so lassen. Kehlen: Die Platten berühren sich oben, darunter ist etwas Luft."));
   }
   if (alleEcken.some((c) => c.gemischt)) {
     hinweise.append(element("li", "", "Das Gebäude hat eine ungerade Zahl von Ecken: An einer Ecke laufen zwei Platten in derselben Rolle zusammen. Dort beim Kleben kurz anhalten und prüfen."));
   }
-  hinweise.append(
-    element("li", "", "Wand–Dach-Anschluss: Die Wände sind so hoch wie im Modell, das Dach liegt oben auf. Ist die Dachpappe dünner als das echte Dach, sitzt das Dach im Modell minimal tiefer.")
-  );
+  if (!ohneGebaeude) {
+    hinweise.append(
+      element("li", "", "Wand–Dach-Anschluss: Die Wände reichen genau bis unter die Dachplatte, das Dach liegt oben auf und deckt die Oberkante der Wände ab. Die Dachhöhe stimmt mit dem Gebäude überein.")
+    );
+  }
   blatt.append(hinweise);
 
   return blatt;

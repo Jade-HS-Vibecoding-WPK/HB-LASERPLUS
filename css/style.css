@@ -66,8 +66,11 @@
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
 }
+/* Beim Darüberfahren orange (seit 19.11., wie alle weißen Knöpfe) */
 .farbmodus-knopf:hover {
+  background: var(--akzent);
   border-color: var(--akzent);
+  color: var(--akzent-text);
 }
 .farbmodus-knopf:focus-visible {
   outline: 2px solid var(--akzent);
@@ -227,9 +230,9 @@ body {
   height: 1.1rem;
 }
 .datei-entfernen:hover {
-  background: var(--flaeche);
+  background: var(--akzent);
   border-color: var(--akzent);
-  color: var(--akzent);
+  color: var(--akzent-text);
 }
 .datei-entfernen:focus-visible {
   outline: 2px solid var(--akzent);
@@ -290,9 +293,11 @@ body {
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
 }
+/* Weiße Knöpfe (nur Rand) füllen sich beim Darüberfahren orange (seit 19.11.) */
 .knopf:hover:not(:disabled) {
-  background: var(--flaeche);
-  border-color: var(--akzent-hover);
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--akzent-text);
 }
 /* Hauptknopf: gefüllt in Tomato (hell) bzw. Salmon (dunkel), Text dunkel */
 .haupt-knopf {
@@ -369,8 +374,9 @@ summary {
   height: 1.05rem;
 }
 .icon-knopf:hover:not(:disabled) {
-  background: var(--flaeche);
-  border-color: var(--akzent-hover);
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--akzent-text);
 }
 .icon-knopf.haupt-knopf {
   background: var(--akzent);
