@@ -51,13 +51,14 @@ Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdeck
 8. **Ehrlich sein:** Wenn etwas nicht oder nur ungefähr funktioniert (z. B. schräge Ecken), sag das klar und trag es in PLAN.md ein.
 9. **Bibliotheken nur mit fester Versionsnummer** einbinden, nie „latest“.
 10. **Erlaubt von außen sind nur Google Fonts und Tailwind** (Entscheidung vom 17.11.), jeweils mit fester Version. Alle anderen Bibliotheken liegen im Projekt unter `lib/` (zurzeit nur web-ifc). Keine anderen Dienste, keine Analyse-Dienste, und die IFC-Datei wird nie irgendwohin geschickt (Regel 4). Hinweis: Beim Laden von Google Fonts sieht Google die IP-Adresse der Besucher. Für das Kursprojekt ist das bewusst in Ordnung.
-11. **Zwei Branches (seit 18.11.), immer den richtigen nennen.**
-    - `main` = **Basisversion**. Sie wird am Freitag präsentiert, GitHub Pages zeigt immer `main`.
-    - `zusatz-3d` = **Zusatzversion** (3D-Druck-Dateien im STL-Format). Klappt sie bis zum Freeze nicht, kommt sie **nicht** nach `main`. Was alles dazugehört, steht in PLAN.md unter „Basis- und Zusatzversion“.
+11. **Branches, immer den richtigen nennen.**
+    - **Seit 19.11. abends ist die 3D-Druck-Version die Hauptversion:** Alison und Svenja haben entschieden, dass die Zusatzversion gut ist. `main` wurde auf den Stand von `zusadtz-3d` vorgezogen (so heißt der Branch auf GitHub, mit Tippfehler). `main` hat jetzt **beides**: Laserdatei (DXF) und 3D-Druck-Datei (STL). Sie wird am Freitag präsentiert, GitHub Pages zeigt immer `main`.
+    - **Neue Änderungen gehören nach `main`.** `zusadtz-3d` wird nicht mehr gebraucht; die Regeln unten zum Übernehmen von `main` in die Zusatzversion gelten nur noch, falls dort doch weitergearbeitet wird.
+    - Früher (18.11. bis 19.11.): `main` = Basisversion ohne 3D-Druck, `zusatz-3d` = Zusatzversion (STL), die nur nach `main` kommen sollte, wenn sie bis zum Freeze klappt. Einzelheiten in PLAN.md unter „Basis- und Zusatzversion“.
     - **Vor jedem Arbeitsschritt** schreibst du zuerst, in welchen Branch die Änderung gehört („Ziel-Branch: main“), und fragst, auf welchem Branch GitHub Desktop gerade steht. Stimmt es nicht, erst umschalten lassen, dann arbeiten.
     - **Am Ende jeder Antwort, in der Dateien geändert wurden**, steht in großen Buchstaben mit Ausrufezeichen, wohin hochgeladen wird, z. B. **HOCHLADEN IN: MAIN !** oder **HOCHLADEN IN: ZUSATZ-3D !**
     - Änderungen an der Basis gehören immer zuerst nach `main`. Danach `main` in `zusatz-3d` übernehmen (GitHub Desktop: auf `zusatz-3d` umschalten → **Branch → Merge into current branch… → main**), damit die Zusatzversion die Basis-Änderungen auch hat.
-    - Die Anweisung **„Entferne alles aus der Zusatzversion und ändere die App zur Basisversion“** heißt: `zusatz-3d` nicht nach `main` übernehmen; `main` bleibt, wie es ist.
+    - Die Anweisung **„Entferne alles aus der Zusatzversion und ändere die App zur Basisversion“** galt bis 19.11. abends (`zusatz-3d` nicht nach `main` übernehmen). Seit der Übernahme hieße das: den 3D-Druck-Teil aus `main` wieder entfernen – vorher nachfragen.
 
 ---
 
@@ -68,6 +69,8 @@ Ausdrücklich **nicht** in dieser Woche: runde Wände, Innenwände, Geschossdeck
 Ruhig, aufgeräumt, viel Weißraum.
 
 **Startseite** (erscheint bei jedem Öffnen und Neuladen, liegt über der Arbeitsseite): großes Logo, ein Satz zur App, Platz für ein Beispielbild und der Knopf **„Erstelle deine Laserdatei“**. Seit 19.11. steht „IFC → Laser“ **nicht mehr sichtbar** darauf (nur noch für Vorleseprogramme, `sr-only`). **Auftritt beim Öffnen** (seit 19.11.): Zuerst blendet das Logo aus der Unschärfe ein, danach erscheinen Satz, Knopf, Hinweis und Sonne/Mond nacheinander (Klasse `auftritt` mit `--schritt` in `index.html`, Bewegung in `css/style.css`; bei „weniger Bewegung“ ohne Animation). Ein Klick irgendwo auf die Startseite (außer auf Sonne/Mond) blendet sie **sanft aus** (Fade 1,6 s mit leichter Unschärfe und Vergrößerung; bei „weniger Bewegung“ im System ohne Fade). Das Beispielbild erscheint automatisch, sobald die Datei `Bilder/beispiel.jpg` existiert.
+
+**Auswahl Laser oder 3D-Druck** (seit 19.11. abends auch auf `main`): Auf der Startseite wählt man zwischen **„Laserdatei · DXF“** und **„3D-Druck-Datei · STL“**. Die 3D-Druck-Seite ist eine eigene Arbeitsseite (`js/druck3d.js`, `js/stl.js`) mit eigenen Bereichen; die Beschreibung unten gilt für die Laser-Seite.
 
 **Arbeitsseite**: kleines Logo und Titel **„Erstelle deine Laserdatei“** in der Kopfzeile (seit 18.11., vorher „IFC → Laser“; der Browser-Tab heißt weiter „IFC → Laser“), darunter **vier** klar nummerierte Bereiche (seit 19.11., vorher drei). Ab 1024 px Breite **zweigeteilt**: links (etwa ⅔) untereinander Bereich 1, 3 und 4; rechts (etwa ⅓) Bereich 2, der beim Scrollen stehen bleibt. Schmaler: untereinander 1 → 2 → 3 → 4.
 
@@ -163,9 +166,9 @@ js/staffage-figuren.js – Alisons eigene Menschen „Figur 1“/„Figur 2“, 
 js/betrachter.js    – WebGL-Betrachter (von Zusatz 3D übernommen, unverändert)
 js/farbmodus.js     – Knopf hell/dunkel (Sonne/Mond)
 js/uebersicht.js    – Übersichtsblatt zum Drucken
-js/druck3d.js       – ZUSATZ 3D (nur Branch zusatz-3d): 3D-Druck-Seite, Dateien, Einstellungen, Modell, STL-Knöpfe
+js/druck3d.js       – 3D-Druck-Seite (seit 19.11. abends auch auf main): Dateien, Einstellungen, Modell, STL-Knöpfe
 js/betrachter.js    – ZUSATZ 3D: kleiner 3D-Betrachter ohne Bibliothek (Canvas)
-js/stl.js           – ZUSATZ 3D: STL schreiben (binär)
+js/stl.js           – 3D-Druck: STL schreiben (binär)
 lib/web-ifc/        – IFC-Bibliothek 0.0.78 (wird mit hochgeladen, siehe .gitignore „!lib/“)
 Bilder/             – logo.svg, später beispiel.jpg (Beispielbild für die Startseite)
 beispiele/          – Test-IFC-Dateien (werden NICHT hochgeladen, siehe .gitignore)

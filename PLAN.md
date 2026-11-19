@@ -215,7 +215,9 @@ Wir arbeiten mit zwei Branches in GitHub (Regeln dazu: CLAUDE.md, Regel 11).
 | `main` | **Basisversion**. Wird am Freitag präsentiert, GitHub Pages zeigt immer `main`. | Bleibt auf jeden Fall. |
 | `zusatz-3d` | **Zusatzversion**: 3D-Druck-Dateien im STL-Format. | Kommt nur nach `main`, wenn sie bis Donnerstag 12:00 (Freeze) funktioniert. |
 
-**„Entferne alles aus der Zusatzversion und ändere die App zur Basisversion“** heißt: `zusatz-3d` wird nicht nach `main` übernommen, `main` bleibt, wie es ist.
+**„Entferne alles aus der Zusatzversion und ändere die App zur Basisversion“** heißt: `zusatz-3d` wird nicht nach `main` übernommen, `main` bleibt, wie es ist. (Galt bis 19.11. abends.)
+
+> **Entscheidung 19.11. abends (Alison und Svenja): Die Zusatzversion ist gut und wird die Hauptwebsite.** `main` wurde auf den Stand von `zusadtz-3d` vorgezogen (ohne Konflikte, weil `zusadtz-3d` schon alle Änderungen aus `main` enthielt, auch Dach und Fenster-Vorschau vom 19.11.). `main` hat jetzt Laserdatei (DXF) **und** 3D-Druck (STL). Neue Änderungen gehören nach `main`. Der Laser-Teil wurde danach mit Test 03 geprüft (ohne Fehler); der STL-Teil wurde von Claude nicht selbst getestet (siehe offener Punkt „Zusatzversion nach dem Merge prüfen“).
 
 ### Basisversion (`main`): Änderungen ab 18.11.
 
