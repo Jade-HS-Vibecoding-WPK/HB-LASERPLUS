@@ -14,10 +14,11 @@
 
 import { zu3d } from "./abwickeln.js";
 
-const FARBEN = {
-  A: [216, 205, 189],   // Außenschicht / eine Schicht: Graupappe hell
-  I: [169, 157, 138],   // Innenschicht: Graupappe dunkler
-  dach: [205, 97, 72],  // Dach: Logo-Orange, damit man es gut unterscheidet
+// Farben der Vorschau (in main.js auch für die Legende benutzt)
+export const FARBEN = {
+  A: [216, 205, 189],     // Außenschicht / eine Schicht: Graupappe hell
+  I: [169, 157, 138],     // Innenschicht: Graupappe dunkler
+  dach: [178, 142, 122],  // Dach: gedecktes, warmes Braungrau (seit 19.11., vorher kräftiges Orange-Rot)
   decke: [140, 150, 160], // Untersicht (U): kühles Grau, damit man sie von unten erkennt
 };
 
@@ -97,12 +98,49 @@ function zerlegen(aussen, loecher) {
 }
 
 // ---------------------------------------------------------
+// NUR FÜR DIE VORSCHAU (seit 19.11.): Wie dick ist das echte Dach?
+// In der IFC enden die Wände an der Unterseite des echten Dachs. Die
+// Dachpappe ist dünner, darum liegt sie beim Kleben tiefer auf den Wänden.
+// Damit die Vorschau das so zeigt (ohne Lücke), wird jede Dachplatte um
+// (echte Dachdicke − Pappdicke) nach innen geschoben. Die Laserteile
+// selbst ändern sich dadurch NICHT.
+// Ergebnis: Map Index der Dachfläche → echte Dicke in Meter
+// ---------------------------------------------------------
+export function dachDickenMessen(huelle, flaechen) {
+  const dicken = new Map();
+  const dachDreiecke = (huelle || []).filter((t) => t.art === "dach");
+  if (!dachDreiecke.length) return dicken;
+  flaechen.forEach((f, index) => {
+    if (f.wofuer !== "dach") return;
+    const n = f.n;
+    const dOben = n[0] * f.ursprung[0] + n[1] * f.ursprung[1] + n[2] * f.ursprung[2];
+    let dUnten = dOben;
+    for (const t of dachDreiecke) {
+      const d = t.dreiecke;
+      for (let i = 0; i + 8 < d.length; i += 9) {
+        const ux = d[i + 3] - d[i], uy = d[i + 4] - d[i + 1], uz = d[i + 5] - d[i + 2];
+        const vx = d[i + 6] - d[i], vy = d[i + 7] - d[i + 1], vz = d[i + 8] - d[i + 2];
+        const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+        const l = Math.hypot(nx, ny, nz);
+        if (l < 1e-9 || Math.abs((nx * n[0] + ny * n[1] + nz * n[2]) / l) < 0.999) continue; // nicht parallel
+        const abst = n[0] * d[i] + n[1] * d[i + 1] + n[2] * d[i + 2];
+        if (abst < dOben + 0.01 && abst > dOben - 1) dUnten = Math.min(dUnten, abst);
+      }
+    }
+    const dicke = dOben - dUnten;
+    if (dicke > 0.005 && dicke < 1) dicken.set(index, dicke);
+  });
+  return dicken;
+}
+
+// ---------------------------------------------------------
 // Alle Teile eines Gebäudes in 3D
 // flaechen: aus abwickeln.js (Meter), teile: aus schichten.js (mm),
 // k: mm im Modell je Meter (1000 / Maßstab), ritzFarbe: z. B. "#0000ff"
 // versatz: [x, y] in mm, um mehrere Gebäude nebeneinander zu stellen
+// dachDicken: aus dachDickenMessen() – Dach liegt in der Vorschau auf den Wänden
 // ---------------------------------------------------------
-export function modellTeile(flaechen, teile, k, ritzFarbe, versatz = [0, 0]) {
+export function modellTeile(flaechen, teile, k, ritzFarbe, versatz = [0, 0], dachDicken = new Map()) {
   const ritzRgb = ((z) => [(z >> 16) & 255, (z >> 8) & 255, z & 255])(parseInt(ritzFarbe.replace("#", ""), 16));
   const nachFarbe = new Map(); // Farbe → Zahlenliste
   const hinzu = (farbe, ...punkte) => {
@@ -122,7 +160,12 @@ export function modellTeile(flaechen, teile, k, ritzFarbe, versatz = [0, 0]) {
       const x = w[0] * k - f.n[0] * tief, y = w[1] * k - f.n[1] * tief, z = w[2] * k - f.n[2] * tief;
       return [x + versatz[0], -z + versatz[1], y];
     };
-    const t0 = t.tiefe || 0, t1 = t0 + t.dicke;
+    // Dachplatten liegen (wie beim Kleben) auf den Wänden: um den Unterschied
+    // zwischen echter Dachdicke und Pappdicke nach innen geschoben
+    const absenken = t.wofuer === "dach" && dachDicken.has(t.flaecheIndex)
+      ? Math.max(0, dachDicken.get(t.flaecheIndex) * k - t.dicke)
+      : 0;
+    const t0 = (t.tiefe || 0) + absenken, t1 = t0 + t.dicke;
 
     // Vorder- und Rückseite
     for (const [a, b, c] of zerlegen(t.aussen, t.loecher)) {

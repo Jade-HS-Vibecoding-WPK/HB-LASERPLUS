@@ -103,7 +103,7 @@ Geprüft mit drei Test-IFCs aus Archicad: „Test 01 – wand und dach“ (6 Au�
 | 4 Zwei Schichten | ✅ |
 | 5 Einstellungen | ✅ Änderungen rechnen die Platten sofort neu |
 | 6 Ecken | ✅ 90° und schräg, Außen- und Innenecken (L-Form geprüft). Schräge Ecken: kleine Keilfuge, Hinweis auf dem Übersichtsblatt |
-| 7 Steildach-Anschlüsse | ⚠️ teilweise: First, Grat und Kehle überlappen richtig. Wand–Dach: Die Wände bleiben so hoch wie in der IFC, das Dach liegt oben auf. Ist die Dachpappe dünner als das echte Dach, sitzt das Dach minimal tiefer (bei 1:100 etwa 1 mm). Giebel sind oben schräg, so wie in der IFC |
+| 7 Steildach-Anschlüsse | ⚠️ teilweise: First, Grat und Kehle überlappen richtig. Wand–Dach: Die Wände bleiben so hoch wie in der IFC, das Dach liegt oben auf. Ist die Dachpappe dünner als das echte Dach, sitzt das Dach minimal tiefer (bei 1:100 etwa 1 mm). Giebel sind oben schräg, so wie in der IFC. **3D-Vorschau (seit 19.11.):** zeigt das Dach so, wie es beim Kleben sitzt – auf den Wänden aufliegend, ohne Lücke (`dachDickenMessen` in `js/modell3d.js` schiebt nur in der Vorschau jede Dachplatte um echte Dachdicke − Pappdicke nach innen; Test 03: 34,5 cm Dach → 1,45 mm). Die Laserteile bleiben unverändert. |
 | 8 Verteilen | ✅ Regal-Verfahren, 10 mm Rand, 3 mm Abstand, Warnung bei zu großen Teilen, bei Bedarf um 90° gedreht |
 | 9 Nummern | ✅ Linienschrift, blau geritzt, unter dem Teil |
 | 10 DXF | ✅ eine Datei je Platte, im Browser geprüft (Ebenen, Farben, Rahmen, Randabstand). **Noch nicht in AutoCAD, Rhino oder der Lasersoftware geöffnet** |
@@ -266,6 +266,7 @@ Wir arbeiten mit zwei Branches in GitHub (Regeln dazu: CLAUDE.md, Regel 11).
 - [x] **Nummernschema (geändert am 17.11.):** Der Buchstabe zeigt die Schicht: A = Außenschicht, I = Innenschicht, D = Dachfläche. Die Zahl ist die Fassade bzw. Dachfläche; gleiche Zahl bei A und I = gleiche Fassade. Beispiel: A-001 kommt auf I-001. Die Himmelsrichtung steht in der Teileliste des Übersichtsblatts, die Legende ebenfalls.
 - [x] **Tipp fürs Übersichtsblatt:** Weil die Nummer nur auf der Restpappe steht, sollte man jedes Teil direkt nach dem Herausnehmen auf der Rückseite mit Bleistift beschriften. (Steht jetzt als Schritt 1 auf dem Übersichtsblatt.)
 - [ ] **GitHub Pages:** Wer darf im Repository „Jade-HS-Vibecoding-WPK“ die Veröffentlichung einschalten? Eventuell die Kursleitung fragen.
+- [ ] **Dach und Laserteile in der Realität klären (19.11., Alison):** In der IFC enden die Wände an der Unterseite des echten Dachs (Test 03: Dach 34,5 cm dick). Die Dachpappe ist nur 1–2 mm dünn. Die **Laserteile** sind unverändert: Beim Kleben liegt das Dach auf den Wänden und sitzt dadurch tiefer als im Archicad-Modell (Test 03 bei 1:100: ca. 1,3–1,7 mm, bei 1:50 ca. 5 mm). Die **3D-Vorschau** zeigt das Dach bereits so aufliegend (nur Darstellung). Noch zu klären: Ist das beim echten Bauen in Ordnung, oder sollen die Wände oben verlängert werden (Versuch am 19.11. wieder zurückgenommen)? Am besten mit einem gelaserten Probe-Giebel testen.
 - [x] **README:** an die neue Idee angepasst (17.11.).
 
 ---

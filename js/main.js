@@ -31,7 +31,7 @@ import { verteilen } from "./verteilen.js";
 import { uebersichtBauen } from "./uebersicht.js";
 import { farbmodusStarten } from "./farbmodus.js";
 import { Betrachter } from "./betrachter.js"; // 3D-Vorschau (von Svenjas Zusatz 3D übernommen, unverändert)
-import { modellTeile, grundrissBreite } from "./modell3d.js";
+import { modellTeile, grundrissBreite, dachDickenMessen, FARBEN } from "./modell3d.js";
 import { staffageTeile } from "./staffage.js";
 
 // Knopf hell/dunkel (Sonne/Mond) anschließen
@@ -452,7 +452,13 @@ function berechnen() {
     for (const t of teileBauen(g.flaechen, g.ecken, e, mehrere ? nummer + "-" : "")) {
       teile.push({ ...t, gebaeude: nummer });
     }
-    liste.push({ nummer, name: g.datei.name, flaechen: g.flaechen, ecken: g.ecken });
+    // dachDicken: nur für die 3D-Vorschau (Dach liegt auf den Wänden),
+    // neu gemessen, sobald die Flächen neu berechnet wurden
+    if (!g.dachDicken || g.dachDickenFuer !== g.flaechen) {
+      g.dachDicken = dachDickenMessen(g.info.huelle, g.flaechen);
+      g.dachDickenFuer = g.flaechen;
+    }
+    liste.push({ nummer, name: g.datei.name, flaechen: g.flaechen, ecken: g.ecken, dachDicken: g.dachDicken });
   }
   // Menschen und Bäume (Staffage) kommen mit auf die Platten
   teile.push(...staffageTeile(e));
@@ -505,19 +511,19 @@ function modellZeigen() {
     const eigene = teile.filter((t) => t.gebaeude === b.nummer);
     if (!eigene.length) continue;
     // erst ohne Versatz bauen, um die Breite zu kennen, dann daneben stellen
-    const probe = modellTeile(b.flaechen, eigene, k, e.farben.ritzen);
+    const probe = modellTeile(b.flaechen, eigene, k, e.farben.ritzen, [0, 0], b.dachDicken);
     const r = grundrissBreite(probe);
     const versatz = [naechstesX - r.x0, 0];
-    alle.push(...(versatz[0] === 0 ? probe : modellTeile(b.flaechen, eigene, k, e.farben.ritzen, versatz)));
+    alle.push(...(versatz[0] === 0 ? probe : modellTeile(b.flaechen, eigene, k, e.farben.ritzen, versatz, b.dachDicken)));
     naechstesX += r.x1 - r.x0 + 20; // 2 cm Abstand zwischen den Gebäuden
   }
   modellBetrachter.setzen(alle, null);
   const aufbau = e.wandaufbau || "zwei";
   const eintraege = [
-    [[216, 205, 189], aufbau === "zwei" ? "Außenschicht (A)" : "Wand (A)"],
-    ...(aufbau === "zwei" ? [[[169, 157, 138], "Innenschicht (I)"]] : []),
-    [[205, 97, 72], "Dach (D)"],
-    ...(teile.some((t) => t.wofuer === "decke") ? [[[140, 150, 160], "Untersicht (U)"]] : []),
+    [FARBEN.A, aufbau === "zwei" ? "Außenschicht (A)" : "Wand (A)"],
+    ...(aufbau === "zwei" ? [[FARBEN.I, "Innenschicht (I)"]] : []),
+    [FARBEN.dach, "Dach (D)"],
+    ...(teile.some((t) => t.wofuer === "decke") ? [[FARBEN.decke, "Untersicht (U)"]] : []),
   ];
   modellLegende.replaceChildren(
     ...eintraege.map(([farbe, text]) => {
